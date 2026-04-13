@@ -17,6 +17,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -47,7 +48,10 @@ const navigation = [
   },
   {
     title: "HR & INTERNAL",
-    items: [{ name: "HR & Payroll", href: "/hr-payroll", icon: Building2 }],
+    items: [
+      { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
+      { name: "HR & Payroll", href: "/hr-payroll", icon: Building2 },
+    ],
   },
   {
     title: "SYSTEM",
