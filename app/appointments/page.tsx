@@ -621,7 +621,7 @@ export default function AppointmentsPage() {
                     <p className="font-medium">{selectedAppointment.status}</p>
                   </div>
                 </div>
-              </DialogContent>
+              </div>
             )}
           </DialogContent>
         </Dialog>
