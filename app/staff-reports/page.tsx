@@ -2,6 +2,8 @@
 
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -9,6 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Table,
   TableBody,
@@ -32,58 +39,59 @@ interface StaffPerformance {
 }
 
 const staffPerformance: StaffPerformance[] = [
-  {
-    id: "1",
-    name: "Rumana Akter",
-    role: "Senior Stylist",
-    appointments: 45,
-    revenue: 67500,
-    rating: 4.8,
-    efficiency: 92,
-  },
-  {
-    id: "2",
-    name: "Md. Sohel Rana",
-    role: "Barber",
-    appointments: 62,
-    revenue: 18600,
-    rating: 4.6,
-    efficiency: 88,
-  },
-  {
-    id: "3",
-    name: "Shahnaz Parvin",
-    role: "Beautician",
-    appointments: 38,
-    revenue: 45600,
-    rating: 4.9,
-    efficiency: 95,
-  },
-  {
-    id: "4",
-    name: "Taslima Khanam",
-    role: "Nail Technician",
-    appointments: 28,
-    revenue: 14000,
-    rating: 4.5,
-    efficiency: 85,
-  },
+  { id: "1", name: "Rumana Akter", role: "Senior Stylist", appointments: 45, revenue: 67500, rating: 4.8, efficiency: 92 },
+  { id: "2", name: "Md. Sohel Rana", role: "Barber", appointments: 62, revenue: 18600, rating: 4.6, efficiency: 88 },
+  { id: "3", name: "Shahnaz Parvin", role: "Beautician", appointments: 38, revenue: 45600, rating: 4.9, efficiency: 95 },
+  { id: "4", name: "Taslima Khanam", role: "Nail Technician", appointments: 28, revenue: 14000, rating: 4.5, efficiency: 85 },
+]
+
+const TIME_OPTIONS = [
+  { value: "all", label: "All Time" },
+  { value: "today", label: "Today" },
+  { value: "week", label: "This Week" },
+  { value: "month", label: "This Month" },
+  { value: "6months", label: "Last 6 Months" },
+  { value: "year", label: "This Year" },
+  { value: "custom", label: "Custom Date" },
 ]
 
 export default function StaffReportsPage() {
-  const [period, setPeriod] = useState("monthly")
+  const [timeFilter, setTimeFilter] = useState("month")
+  const [customDateFrom, setCustomDateFrom] = useState("")
+  const [customDateTo, setCustomDateTo] = useState("")
+  const [showCustomDate, setShowCustomDate] = useState(false)
 
   const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase()
   }
 
   const totalAppointments = staffPerformance.reduce((sum, s) => sum + s.appointments, 0)
   const totalRevenue = staffPerformance.reduce((sum, s) => sum + s.revenue, 0)
   const avgRating = (staffPerformance.reduce((sum, s) => sum + s.rating, 0) / staffPerformance.length).toFixed(1)
+
+  const handleExport = () => {
+    const headers = ["Name", "Role", "Appointments", "Revenue", "Rating", "Efficiency"]
+    const rows = staffPerformance.map(s => [s.name, s.role, s.appointments, s.revenue, s.rating, s.efficiency + "%"])
+    const csv = [
+      ["Staff Performance Report"],
+      ["Period", timeFilter],
+      [""],
+      headers,
+      ...rows,
+      [""],
+      ["Summary"],
+      ["Total Appointments", totalAppointments],
+      ["Total Revenue", totalRevenue],
+      ["Average Rating", avgRating],
+    ].map(row => row.join(",")).join("\n")
+    
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `staff-report-${timeFilter}-${new Date().toISOString().split("T")[0]}.csv`
+    a.click()
+  }
 
   return (
     <DashboardLayout>
@@ -94,17 +102,36 @@ export default function StaffReportsPage() {
             <p className="text-muted-foreground">Employee performance analytics</p>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline">
+            <Popover open={showCustomDate && timeFilter === "custom"} onOpenChange={setShowCustomDate}>
+              <PopoverTrigger asChild>
+                <div>
+                  <Select value={timeFilter} onValueChange={(v) => { setTimeFilter(v); if (v === "custom") setShowCustomDate(true) }}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIME_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-4">
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">From</Label>
+                    <Input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">To</Label>
+                    <Input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} />
+                  </div>
+                  <Button size="sm" className="w-full" onClick={() => setShowCustomDate(false)}>Apply</Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
@@ -156,16 +183,14 @@ export default function StaffReportsPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {getInitials(staff.name)}
-                        </AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary">{getInitials(staff.name)}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{staff.name}</span>
                     </div>
                   </TableCell>
                   <TableCell>{staff.role}</TableCell>
                   <TableCell>{staff.appointments}</TableCell>
-                  <TableCell className="font-medium">₹{staff.revenue.toLocaleString()}</TableCell>
+                  <TableCell className="font-medium">৳{staff.revenue.toLocaleString()}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -175,10 +200,7 @@ export default function StaffReportsPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `${staff.efficiency}%` }}
-                        />
+                        <div className="h-full bg-primary rounded-full" style={{ width: `${staff.efficiency}%` }} />
                       </div>
                       <span className="text-sm">{staff.efficiency}%</span>
                     </div>

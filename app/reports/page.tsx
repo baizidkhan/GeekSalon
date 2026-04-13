@@ -2,6 +2,8 @@
 
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -9,6 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   AreaChart,
   Area,
@@ -55,8 +62,50 @@ const appointmentData = [
 
 const COLORS = ["oklch(0.6 0.2 250)", "oklch(0.7 0.15 200)", "oklch(0.65 0.2 30)", "oklch(0.5 0.15 280)"]
 
+const TIME_OPTIONS = [
+  { value: "all", label: "All Time" },
+  { value: "today", label: "Today" },
+  { value: "week", label: "This Week" },
+  { value: "month", label: "This Month" },
+  { value: "6months", label: "Last 6 Months" },
+  { value: "year", label: "This Year" },
+  { value: "custom", label: "Custom Date" },
+]
+
 export default function ReportsPage() {
-  const [period, setPeriod] = useState("monthly")
+  const [timeFilter, setTimeFilter] = useState("month")
+  const [customDateFrom, setCustomDateFrom] = useState("")
+  const [customDateTo, setCustomDateTo] = useState("")
+  const [showCustomDate, setShowCustomDate] = useState(false)
+
+  const handleExport = () => {
+    const reportData = {
+      period: timeFilter,
+      customRange: timeFilter === "custom" ? { from: customDateFrom, to: customDateTo } : null,
+      revenue: revenueData,
+      services: serviceData,
+      appointments: appointmentData,
+    }
+    const csv = [
+      ["Report Export"],
+      ["Period", timeFilter],
+      [""],
+      ["Revenue by Month"],
+      ["Month", "Revenue"],
+      ...revenueData.map(r => [r.month, r.revenue]),
+      [""],
+      ["Service Distribution"],
+      ["Service", "Percentage"],
+      ...serviceData.map(s => [s.name, s.value + "%"]),
+    ].map(row => row.join(",")).join("\n")
+    
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `report-${timeFilter}-${new Date().toISOString().split("T")[0]}.csv`
+    a.click()
+  }
 
   return (
     <DashboardLayout>
@@ -67,17 +116,36 @@ export default function ReportsPage() {
             <p className="text-muted-foreground">Business insights and analytics</p>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline">
+            <Popover open={showCustomDate && timeFilter === "custom"} onOpenChange={setShowCustomDate}>
+              <PopoverTrigger asChild>
+                <div>
+                  <Select value={timeFilter} onValueChange={(v) => { setTimeFilter(v); if (v === "custom") setShowCustomDate(true) }}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIME_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-4">
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">From</Label>
+                    <Input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">To</Label>
+                    <Input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} />
+                  </div>
+                  <Button size="sm" className="w-full" onClick={() => setShowCustomDate(false)}>Apply</Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
