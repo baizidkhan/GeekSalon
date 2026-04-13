@@ -24,7 +24,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { Download, TrendingUp, Users, Calendar, IndianRupee } from "lucide-react"
+import { Download, TrendingUp, Users, Calendar } from "lucide-react"
 import { useState } from "react"
 
 const revenueData = [
@@ -89,11 +89,11 @@ export default function ReportsPage() {
           <div className="bg-card rounded-xl p-5 border border-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                <IndianRupee className="w-5 h-5 text-primary" />
+                <span className="w-5 h-5 text-primary font-bold text-base flex items-center justify-center">৳</span>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-semibold text-foreground">₹3,28,000</p>
+                <p className="text-2xl font-semibold text-foreground">৳3,28,000</p>
                 <p className="text-xs text-green-600">+12% from last month</p>
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function ReportsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Avg. Ticket Size</p>
-                <p className="text-2xl font-semibold text-foreground">₹2,103</p>
+                <p className="text-2xl font-semibold text-foreground">৳2,103</p>
                 <p className="text-xs text-green-600">+5% from last month</p>
               </div>
             </div>
@@ -151,8 +151,8 @@ export default function ReportsPage() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `₹${v/1000}k`} />
-                  <Tooltip formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${v/1000}k`} />
+                  <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
                   <Area type="monotone" dataKey="revenue" stroke="oklch(0.6 0.2 250)" strokeWidth={2} fill="url(#revenueGradient2)" />
                 </AreaChart>
               </ResponsiveContainer>

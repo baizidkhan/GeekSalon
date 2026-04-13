@@ -44,7 +44,7 @@ export default function DashboardPage() {
           />
           <StatCard
             title="Total Revenue"
-            value="₹9,800"
+            value="৳9,800"
             subtitle="WEEK"
             icon={TrendingUp}
           />

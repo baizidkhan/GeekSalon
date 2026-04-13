@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Plus, Download, Calendar, IndianRupee, MoreHorizontal } from "lucide-react"
+import { Plus, Download, Calendar, MoreHorizontal } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,7 +64,7 @@ const payrollRecords: PayrollRecord[] = [
   {
     id: "1",
     employeeId: "EMP001",
-    employeeName: "Anjali Verma",
+    employeeName: "Rumana Akter",
     role: "Senior Stylist",
     baseSalary: 35000,
     bonus: 5000,
@@ -76,7 +76,7 @@ const payrollRecords: PayrollRecord[] = [
   {
     id: "2",
     employeeId: "EMP002",
-    employeeName: "Vikram Singh",
+    employeeName: "Md. Sohel Rana",
     role: "Barber",
     baseSalary: 25000,
     bonus: 2000,
@@ -88,7 +88,7 @@ const payrollRecords: PayrollRecord[] = [
   {
     id: "3",
     employeeId: "EMP003",
-    employeeName: "Sunita Rao",
+    employeeName: "Shahnaz Parvin",
     role: "Beautician",
     baseSalary: 28000,
     bonus: 3000,
@@ -100,7 +100,7 @@ const payrollRecords: PayrollRecord[] = [
   {
     id: "4",
     employeeId: "EMP004",
-    employeeName: "Raj Malhotra",
+    employeeName: "Taslima Khanam",
     role: "Nail Technician",
     baseSalary: 22000,
     bonus: 1500,
@@ -114,7 +114,7 @@ const payrollRecords: PayrollRecord[] = [
 const leaveRecords: LeaveRecord[] = [
   {
     id: "1",
-    employeeName: "Anjali Verma",
+    employeeName: "Rumana Akter",
     type: "Annual",
     startDate: "2026-04-15",
     endDate: "2026-04-18",
@@ -123,7 +123,7 @@ const leaveRecords: LeaveRecord[] = [
   },
   {
     id: "2",
-    employeeName: "Vikram Singh",
+    employeeName: "Md. Sohel Rana",
     type: "Sick",
     startDate: "2026-04-10",
     endDate: "2026-04-10",
@@ -132,7 +132,7 @@ const leaveRecords: LeaveRecord[] = [
   },
   {
     id: "3",
-    employeeName: "Sunita Rao",
+    employeeName: "Shahnaz Parvin",
     type: "Casual",
     startDate: "2026-04-20",
     endDate: "2026-04-21",
@@ -208,22 +208,22 @@ export default function HRPayrollPage() {
           <div className="bg-card rounded-xl p-5 border border-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                <IndianRupee className="w-5 h-5 text-primary" />
+                <span className="w-5 h-5 text-primary font-bold text-base flex items-center justify-center">৳</span>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Payroll</p>
-                <p className="text-2xl font-semibold text-foreground">₹{totalPayroll.toLocaleString()}</p>
+                <p className="text-2xl font-semibold text-foreground">৳{totalPayroll.toLocaleString()}</p>
               </div>
             </div>
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg">
-                <IndianRupee className="w-5 h-5 text-amber-600" />
+                <span className="w-5 h-5 text-amber-600 font-bold text-base flex items-center justify-center">৳</span>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl font-semibold text-foreground">₹{pendingPayroll.toLocaleString()}</p>
+                <p className="text-2xl font-semibold text-foreground">৳{pendingPayroll.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -268,10 +268,10 @@ export default function HRPayrollPage() {
                             <SelectValue placeholder="Select employee" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1">Anjali Verma</SelectItem>
-                            <SelectItem value="2">Vikram Singh</SelectItem>
-                            <SelectItem value="3">Sunita Rao</SelectItem>
-                            <SelectItem value="4">Raj Malhotra</SelectItem>
+                            <SelectItem value="1">Rumana Akter</SelectItem>
+                            <SelectItem value="2">Md. Sohel Rana</SelectItem>
+                            <SelectItem value="3">Shahnaz Parvin</SelectItem>
+                            <SelectItem value="4">Taslima Khanam</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -324,10 +324,10 @@ export default function HRPayrollPage() {
                         </div>
                       </TableCell>
                       <TableCell>{record.role}</TableCell>
-                      <TableCell>₹{record.baseSalary.toLocaleString()}</TableCell>
-                      <TableCell className="text-green-600">+₹{record.bonus.toLocaleString()}</TableCell>
-                      <TableCell className="text-red-600">-₹{record.deductions.toLocaleString()}</TableCell>
-                      <TableCell className="font-medium">₹{record.netSalary.toLocaleString()}</TableCell>
+                      <TableCell>৳{record.baseSalary.toLocaleString()}</TableCell>
+                      <TableCell className="text-green-600">+৳{record.bonus.toLocaleString()}</TableCell>
+                      <TableCell className="text-red-600">-৳{record.deductions.toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">৳{record.netSalary.toLocaleString()}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
                           {record.status}

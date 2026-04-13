@@ -77,15 +77,10 @@ function generateDays(): DayStatus[] {
 }
 
 const AVATARS = [
-  { name: "Anthony Thomas",     initials: "AT", bg: "#dbeafe" },
-  { name: "Benjamin Martinez",  initials: "BM", bg: "#fef3c7" },
-  { name: "Christopher Moore",  initials: "CM", bg: "#d1fae5" },
-  { name: "Diana Kim",          initials: "DK", bg: "#fce7f3" },
-  { name: "Edward Wilson",      initials: "EW", bg: "#ede9fe" },
-  { name: "Fiona Brown",        initials: "FB", bg: "#ffedd5" },
-  { name: "George Davis",       initials: "GD", bg: "#e0f2fe" },
-  { name: "Hannah Clark",       initials: "HC", bg: "#fdf2f8" },
-  { name: "Ivan Rodriguez",     initials: "IR", bg: "#ecfdf5" },
+  { name: "Md. Rafiqul Islam",   initials: "RI", bg: "#dbeafe" },
+  { name: "Fatema Begum",        initials: "FB", bg: "#fce7f3" },
+  { name: "Karim Hossain",       initials: "KH", bg: "#d1fae5" },
+  { name: "Nasrin Akhter",       initials: "NA", bg: "#fef3c7" },
 ]
 
 const ALL_EMPLOYEES: Employee[] = AVATARS.map((a, i) => {
@@ -95,7 +90,8 @@ const ALL_EMPLOYEES: Employee[] = AVATARS.map((a, i) => {
 })
 
 const YEARS = ["2022", "2023", "2024", "2025", "2026"]
-const PAGE_SIZE = 9
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+const PAGE_SIZE = 4
 
 // ---------- Day Status Icon ----------
 function DayIcon({ status }: { status: DayStatus }) {
@@ -129,8 +125,13 @@ export default function AttendancePage() {
   })
 
   const [search, setSearch]   = useState("")
-  const [year, setYear]       = useState("2024")
+  const [year, setYear]       = useState(String(new Date().getFullYear()))
+  const [month, setMonth]     = useState(String(new Date().getMonth()))
   const [page, setPage]       = useState(1)
+
+  const daysInMonth = useMemo(() => {
+    return new Date(Number(year), Number(month) + 1, 0).getDate()
+  }, [year, month])
 
   const filtered = useMemo(() => {
     return ALL_EMPLOYEES.filter((e) =>
@@ -152,7 +153,7 @@ export default function AttendancePage() {
     const blob = new Blob([csv], { type: "text/csv" })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement("a")
-    a.href = url; a.download = `attendance-${year}.csv`; a.click()
+    a.href = url; a.download = `attendance-${MONTH_NAMES[Number(month)]}-${year}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
@@ -291,7 +292,17 @@ export default function AttendancePage() {
                 <Download className="w-3.5 h-3.5" />
                 Download Report
               </Button>
-              <Select value={year} onValueChange={setYear}>
+              <Select value={month} onValueChange={(v) => { setMonth(v); setPage(1) }}>
+                <SelectTrigger className="h-8 w-32 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTH_NAMES.map((m, i) => (
+                    <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={year} onValueChange={(v) => { setYear(v); setPage(1) }}>
                 <SelectTrigger className="h-8 w-24 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -313,7 +324,7 @@ export default function AttendancePage() {
                     Employee Name
                     <span className="ml-1 text-xs">↑</span>
                   </th>
-                  {Array.from({ length: 31 }, (_, i) => (
+                  {Array.from({ length: daysInMonth }, (_, i) => (
                     <th
                       key={i + 1}
                       className="px-1 py-3 font-medium text-muted-foreground text-center min-w-[28px]"
@@ -347,7 +358,7 @@ export default function AttendancePage() {
                       </div>
                     </td>
                     {/* Days */}
-                    {emp.days.map((status, di) => (
+                    {emp.days.slice(0, daysInMonth).map((status, di) => (
                       <td key={di} className="px-1 py-2.5 text-center">
                         <div className="flex justify-center">
                           <DayIcon status={status} />

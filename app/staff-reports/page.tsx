@@ -34,7 +34,7 @@ interface StaffPerformance {
 const staffPerformance: StaffPerformance[] = [
   {
     id: "1",
-    name: "Anjali Verma",
+    name: "Rumana Akter",
     role: "Senior Stylist",
     appointments: 45,
     revenue: 67500,
@@ -43,7 +43,7 @@ const staffPerformance: StaffPerformance[] = [
   },
   {
     id: "2",
-    name: "Vikram Singh",
+    name: "Md. Sohel Rana",
     role: "Barber",
     appointments: 62,
     revenue: 18600,
@@ -52,7 +52,7 @@ const staffPerformance: StaffPerformance[] = [
   },
   {
     id: "3",
-    name: "Sunita Rao",
+    name: "Shahnaz Parvin",
     role: "Beautician",
     appointments: 38,
     revenue: 45600,
@@ -61,7 +61,7 @@ const staffPerformance: StaffPerformance[] = [
   },
   {
     id: "4",
-    name: "Raj Malhotra",
+    name: "Taslima Khanam",
     role: "Nail Technician",
     appointments: 28,
     revenue: 14000,
@@ -123,7 +123,7 @@ export default function StaffReportsPage() {
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Total Revenue</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">₹{totalRevenue.toLocaleString()}</p>
+            <p className="text-2xl font-semibold text-foreground mt-1">৳{totalRevenue.toLocaleString()}</p>
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Avg. Rating</p>
@@ -195,10 +195,10 @@ export default function StaffReportsPage() {
             <h4 className="text-sm text-muted-foreground mb-3">Most Appointments</h4>
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12">
-                <AvatarFallback className="bg-primary/10 text-primary text-lg">VS</AvatarFallback>
+                <AvatarFallback className="bg-primary/10 text-primary text-lg">SR</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium">Vikram Singh</p>
+                <p className="font-medium">Md. Sohel Rana</p>
                 <p className="text-sm text-muted-foreground">62 appointments</p>
               </div>
             </div>
@@ -207,11 +207,11 @@ export default function StaffReportsPage() {
             <h4 className="text-sm text-muted-foreground mb-3">Highest Revenue</h4>
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12">
-                <AvatarFallback className="bg-primary/10 text-primary text-lg">AV</AvatarFallback>
+                <AvatarFallback className="bg-primary/10 text-primary text-lg">RA</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium">Anjali Verma</p>
-                <p className="text-sm text-muted-foreground">₹67,500 revenue</p>
+                <p className="font-medium">Rumana Akter</p>
+                <p className="text-sm text-muted-foreground">৳67,500 revenue</p>
               </div>
             </div>
           </div>
@@ -219,10 +219,10 @@ export default function StaffReportsPage() {
             <h4 className="text-sm text-muted-foreground mb-3">Top Rated</h4>
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12">
-                <AvatarFallback className="bg-primary/10 text-primary text-lg">SR</AvatarFallback>
+                <AvatarFallback className="bg-primary/10 text-primary text-lg">SP</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium">Sunita Rao</p>
+                <p className="font-medium">Shahnaz Parvin</p>
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                   <span className="text-sm text-muted-foreground">4.9 rating</span>

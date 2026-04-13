@@ -210,7 +210,7 @@ export default function ServicesPage() {
                     />
                   </div>
                   <div>
-                    <Label>Price (₹)</Label>
+                    <Label>Price (৳)</Label>
                     <Input
                       type="number"
                       value={newService.price}
@@ -268,7 +268,7 @@ export default function ServicesPage() {
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    ₹{service.price.toLocaleString()}
+                    ৳{service.price.toLocaleString()}
                   </TableCell>
                   <TableCell>
                     <Switch

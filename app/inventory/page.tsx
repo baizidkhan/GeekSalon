@@ -218,7 +218,7 @@ export default function InventoryPage() {
                     />
                   </div>
                   <div>
-                    <Label>Price (₹)</Label>
+                    <Label>Price (৳)</Label>
                     <Input
                       type="number"
                       value={newItem.price}
@@ -295,7 +295,7 @@ export default function InventoryPage() {
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Total Value</p>
             <p className="text-2xl font-semibold text-foreground">
-              ₹{totalValue.toLocaleString()}
+              ৳{totalValue.toLocaleString()}
             </p>
           </div>
         </div>
@@ -353,7 +353,7 @@ export default function InventoryPage() {
                       (min: {item.minStock})
                     </span>
                   </TableCell>
-                  <TableCell>₹{item.price.toLocaleString()}</TableCell>
+                  <TableCell>৳{item.price.toLocaleString()}</TableCell>
                   <TableCell className="text-muted-foreground">{item.supplier}</TableCell>
                   <TableCell>
                     <DropdownMenu>

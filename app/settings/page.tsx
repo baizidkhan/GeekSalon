@@ -21,9 +21,9 @@ export default function SettingsPage() {
   const [businessSettings, setBusinessSettings] = useState({
     name: "SalonBOS",
     email: "contact@salonbos.com",
-    phone: "+91 98765 00000",
-    address: "123 Main Street, Mumbai, Maharashtra 400001",
-    gst: "27AABCS1429B1Z5",
+    phone: "+880 1711-000000",
+    address: "123 Dhanmondi Road, Dhaka-1205, Bangladesh",
+    gst: "BIN-000000000-0101",
   })
 
   const [notifications, setNotifications] = useState({
@@ -285,20 +285,22 @@ export default function SettingsPage() {
               <div className="space-y-4 max-w-xl">
                 <div>
                   <Label>Default Currency</Label>
-                  <Select defaultValue="INR">
+                  <Select defaultValue="BDT">
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="INR">Indian Rupee (INR)</SelectItem>
-                      <SelectItem value="USD">US Dollar (USD)</SelectItem>
-                      <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                      <SelectItem value="BDT">Bangladeshi Taka (BDT ৳)</SelectItem>
+                      <SelectItem value="USD">US Dollar (USD $)</SelectItem>
+                      <SelectItem value="EUR">Euro (EUR €)</SelectItem>
+                      <SelectItem value="GBP">British Pound (GBP £)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Currency symbol: ৳ (BDT)</p>
                 </div>
                 <div>
                   <Label>Tax Rate (%)</Label>
-                  <Input type="number" defaultValue="18" />
+                  <Input type="number" defaultValue="15" />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>

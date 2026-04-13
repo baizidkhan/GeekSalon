@@ -50,7 +50,7 @@ const initialInvoices: Invoice[] = [
   {
     id: "1",
     invoiceNo: "INV-001",
-    client: "Priya Sharma",
+    client: "Fatema Begum",
     services: ["Haircut - Women", "Hair Spa"],
     amount: 2500,
     paymentMethod: "UPI",
@@ -60,7 +60,7 @@ const initialInvoices: Invoice[] = [
   {
     id: "2",
     invoiceNo: "INV-002",
-    client: "Rahul Kumar",
+    client: "Md. Rafiqul Islam",
     services: ["Haircut - Men"],
     amount: 300,
     paymentMethod: "Cash",
@@ -70,7 +70,7 @@ const initialInvoices: Invoice[] = [
   {
     id: "3",
     invoiceNo: "INV-003",
-    client: "Meera Patel",
+    client: "Nasrin Akhter",
     services: ["Facial - Basic", "Threading - Eyebrow"],
     amount: 1200,
     paymentMethod: "Card",
@@ -80,7 +80,7 @@ const initialInvoices: Invoice[] = [
   {
     id: "4",
     invoiceNo: "INV-004",
-    client: "Amit Gupta",
+    client: "Karim Hossain",
     services: ["Haircut - Men", "Beard Trim"],
     amount: 500,
     paymentMethod: "UPI",
@@ -185,7 +185,7 @@ export default function BillingPage() {
                   />
                 </div>
                 <div>
-                  <Label>Amount (₹)</Label>
+                  <Label>Amount (৳)</Label>
                   <Input
                     type="number"
                     value={newInvoice.amount}
@@ -226,7 +226,7 @@ export default function BillingPage() {
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Total Revenue</p>
             <p className="text-2xl font-semibold text-foreground mt-1">
-              ₹{totalRevenue.toLocaleString()}
+              ৳{totalRevenue.toLocaleString()}
             </p>
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
@@ -282,7 +282,7 @@ export default function BillingPage() {
                     <div className="text-sm">{invoice.services.join(", ")}</div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    ₹{invoice.amount.toLocaleString()}
+                    ৳{invoice.amount.toLocaleString()}
                   </TableCell>
                   <TableCell>{invoice.paymentMethod}</TableCell>
                   <TableCell>{invoice.date}</TableCell>

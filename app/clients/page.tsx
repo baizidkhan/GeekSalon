@@ -42,36 +42,36 @@ interface Client {
 const initialClients: Client[] = [
   {
     id: "1",
-    name: "Priya Sharma",
-    email: "priya.sharma@email.com",
-    phone: "+91 98765 43210",
+    name: "Fatema Begum",
+    email: "fatema.begum@email.com",
+    phone: "+880 1711-234567",
     visits: 5,
     totalSpent: 4500,
     lastVisit: "2026-04-06",
   },
   {
     id: "2",
-    name: "Rahul Kumar",
-    email: "rahul.kumar@email.com",
-    phone: "+91 87654 32109",
+    name: "Md. Rafiqul Islam",
+    email: "rafiqul.islam@email.com",
+    phone: "+880 1812-345678",
     visits: 3,
     totalSpent: 1800,
     lastVisit: "2026-04-06",
   },
   {
     id: "3",
-    name: "Meera Patel",
-    email: "meera.patel@email.com",
-    phone: "+91 76543 21098",
+    name: "Nasrin Akhter",
+    email: "nasrin.akhter@email.com",
+    phone: "+880 1911-456789",
     visits: 8,
     totalSpent: 12000,
     lastVisit: "2026-04-05",
   },
   {
     id: "4",
-    name: "Amit Gupta",
-    email: "amit.gupta@email.com",
-    phone: "+91 65432 10987",
+    name: "Karim Hossain",
+    email: "karim.hossain@email.com",
+    phone: "+880 1611-567890",
     visits: 2,
     totalSpent: 1500,
     lastVisit: "2026-04-03",
@@ -228,7 +228,7 @@ export default function ClientsPage() {
                     </div>
                   </TableCell>
                   <TableCell>{client.visits}</TableCell>
-                  <TableCell>₹{client.totalSpent.toLocaleString()}</TableCell>
+                  <TableCell>৳{client.totalSpent.toLocaleString()}</TableCell>
                   <TableCell>{client.lastVisit}</TableCell>
                   <TableCell>
                     <DropdownMenu>
