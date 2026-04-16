@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -18,8 +18,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  LogOut,
 } from "lucide-react"
 import { useState } from "react"
+import { logout } from "@/lib/api"
 
 const navigation = [
   {
@@ -61,7 +63,17 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch {
+      // ignore errors — redirect regardless
+    }
+    router.push("/login")
+  }
 
   return (
     <aside
@@ -116,6 +128,15 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Logout */}
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-3 px-4 py-3 border-t border-border text-muted-foreground hover:text-destructive transition-colors shrink-0"
+      >
+        <LogOut className="w-5 h-5 shrink-0" />
+        {!collapsed && <span className="text-sm">Logout</span>}
+      </button>
 
       {/* Collapse Button */}
       <button
