@@ -1,11 +1,11 @@
-import api from '../base';
+import api from '../base'
 
-export interface EmployeeBasic {
-  id: string;
-  name: string;
-  role: string;
+export async function getEmployees() {
+  const { data } = await api.get('/employee')
+  return data
 }
 
-export function getBasicEmployees(): Promise<EmployeeBasic[]> {
-  return api.get<EmployeeBasic[]>('/employee/basic').then((r) => r.data);
+export async function getBasicEmployees() {
+  const { data } = await api.get('/employee/basic')
+  return data
 }
