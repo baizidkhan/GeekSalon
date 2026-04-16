@@ -19,10 +19,10 @@ import {
   UserCheck,
   AlertTriangle,
 } from "lucide-react"
-import { getDashboardStats, type DashboardStats } from "@/lib/api"
+import { getDashboardStats } from "@/api/dashboard/dashboard"
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [stats, setStats] = useState<Record<string, any> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,7 +36,11 @@ export default function DashboardPage() {
   useEffect(() => {
     getDashboardStats()
       .then(setStats)
-      .catch((err: Error) => setError(err.message))
+      .catch((err: any) => {
+        if (err?.response?.status !== 401) {
+          setError(err.message)
+        }
+      })
       .finally(() => setLoading(false))
   }, [])
 
