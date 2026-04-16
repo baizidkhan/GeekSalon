@@ -21,7 +21,7 @@ import {
   LogOut,
 } from "lucide-react"
 import { useState } from "react"
-import { logout } from "@/lib/api"
+import { logout } from "@/api/auth/auth"
 
 const navigation = [
   {
