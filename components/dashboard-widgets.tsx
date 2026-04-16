@@ -1,5 +1,25 @@
 import { Calendar, AlertTriangle, Layers } from "lucide-react"
-import type { DashboardAppointment, LowStockItem, TopService } from "@/lib/api"
+interface DashboardAppointment {
+  id: string
+  clientName: string
+  time: string
+  services: string[]
+  status: string
+  staff: string | null
+}
+
+interface LowStockItem {
+  id: string
+  name: string
+  category: string
+  stockQty: number
+  minStockLevel: number
+}
+
+interface TopService {
+  name: string
+  count: number
+}
 
 interface TodaysAppointmentsProps {
   appointments: DashboardAppointment[]
