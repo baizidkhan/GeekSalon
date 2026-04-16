@@ -1,25 +1,20 @@
-import axios from 'axios';
+import axios from 'axios'
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
+  baseURL: 'http://localhost:4000',
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+})
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (
-      error.response?.status === 401 &&
-      typeof window !== 'undefined' &&
-      window.location.pathname !== '/login'
-    ) {
-      window.location.href = '/login';
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Clear the cookie server-side before redirecting, so proxy doesn't loop
+      try { await api.post('/auth/logout') } catch {}
+      window.location.replace('/login')
     }
-    return Promise.reject(error);
-  },
-);
+    return Promise.reject(error)
+  }
+)
 
-export default api;
+export default api
