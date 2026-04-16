@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Scissors } from "lucide-react"
-import { login } from "@/lib/api"
+import { login } from "@/api/auth/auth"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -20,7 +20,7 @@ export default function LoginPage() {
     setError("")
     setLoading(true)
     try {
-      await login({ useremail, password })
+      await login(useremail, password)
       router.push("/")
     } catch {
       setError("Invalid email or password. Please try again.")
