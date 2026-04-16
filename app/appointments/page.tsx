@@ -36,15 +36,21 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import {
-  getAppointments,
-  createAppointment,
-  updateAppointment,
-  deleteAppointment,
-  getActiveServices,
-  getBasicEmployees,
-  type AppointmentRecord,
-} from "@/lib/api"
+import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "@/api/appointments/appointments"
+import { getActiveServices } from "@/api/services/services"
+import { getBasicEmployees } from "@/api/employees/employees"
+
+interface AppointmentRecord {
+  id: string
+  clientName: string
+  phoneNumber: string
+  date: string
+  time: string
+  staff: string | null
+  services: string[] | null
+  source: string
+  status: string
+}
 
 type AppointmentStatus = "Pending" | "Confirmed" | "Checked In" | "In Service" | "Completed" | "Cancelled"
 type AppointmentSource = "Online" | "Walk In" | "Call"
@@ -147,8 +153,9 @@ export default function AppointmentsPage() {
   const fetchAppointments = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await getAppointments({}, 1, 200)
-      setAppointments(res.data.map(toUIAppointment))
+      const res = await getAppointments()
+      const list: AppointmentRecord[] = res?.data ?? res ?? []
+      setAppointments(list.map(toUIAppointment))
     } catch (err) {
       console.error("Failed to fetch appointments", err)
     } finally {
@@ -159,10 +166,10 @@ export default function AppointmentsPage() {
   useEffect(() => {
     fetchAppointments()
     getActiveServices()
-      .then((list) => setServiceOptions(list.map((s) => s.name)))
+      .then((list: { name: string }[]) => setServiceOptions(list.map((s) => s.name)))
       .catch(console.error)
     getBasicEmployees()
-      .then((list) => setEmployeeOptions(list.map((e) => e.name)))
+      .then((list: { name: string }[]) => setEmployeeOptions(list.map((e) => e.name)))
       .catch(console.error)
   }, [fetchAppointments])
 
