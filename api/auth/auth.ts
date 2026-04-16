@@ -1,24 +1,11 @@
-import api from '../base';
+import api from '../base'
 
-export interface LoginPayload {
-  useremail: string;
-  password: string;
+export async function login(useremail: string, password: string) {
+  const { data } = await api.post('/auth/login', { useremail, password })
+  return data
 }
 
-export interface LoginResponse {
-  accessToken: string;
-  user: {
-    id: string;
-    useremail: string;
-    role: string;
-    permissions: string[];
-  };
-}
-
-export function login(payload: LoginPayload): Promise<LoginResponse> {
-  return api.post<LoginResponse>('/auth/login', payload).then((r) => r.data);
-}
-
-export function logout(): Promise<{ message: string }> {
-  return api.post<{ message: string }>('/auth/logout').then((r) => r.data);
+export async function logout() {
+  const { data } = await api.post('/auth/logout')
+  return data
 }
