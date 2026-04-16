@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { getInvoices, createInvoice, updateInvoice, deleteInvoice } from "@/api/billing/billing"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,17 +48,10 @@ interface Invoice {
   client: string
   services: string[]
   amount: number
-  paymentMethod: "Cash" | "Card" | "UPI"
+  paymentMethod: "Cash" | "bKash" | "Card"
   date: string
-  status: "Paid" | "Pending" | "Refunded"
+  status: "Paid" | "Unpaid" | "Partial"
 }
-
-const initialInvoices: Invoice[] = [
-  { id: "1", invoiceNo: "INV-001", client: "Fatema Begum", services: ["Haircut - Women", "Hair Spa"], amount: 2500, paymentMethod: "UPI", date: "2026-04-06", status: "Paid" },
-  { id: "2", invoiceNo: "INV-002", client: "Md. Rafiqul Islam", services: ["Haircut - Men"], amount: 300, paymentMethod: "Cash", date: "2026-04-06", status: "Paid" },
-  { id: "3", invoiceNo: "INV-003", client: "Nasrin Akhter", services: ["Facial - Basic", "Threading - Eyebrow"], amount: 1200, paymentMethod: "Card", date: "2026-04-05", status: "Paid" },
-  { id: "4", invoiceNo: "INV-004", client: "Karim Hossain", services: ["Haircut - Men", "Beard Trim"], amount: 500, paymentMethod: "UPI", date: "2026-04-05", status: "Pending" },
-]
 
 const TIME_OPTIONS = [
   { value: "all", label: "All Time" },
@@ -69,19 +63,56 @@ const TIME_OPTIONS = [
   { value: "custom", label: "Custom Date" },
 ]
 
+function mapInvoice(inv: any): Invoice {
+  return {
+    id: inv.id,
+    invoiceNo: inv.invoiceNumber,
+    client: inv.client?.name ?? "Walk-in",
+    services: inv.services ?? [],
+    amount: Number(inv.total),
+    paymentMethod: inv.paymentMethod,
+    date: inv.createdAt?.split("T")[0] ?? "",
+    status: inv.status,
+  }
+}
+
 export default function BillingPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices)
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState("all")
   const [customDateFrom, setCustomDateFrom] = useState("")
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
-  const [newInvoice, setNewInvoice] = useState({ client: "", services: "", amount: "", paymentMethod: "Cash" as const })
-  
+  const [newInvoice, setNewInvoice] = useState({
+    staff: "",
+    services: "",
+    total: "",
+    paymentMethod: "Cash" as "Cash" | "bKash" | "Card",
+    status: "Paid" as "Paid" | "Unpaid" | "Partial",
+  })
+
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
-  const [editInvoice, setEditInvoice] = useState<Invoice | null>(null)
-  const [deleteInvoice, setDeleteInvoice] = useState<Invoice | null>(null)
+  const [editInvoiceState, setEditInvoiceState] = useState<Invoice | null>(null)
+  const [deleteInvoiceState, setDeleteInvoiceState] = useState<Invoice | null>(null)
+
+  const fetchInvoices = async () => {
+    try {
+      const res = await getInvoices()
+      const mapped = (res.data ?? res).map(mapInvoice)
+      mapped.sort((a: Invoice, b: Invoice) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      setInvoices(mapped)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchInvoices()
+  }, [])
 
   const filterByDate = (date: string) => {
     if (timeFilter === "all") return true
@@ -108,40 +139,52 @@ export default function BillingPage() {
     return invoices.filter(
       (inv) =>
         (inv.client.toLowerCase().includes(search.toLowerCase()) ||
-        inv.invoiceNo.toLowerCase().includes(search.toLowerCase())) &&
+          inv.invoiceNo.toLowerCase().includes(search.toLowerCase())) &&
         filterByDate(inv.date)
     )
   }, [invoices, search, timeFilter, customDateFrom, customDateTo])
 
-  const handleAddInvoice = () => {
-    if (newInvoice.client && newInvoice.amount) {
-      const nextInvoiceNo = `INV-${String(invoices.length + 1).padStart(3, "0")}`
-      setInvoices([...invoices, {
-        id: Date.now().toString(),
-        invoiceNo: nextInvoiceNo,
-        client: newInvoice.client,
-        services: newInvoice.services.split(",").map((s) => s.trim()),
-        amount: parseFloat(newInvoice.amount),
+  const handleAddInvoice = async () => {
+    if (!newInvoice.staff) return
+    try {
+      await createInvoice({
+        staff: newInvoice.staff,
+        services: newInvoice.services ? newInvoice.services.split(",").map(s => s.trim()) : [],
+        total: newInvoice.total ? parseFloat(newInvoice.total) : undefined,
         paymentMethod: newInvoice.paymentMethod,
-        date: new Date().toISOString().split("T")[0],
-        status: "Paid",
-      }])
-      setNewInvoice({ client: "", services: "", amount: "", paymentMethod: "Cash" })
+        status: newInvoice.status,
+      })
+      setNewInvoice({ staff: "", services: "", total: "", paymentMethod: "Cash", status: "Paid" })
       setIsDialogOpen(false)
+      fetchInvoices()
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  const handleEditSave = () => {
-    if (editInvoice) {
-      setInvoices(invoices.map(inv => inv.id === editInvoice.id ? editInvoice : inv))
-      setEditInvoice(null)
+  const handleEditSave = async () => {
+    if (!editInvoiceState) return
+    try {
+      await updateInvoice(editInvoiceState.id, {
+        total: editInvoiceState.amount,
+        status: editInvoiceState.status,
+        paymentMethod: editInvoiceState.paymentMethod,
+      })
+      setEditInvoiceState(null)
+      fetchInvoices()
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  const handleDelete = () => {
-    if (deleteInvoice) {
-      setInvoices(invoices.filter(inv => inv.id !== deleteInvoice.id))
-      setDeleteInvoice(null)
+  const handleDelete = async () => {
+    if (!deleteInvoiceState) return
+    try {
+      await deleteInvoice(deleteInvoiceState.id)
+      setDeleteInvoiceState(null)
+      fetchInvoices()
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -154,42 +197,16 @@ export default function BillingPage() {
     const a = document.createElement("a"); a.href = url; a.download = "invoices.csv"; a.click()
   }
 
-  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const text = event.target?.result as string
-      const lines = text.split("\n").slice(1)
-      const imported = lines.filter(l => l.trim()).map((line, i) => {
-        const [invoiceNo, client, services, amount, paymentMethod, date, status] = line.split(",")
-        return {
-          id: `imported-${Date.now()}-${i}`,
-          invoiceNo: invoiceNo?.trim() || `INV-${Date.now()}`,
-          client: client?.trim() || "",
-          services: services?.split(";").map(s => s.trim()) || [],
-          amount: parseFloat(amount) || 0,
-          paymentMethod: (paymentMethod?.trim() as "Cash" | "Card" | "UPI") || "Cash",
-          date: date?.trim() || new Date().toISOString().split("T")[0],
-          status: (status?.trim() as "Paid" | "Pending" | "Refunded") || "Pending",
-        }
-      })
-      setInvoices([...invoices, ...imported])
-    }
-    reader.readAsText(file)
-    e.target.value = ""
-  }
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Paid": return "bg-green-100 text-green-700"
-      case "Pending": return "bg-amber-100 text-amber-700"
-      case "Refunded": return "bg-red-100 text-red-700"
+      case "Unpaid": return "bg-amber-100 text-amber-700"
+      case "Partial": return "bg-blue-100 text-blue-700"
       default: return "bg-gray-100 text-gray-700"
     }
   }
 
-  const totalRevenue = invoices.filter((inv) => inv.status === "Paid").reduce((sum, inv) => sum + inv.amount, 0)
+  const totalRevenue = invoices.filter(inv => inv.status === "Paid").reduce((sum, inv) => sum + inv.amount, 0)
 
   return (
     <DashboardLayout>
@@ -200,27 +217,43 @@ export default function BillingPage() {
             <p className="text-muted-foreground">Manage invoices and payments</p>
           </div>
           <div className="flex items-center gap-2">
-            <label className="cursor-pointer">
-              <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
-              <Button variant="outline" asChild><span><Upload className="w-4 h-4 mr-2" />Import CSV</span></Button>
-            </label>
             <Button variant="outline" onClick={handleExportCSV}><Download className="w-4 h-4 mr-2" />Export CSV</Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />New Invoice</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Create New Invoice</DialogTitle></DialogHeader>
                 <div className="space-y-4 mt-4">
-                  <div><Label>Client Name</Label><Input value={newInvoice.client} onChange={(e) => setNewInvoice({ ...newInvoice, client: e.target.value })} placeholder="Enter client name" /></div>
-                  <div><Label>Services (comma separated)</Label><Input value={newInvoice.services} onChange={(e) => setNewInvoice({ ...newInvoice, services: e.target.value })} placeholder="e.g., Haircut, Hair Spa" /></div>
-                  <div><Label>Amount (৳)</Label><Input type="number" value={newInvoice.amount} onChange={(e) => setNewInvoice({ ...newInvoice, amount: e.target.value })} placeholder="Enter amount" /></div>
+                  <div>
+                    <Label>Staff</Label>
+                    <Input value={newInvoice.staff} onChange={(e) => setNewInvoice({ ...newInvoice, staff: e.target.value })} placeholder="Staff name" />
+                  </div>
+                  <div>
+                    <Label>Services (comma separated)</Label>
+                    <Input value={newInvoice.services} onChange={(e) => setNewInvoice({ ...newInvoice, services: e.target.value })} placeholder="e.g., Haircut, Hair Spa" />
+                  </div>
+                  <div>
+                    <Label>Amount (৳)</Label>
+                    <Input type="number" value={newInvoice.total} onChange={(e) => setNewInvoice({ ...newInvoice, total: e.target.value })} placeholder="Leave empty to auto-calculate" />
+                  </div>
                   <div>
                     <Label>Payment Method</Label>
-                    <Select value={newInvoice.paymentMethod} onValueChange={(value: "Cash" | "Card" | "UPI") => setNewInvoice({ ...newInvoice, paymentMethod: value })}>
+                    <Select value={newInvoice.paymentMethod} onValueChange={(v: "Cash" | "bKash" | "Card") => setNewInvoice({ ...newInvoice, paymentMethod: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="bKash">bKash</SelectItem>
                         <SelectItem value="Card">Card</SelectItem>
-                        <SelectItem value="UPI">UPI</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <Select value={newInvoice.status} onValueChange={(v: "Paid" | "Unpaid" | "Partial") => setNewInvoice({ ...newInvoice, status: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                        <SelectItem value="Unpaid">Unpaid</SelectItem>
+                        <SelectItem value="Partial">Partial</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -241,8 +274,8 @@ export default function BillingPage() {
             <p className="text-2xl font-semibold text-foreground mt-1">{invoices.length}</p>
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
-            <p className="text-sm text-muted-foreground">Pending Payments</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">{invoices.filter((inv) => inv.status === "Pending").length}</p>
+            <p className="text-sm text-muted-foreground">Unpaid</p>
+            <p className="text-2xl font-semibold text-foreground mt-1">{invoices.filter(inv => inv.status === "Unpaid").length}</p>
           </div>
         </div>
 
@@ -251,7 +284,7 @@ export default function BillingPage() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-[200px] max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Search invoices..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+                <Input placeholder="Search by client or invoice no..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
               </div>
               <Popover open={showCustomDate && timeFilter === "custom"} onOpenChange={setShowCustomDate}>
                 <PopoverTrigger asChild>
@@ -270,7 +303,7 @@ export default function BillingPage() {
                   </div>
                 </PopoverContent>
               </Popover>
-              <span className="text-sm text-muted-foreground ml-auto">{filteredInvoices.length} results</span>
+              <span className="text-sm text-muted-foreground ml-auto">{loading ? "Loading..." : `${filteredInvoices.length} results`}</span>
             </div>
           </div>
           <Table>
@@ -287,7 +320,11 @@ export default function BillingPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredInvoices.map((invoice) => (
+              {loading ? (
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+              ) : filteredInvoices.length === 0 ? (
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No invoices found.</TableCell></TableRow>
+              ) : filteredInvoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{invoice.invoiceNo}</span></div></TableCell>
                   <TableCell>{invoice.client}</TableCell>
@@ -301,9 +338,9 @@ export default function BillingPage() {
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setViewInvoice(invoice)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditInvoice({...invoice})}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditInvoiceState({ ...invoice })}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
                         <DropdownMenuItem><Printer className="w-4 h-4 mr-2" />Print</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInvoice(invoice)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInvoiceState(invoice)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -335,21 +372,34 @@ export default function BillingPage() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editInvoice} onOpenChange={() => setEditInvoice(null)}>
+      <Dialog open={!!editInvoiceState} onOpenChange={() => setEditInvoiceState(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Invoice</DialogTitle></DialogHeader>
-          {editInvoice && (
+          {editInvoiceState && (
             <div className="space-y-4 mt-4">
-              <div><Label>Client</Label><Input value={editInvoice.client} onChange={(e) => setEditInvoice({...editInvoice, client: e.target.value})} /></div>
-              <div><Label>Amount</Label><Input type="number" value={editInvoice.amount} onChange={(e) => setEditInvoice({...editInvoice, amount: parseFloat(e.target.value) || 0})} /></div>
+              <div>
+                <Label>Amount (৳)</Label>
+                <Input type="number" value={editInvoiceState.amount} onChange={(e) => setEditInvoiceState({ ...editInvoiceState, amount: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>Payment Method</Label>
+                <Select value={editInvoiceState.paymentMethod} onValueChange={(v: "Cash" | "bKash" | "Card") => setEditInvoiceState({ ...editInvoiceState, paymentMethod: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="bKash">bKash</SelectItem>
+                    <SelectItem value="Card">Card</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>Status</Label>
-                <Select value={editInvoice.status} onValueChange={(v: "Paid" | "Pending" | "Refunded") => setEditInvoice({...editInvoice, status: v})}>
+                <Select value={editInvoiceState.status} onValueChange={(v: "Paid" | "Unpaid" | "Partial") => setEditInvoiceState({ ...editInvoiceState, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Paid">Paid</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Refunded">Refunded</SelectItem>
+                    <SelectItem value="Unpaid">Unpaid</SelectItem>
+                    <SelectItem value="Partial">Partial</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -360,12 +410,12 @@ export default function BillingPage() {
       </Dialog>
 
       {/* Delete Dialog */}
-      <Dialog open={!!deleteInvoice} onOpenChange={() => setDeleteInvoice(null)}>
+      <Dialog open={!!deleteInvoiceState} onOpenChange={() => setDeleteInvoiceState(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Delete Invoice</DialogTitle></DialogHeader>
-          <p className="text-muted-foreground">Are you sure you want to delete invoice <strong>{deleteInvoice?.invoiceNo}</strong>?</p>
+          <p className="text-muted-foreground">Are you sure you want to delete invoice <strong>{deleteInvoiceState?.invoiceNo}</strong>?</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteInvoice(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteInvoiceState(null)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDelete}>Delete</Button>
           </DialogFooter>
         </DialogContent>
