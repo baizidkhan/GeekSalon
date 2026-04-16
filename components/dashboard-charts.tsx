@@ -12,7 +12,15 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { BarChart3, Calendar } from "lucide-react"
-import type { RevenueTrendPoint, AppointmentTrendPoint } from "@/lib/api"
+interface RevenueTrendPoint {
+  day: string
+  revenue: number
+}
+
+interface AppointmentTrendPoint {
+  week: string
+  appointments: number
+}
 
 interface RevenueChartProps {
   data: RevenueTrendPoint[]
