@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { getClients, createClient, updateClient, deleteClient } from "@/api/clients/clients"
+import { useState, useMemo, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, ArrowUpDown, Eye, Pencil, Trash2, Calendar } from "lucide-react"
+import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, ArrowUpDown, Eye, Pencil, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,44 +53,6 @@ interface Client {
   lastVisit: string
 }
 
-const initialClients: Client[] = [
-  {
-    id: "1",
-    name: "Fatema Begum",
-    email: "fatema.begum@email.com",
-    phone: "+880 1711-234567",
-    visits: 5,
-    totalSpent: 4500,
-    lastVisit: "2026-04-06",
-  },
-  {
-    id: "2",
-    name: "Md. Rafiqul Islam",
-    email: "rafiqul.islam@email.com",
-    phone: "+880 1812-345678",
-    visits: 3,
-    totalSpent: 1800,
-    lastVisit: "2026-04-06",
-  },
-  {
-    id: "3",
-    name: "Nasrin Akhter",
-    email: "nasrin.akhter@email.com",
-    phone: "+880 1911-456789",
-    visits: 8,
-    totalSpent: 12000,
-    lastVisit: "2026-04-05",
-  },
-  {
-    id: "4",
-    name: "Karim Hossain",
-    email: "karim.hossain@email.com",
-    phone: "+880 1611-567890",
-    visits: 2,
-    totalSpent: 1500,
-    lastVisit: "2026-04-03",
-  },
-]
 
 const TIME_OPTIONS = [
   { value: "all", label: "All Time" },
@@ -102,13 +65,14 @@ const TIME_OPTIONS = [
 ]
 
 const VISIT_SORT_OPTIONS = [
-  { value: "none", label: "All Visits" },
-  { value: "high", label: "High to Low" },
-  { value: "low", label: "Low to High" },
+  { value: "none", label: "Sort by Spent" },
+  { value: "high", label: "Spent: High to Low" },
+  { value: "low", label: "Spent: Low to High" },
 ]
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>(initialClients)
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState("all")
@@ -121,11 +85,18 @@ export default function ClientsPage() {
     email: "",
     phone: "",
   })
-  
+
+  useEffect(() => {
+    getClients().then((res) => {
+      setClients(res.data ?? res)
+      setLoading(false)
+    }).catch(console.error)
+  }, [])
+
   // View/Edit/Delete dialogs
   const [viewClient, setViewClient] = useState<Client | null>(null)
   const [editClient, setEditClient] = useState<Client | null>(null)
-  const [deleteClient, setDeleteClient] = useState<Client | null>(null)
+  const [deleteClientState, setDeleteClientState] = useState<Client | null>(null)
 
   const filterByDate = (date: string) => {
     if (timeFilter === "all") return true
@@ -160,50 +131,47 @@ export default function ClientsPage() {
     let result = clients.filter(
       (client) =>
         (client.name.toLowerCase().includes(search.toLowerCase()) ||
-        client.email.toLowerCase().includes(search.toLowerCase()) ||
-        client.phone.includes(search)) &&
+          client.email.toLowerCase().includes(search.toLowerCase()) ||
+          client.phone.includes(search)) &&
         filterByDate(client.lastVisit)
     )
-    
+
     if (visitSort === "high") {
-      result = [...result].sort((a, b) => b.visits - a.visits)
+      result = [...result].sort((a, b) => b.totalSpent - a.totalSpent)
     } else if (visitSort === "low") {
-      result = [...result].sort((a, b) => a.visits - b.visits)
+      result = [...result].sort((a, b) => a.totalSpent - b.totalSpent)
     }
-    
+
     return result
   }, [clients, search, timeFilter, visitSort, customDateFrom, customDateTo])
 
-  const handleAddClient = () => {
-    if (newClient.name && newClient.phone) {
-      setClients([
-        ...clients,
-        {
-          id: Date.now().toString(),
-          ...newClient,
-          visits: 0,
-          totalSpent: 0,
-          lastVisit: "-",
-        },
-      ])
-      setNewClient({ name: "", email: "", phone: "" })
-      setIsDialogOpen(false)
-    }
+  const handleAddClient = async () => {
+    if (!newClient.name || !newClient.phone)
+      return
+    await createClient(newClient)
+    const res = await getClients()
+    setClients(res.data ?? res)
+    setIsDialogOpen(false)
+    setNewClient({ name: "", email: "", phone: "" })
+
   }
 
-  const handleEditSave = () => {
-    if (editClient) {
-      setClients(clients.map(c => c.id === editClient.id ? editClient : c))
-      setEditClient(null)
-    }
+  const handleEditSave = async () => {
+    if (!editClient) return
+    await updateClient(editClient.id, editClient)
+    const res = await getClients()
+    setClients(res.data ?? res)
+    setEditClient(null)
+
   }
 
-  const handleDelete = () => {
-    if (deleteClient) {
-      setClients(clients.filter(c => c.id !== deleteClient.id))
-      setDeleteClient(null)
-    }
+  const handleDelete = async () => {
+    if (!deleteClientState) return
+    await deleteClient(deleteClientState.id)
+    setClients(clients.filter(c => c.id !== deleteClientState.id))
+    setDeleteClientState(null)
   }
+
 
   const handleExportCSV = () => {
     const headers = ["Name", "Email", "Phone", "Visits", "Total Spent", "Last Visit"]
@@ -333,7 +301,7 @@ export default function ClientsPage() {
                   className="pl-9"
                 />
               </div>
-              
+
               <Popover open={showCustomDate && timeFilter === "custom"} onOpenChange={(open) => setShowCustomDate(open)}>
                 <PopoverTrigger asChild>
                   <div>
@@ -416,8 +384,8 @@ export default function ClientsPage() {
                     </div>
                   </TableCell>
                   <TableCell>{client.visits}</TableCell>
-                  <TableCell>৳{client.totalSpent.toLocaleString()}</TableCell>
-                  <TableCell>{client.lastVisit}</TableCell>
+                  <TableCell>৳{(client.totalSpent ?? 0).toLocaleString()}</TableCell>
+                  <TableCell>{client.lastVisit ?? '-'}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -429,10 +397,10 @@ export default function ClientsPage() {
                         <DropdownMenuItem onClick={() => setViewClient(client)}>
                           <Eye className="w-4 h-4 mr-2" />View
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditClient({...client})}>
+                        <DropdownMenuItem onClick={() => setEditClient({ ...client })}>
                           <Pencil className="w-4 h-4 mr-2" />Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteClient(client)}>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteClientState(client)}>
                           <Trash2 className="w-4 h-4 mr-2" />Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -466,7 +434,7 @@ export default function ClientsPage() {
                 <div><Label className="text-muted-foreground">Phone</Label><p className="font-medium">{viewClient.phone}</p></div>
                 <div><Label className="text-muted-foreground">Visits</Label><p className="font-medium">{viewClient.visits}</p></div>
                 <div><Label className="text-muted-foreground">Total Spent</Label><p className="font-medium">৳{viewClient.totalSpent.toLocaleString()}</p></div>
-                <div><Label className="text-muted-foreground">Last Visit</Label><p className="font-medium">{viewClient.lastVisit}</p></div>
+                <div><Label className="text-muted-foreground">Last Visit</Label><p className="font-medium">{viewClient.lastVisit ?? '-'}</p></div>
               </div>
             </div>
           )}
@@ -481,9 +449,9 @@ export default function ClientsPage() {
           </DialogHeader>
           {editClient && (
             <div className="space-y-4 mt-4">
-              <div><Label>Full Name</Label><Input value={editClient.name} onChange={(e) => setEditClient({...editClient, name: e.target.value})} /></div>
-              <div><Label>Email</Label><Input value={editClient.email} onChange={(e) => setEditClient({...editClient, email: e.target.value})} /></div>
-              <div><Label>Phone</Label><Input value={editClient.phone} onChange={(e) => setEditClient({...editClient, phone: e.target.value})} /></div>
+              <div><Label>Full Name</Label><Input value={editClient.name} onChange={(e) => setEditClient({ ...editClient, name: e.target.value })} /></div>
+              <div><Label>Email</Label><Input value={editClient.email} onChange={(e) => setEditClient({ ...editClient, email: e.target.value })} /></div>
+              <div><Label>Phone</Label><Input value={editClient.phone} onChange={(e) => setEditClient({ ...editClient, phone: e.target.value })} /></div>
               <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
             </div>
           )}
@@ -491,14 +459,14 @@ export default function ClientsPage() {
       </Dialog>
 
       {/* Delete Dialog */}
-      <Dialog open={!!deleteClient} onOpenChange={() => setDeleteClient(null)}>
+      <Dialog open={!!deleteClientState} onOpenChange={() => setDeleteClientState(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Client</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground">Are you sure you want to delete <strong>{deleteClient?.name}</strong>? This action cannot be undone.</p>
+          <p className="text-muted-foreground">Are you sure you want to delete <strong>{deleteClientState?.name}</strong>? This action cannot be undone.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteClient(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteClientState(null)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDelete}>Delete</Button>
           </DialogFooter>
         </DialogContent>
