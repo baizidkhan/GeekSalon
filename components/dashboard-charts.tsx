@@ -12,28 +12,17 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { BarChart3, Calendar } from "lucide-react"
+import type { RevenueTrendPoint, AppointmentTrendPoint } from "@/lib/api"
 
-const revenueData = [
-  { day: "Wed", revenue: 0 },
-  { day: "Thu", revenue: 0 },
-  { day: "Fri", revenue: 0 },
-  { day: "Sat", revenue: 2500 },
-  { day: "Sun", revenue: 8500 },
-  { day: "Mon", revenue: 7200 },
-  { day: "Tue", revenue: 1500 },
-]
+interface RevenueChartProps {
+  data: RevenueTrendPoint[]
+}
 
-const appointmentData = [
-  { week: "WFeb 23", appointments: 0 },
-  { week: "WMar 2", appointments: 0 },
-  { week: "WMar 9", appointments: 0 },
-  { week: "WMar 16", appointments: 0 },
-  { week: "WMar 23", appointments: 0 },
-  { week: "WMar 30", appointments: 4 },
-  { week: "WApr 6", appointments: 1 },
-]
+interface AppointmentChartProps {
+  data: AppointmentTrendPoint[]
+}
 
-export function RevenueChart() {
+export function RevenueChart({ data }: RevenueChartProps) {
   return (
     <div className="bg-card rounded-xl p-5 border border-border">
       <div className="flex items-center gap-2 mb-4">
@@ -42,7 +31,7 @@ export function RevenueChart() {
       </div>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={revenueData}>
+          <AreaChart data={data}>
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="oklch(0.6 0.2 250)" stopOpacity={0.3} />
@@ -68,7 +57,7 @@ export function RevenueChart() {
                 border: "1px solid #e5e7eb",
                 borderRadius: "8px",
               }}
-              formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]}
+              formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]}
             />
             <Area
               type="monotone"
@@ -84,7 +73,7 @@ export function RevenueChart() {
   )
 }
 
-export function AppointmentChart() {
+export function AppointmentChart({ data }: AppointmentChartProps) {
   return (
     <div className="bg-card rounded-xl p-5 border border-border">
       <div className="flex items-center gap-2 mb-4">
@@ -93,7 +82,7 @@ export function AppointmentChart() {
       </div>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={appointmentData}>
+          <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
             <XAxis
               dataKey="week"
