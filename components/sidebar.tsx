@@ -21,6 +21,7 @@ import {
   LogOut,
   X,
   Sparkles,
+  UserLock,
 } from "lucide-react"
 import { useState } from "react"
 import { logout } from "@/api/auth/auth"
@@ -39,6 +40,7 @@ const navigation = [
     title: "Service & Staff",
     items: [
       { name: "Services", href: "/services", icon: Scissors },
+      { name: "Employee Account", href: "/employee-account", icon: UserLock },
       { name: "Employees", href: "/employees", icon: UserCheck },
     ],
   },
