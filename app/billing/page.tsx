@@ -87,10 +87,11 @@ export default function BillingPage() {
   const [showCustomDate, setShowCustomDate] = useState(false)
   const [newInvoice, setNewInvoice] = useState({
     staff: "",
+    printBy: "",
     services: "",
     total: "",
     paymentMethod: "Cash" as "Cash" | "bKash" | "Card",
-    status: "Paid" as "Paid" | "Unpaid" | "Partial",
+    status: "Unpaid" as "Paid" | "Unpaid" | "Partial",
   })
 
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
@@ -149,12 +150,13 @@ export default function BillingPage() {
     try {
       await createInvoice({
         staff: newInvoice.staff,
+        printBy: newInvoice.status === "Paid" ? newInvoice.printBy || undefined : undefined,
         services: newInvoice.services ? newInvoice.services.split(",").map(s => s.trim()) : [],
         total: newInvoice.total ? parseFloat(newInvoice.total) : undefined,
         paymentMethod: newInvoice.paymentMethod,
         status: newInvoice.status,
       })
-      setNewInvoice({ staff: "", services: "", total: "", paymentMethod: "Cash", status: "Paid" })
+      setNewInvoice({ staff: "", printBy: "", services: "", total: "", paymentMethod: "Cash", status: "Unpaid" })
       setIsDialogOpen(false)
       fetchInvoices()
     } catch (err) {
@@ -257,6 +259,12 @@ export default function BillingPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {newInvoice.status === "Paid" && (
+                    <div>
+                      <Label>Printed By</Label>
+                      <Input value={newInvoice.printBy} onChange={(e) => setNewInvoice({ ...newInvoice, printBy: e.target.value })} placeholder="Employee name who printed" />
+                    </div>
+                  )}
                   <Button onClick={handleAddInvoice} className="w-full">Create Invoice</Button>
                 </div>
               </DialogContent>
