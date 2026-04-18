@@ -715,9 +715,8 @@ export default function AppointmentsPage() {
                   <Label>Phone Number</Label>
                   <Input
                     value={selectedAppointment.phone}
-                    onChange={(e) =>
-                      setSelectedAppointment({ ...selectedAppointment, phone: e.target.value })
-                    }
+                    readOnly
+                    className="bg-muted cursor-not-allowed"
                   />
                 </div>
                 <div>
