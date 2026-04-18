@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useCallback, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,8 +18,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import {
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   PieChart,
@@ -32,38 +31,25 @@ import {
   Legend,
 } from "recharts"
 import { Download, TrendingUp, Users, Calendar } from "lucide-react"
-import { useState } from "react"
+import { getReports } from "@/api/reports/reports"
 
-const revenueData = [
-  { month: "Jan", revenue: 45000 },
-  { month: "Feb", revenue: 52000 },
-  { month: "Mar", revenue: 48000 },
-  { month: "Apr", revenue: 61000 },
-  { month: "May", revenue: 55000 },
-  { month: "Jun", revenue: 67000 },
-]
+interface ReportData {
+  totalRevenue: number
+  paidRevenue: number
+  unpaidRevenue: number
+  revenueByPaymentMethod: { Cash: number; bKash: number; Card: number }
+  totalInvoices: number
+  totalAppointments: number
+  appointmentsByStatus: Record<string, number>
+  appointmentsBySource: Record<string, number>
+  newClients: number
+  topServices: { name: string; count: number }[]
+  topStaff: { name: string; revenue: number }[]
+}
 
-const serviceData = [
-  { name: "Hair Services", value: 45 },
-  { name: "Skin Care", value: 25 },
-  { name: "Nail Services", value: 20 },
-  { name: "Grooming", value: 10 },
-]
-
-const appointmentData = [
-  { day: "Mon", online: 8, walkin: 5 },
-  { day: "Tue", online: 6, walkin: 7 },
-  { day: "Wed", online: 10, walkin: 4 },
-  { day: "Thu", online: 7, walkin: 6 },
-  { day: "Fri", online: 12, walkin: 8 },
-  { day: "Sat", online: 15, walkin: 12 },
-  { day: "Sun", online: 5, walkin: 3 },
-]
-
-const COLORS = ["oklch(0.6 0.2 250)", "oklch(0.7 0.15 200)", "oklch(0.65 0.2 30)", "oklch(0.5 0.15 280)"]
+const COLORS = ["oklch(0.6 0.2 250)", "oklch(0.7 0.15 200)", "oklch(0.65 0.2 30)", "oklch(0.5 0.15 280)", "oklch(0.55 0.18 150)", "oklch(0.6 0.18 320)"]
 
 const TIME_OPTIONS = [
-  { value: "all", label: "All Time" },
   { value: "today", label: "Today" },
   { value: "week", label: "This Week" },
   { value: "month", label: "This Month" },
@@ -72,33 +58,99 @@ const TIME_OPTIONS = [
   { value: "custom", label: "Custom Date" },
 ]
 
+function getDateRange(filter: string): { from: string; to: string } {
+  const now = new Date()
+  const today = now.toISOString().split("T")[0]
+
+  if (filter === "today") return { from: today, to: today }
+
+  if (filter === "week") {
+    const d = new Date(now)
+    d.setDate(d.getDate() - 6)
+    return { from: d.toISOString().split("T")[0], to: today }
+  }
+
+  if (filter === "month") {
+    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`
+    return { from, to: today }
+  }
+
+  if (filter === "6months") {
+    const d = new Date(now)
+    d.setMonth(d.getMonth() - 6)
+    return { from: d.toISOString().split("T")[0], to: today }
+  }
+
+  if (filter === "year") {
+    return { from: `${now.getFullYear()}-01-01`, to: today }
+  }
+
+  return { from: today, to: today }
+}
+
 export default function ReportsPage() {
   const [timeFilter, setTimeFilter] = useState("month")
-  const [customDateFrom, setCustomDateFrom] = useState("")
-  const [customDateTo, setCustomDateTo] = useState("")
+  const [customFrom, setCustomFrom] = useState("")
+  const [customTo, setCustomTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
+  const [data, setData] = useState<ReportData | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const fetchReports = useCallback(async (filter: string, from?: string, to?: string) => {
+    const range = filter === "custom" && from && to
+      ? { from, to }
+      : getDateRange(filter)
+    try {
+      setLoading(true)
+      const res = await getReports(range.from, range.to)
+      setData(res)
+    } catch (err) {
+      console.error("Failed to fetch reports", err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchReports("month")
+  }, [fetchReports])
+
+  const handleTimeFilterChange = (v: string) => {
+    setTimeFilter(v)
+    if (v === "custom") {
+      setShowCustomDate(true)
+    } else {
+      fetchReports(v)
+    }
+  }
+
+  const handleCustomApply = () => {
+    setShowCustomDate(false)
+    if (customFrom && customTo) fetchReports("custom", customFrom, customTo)
+  }
 
   const handleExport = () => {
-    const reportData = {
-      period: timeFilter,
-      customRange: timeFilter === "custom" ? { from: customDateFrom, to: customDateTo } : null,
-      revenue: revenueData,
-      services: serviceData,
-      appointments: appointmentData,
-    }
-    const csv = [
-      ["Report Export"],
-      ["Period", timeFilter],
+    if (!data) return
+    const rows = [
+      ["Total Revenue", data.totalRevenue],
+      ["Paid Revenue", data.paidRevenue],
+      ["Unpaid Revenue", data.unpaidRevenue],
+      ["Total Appointments", data.totalAppointments],
+      ["New Clients", data.newClients],
+      ["Total Invoices", data.totalInvoices],
       [""],
-      ["Revenue by Month"],
-      ["Month", "Revenue"],
-      ...revenueData.map(r => [r.month, r.revenue]),
+      ["Payment Method", "Revenue"],
+      ["Cash", data.revenueByPaymentMethod.Cash],
+      ["bKash", data.revenueByPaymentMethod.bKash],
+      ["Card", data.revenueByPaymentMethod.Card],
       [""],
-      ["Service Distribution"],
-      ["Service", "Percentage"],
-      ...serviceData.map(s => [s.name, s.value + "%"]),
-    ].map(row => row.join(",")).join("\n")
-    
+      ["Service", "Bookings"],
+      ...data.topServices.map(s => [s.name, s.count]),
+      [""],
+      ["Staff", "Revenue"],
+      ...data.topStaff.map(s => [s.name, s.revenue]),
+    ]
+    const csv = rows.map(r => r.join(",")).join("\n")
     const blob = new Blob([csv], { type: "text/csv" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -106,6 +158,20 @@ export default function ReportsPage() {
     a.download = `report-${timeFilter}-${new Date().toISOString().split("T")[0]}.csv`
     a.click()
   }
+
+  const paymentChartData = data ? [
+    { name: "Cash", revenue: Number(data.revenueByPaymentMethod.Cash) },
+    { name: "bKash", revenue: Number(data.revenueByPaymentMethod.bKash) },
+    { name: "Card", revenue: Number(data.revenueByPaymentMethod.Card) },
+  ] : []
+
+  const sourceChartData = data
+    ? Object.entries(data.appointmentsBySource).map(([name, count]) => ({ name, count }))
+    : []
+
+  const avgTicket = data && data.totalInvoices > 0
+    ? Math.round(data.totalRevenue / data.totalInvoices)
+    : 0
 
   return (
     <DashboardLayout>
@@ -116,16 +182,16 @@ export default function ReportsPage() {
             <p className="text-muted-foreground">Business insights and analytics</p>
           </div>
           <div className="flex items-center gap-3">
-            <Popover open={showCustomDate && timeFilter === "custom"} onOpenChange={setShowCustomDate}>
+            <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
               <PopoverTrigger asChild>
                 <div>
-                  <Select value={timeFilter} onValueChange={(v) => { setTimeFilter(v); if (v === "custom") setShowCustomDate(true) }}>
-                    <SelectTrigger className="w-40">
+                  <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
+                    <SelectTrigger className="w-40 cursor-pointer">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {TIME_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        <SelectItem className="cursor-pointer" key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -135,141 +201,175 @@ export default function ReportsPage() {
                 <div className="space-y-3">
                   <div>
                     <Label className="text-xs">From</Label>
-                    <Input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} />
+                    <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
                   </div>
                   <div>
                     <Label className="text-xs">To</Label>
-                    <Input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} />
+                    <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
                   </div>
-                  <Button size="sm" className="w-full" onClick={() => setShowCustomDate(false)}>Apply</Button>
+                  <Button size="sm" className="w-full cursor-pointer" onClick={handleCustomApply}>Apply</Button>
                 </div>
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline" onClick={handleExport} disabled={!data} className="cursor-pointer">
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-card rounded-xl p-5 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <span className="w-5 h-5 text-primary font-bold text-base flex items-center justify-center">৳</span>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-semibold text-foreground">৳3,28,000</p>
-                <p className="text-xs text-green-600">+12% from last month</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-card rounded-xl p-5 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Calendar className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Appointments</p>
-                <p className="text-2xl font-semibold text-foreground">156</p>
-                <p className="text-xs text-green-600">+8% from last month</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-card rounded-xl p-5 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Users className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">New Clients</p>
-                <p className="text-2xl font-semibold text-foreground">24</p>
-                <p className="text-xs text-green-600">+15% from last month</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-card rounded-xl p-5 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg. Ticket Size</p>
-                <p className="text-2xl font-semibold text-foreground">৳2,103</p>
-                <p className="text-xs text-green-600">+5% from last month</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        {loading && (
+          <div className="text-center text-muted-foreground py-20">Loading...</div>
+        )}
 
-        {/* Charts Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          <div className="bg-card rounded-xl p-5 border border-border">
-            <h3 className="font-medium text-foreground mb-4">Revenue Trend</h3>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="revenueGradient2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="oklch(0.6 0.2 250)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="oklch(0.6 0.2 250)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${v/1000}k`} />
-                  <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
-                  <Area type="monotone" dataKey="revenue" stroke="oklch(0.6 0.2 250)" strokeWidth={2} fill="url(#revenueGradient2)" />
-                </AreaChart>
-              </ResponsiveContainer>
+        {!loading && data && (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <span className="w-5 h-5 text-primary font-bold text-base flex items-center justify-center">৳</span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Revenue</p>
+                    <p className="text-2xl font-semibold text-foreground">৳{data.totalRevenue.toLocaleString()}</p>
+                    <p className="text-xs text-green-600">৳{data.paidRevenue.toLocaleString()} paid</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Calendar className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Appointments</p>
+                    <p className="text-2xl font-semibold text-foreground">{data.totalAppointments}</p>
+                    <p className="text-xs text-muted-foreground">{data.totalInvoices} invoices</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Users className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">New Clients</p>
+                    <p className="text-2xl font-semibold text-foreground">{data.newClients}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Avg. Ticket Size</p>
+                    <p className="text-2xl font-semibold text-foreground">৳{avgTicket.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-card rounded-xl p-5 border border-border">
-            <h3 className="font-medium text-foreground mb-4">Service Distribution</h3>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={serviceData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {serviceData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => [`${value}%`, "Share"]} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+            {/* Charts Row 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <h3 className="font-medium text-foreground mb-4">Revenue by Payment Method</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={paymentChartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
+                      <Bar dataKey="revenue" fill="oklch(0.6 0.2 250)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <h3 className="font-medium text-foreground mb-4">Top Services</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={data.topServices.slice(0, 6)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={2}
+                        dataKey="count"
+                        nameKey="name"
+                      >
+                        {data.topServices.slice(0, 6).map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => [value, "Bookings"]} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Charts Row 2 */}
-        <div className="bg-card rounded-xl p-5 border border-border">
-          <h3 className="font-medium text-foreground mb-4">Appointments by Type</h3>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={appointmentData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="online" name="Online" fill="oklch(0.6 0.2 250)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="walkin" name="Walk-in" fill="oklch(0.7 0.15 200)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+            {/* Charts Row 2 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <h3 className="font-medium text-foreground mb-4">Appointments by Source</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={sourceChartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                      <Tooltip />
+                      <Bar dataKey="count" name="Appointments" fill="oklch(0.7 0.15 200)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <h3 className="font-medium text-foreground mb-4">Appointments by Status</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={Object.entries(data.appointmentsByStatus).map(([name, count]) => ({ name, count }))}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7280" }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                      <Tooltip />
+                      <Bar dataKey="count" name="Appointments" fill="oklch(0.65 0.2 30)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Staff Revenue */}
+            {data.topStaff.length > 0 && (
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <h3 className="font-medium text-foreground mb-4">Staff Revenue</h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.topStaff} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
+                      <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} width={80} />
+                      <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
+                      <Bar dataKey="revenue" fill="oklch(0.5 0.15 280)" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </DashboardLayout>
   )
