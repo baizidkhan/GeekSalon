@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Plus, Download, Calendar, MoreHorizontal } from "lucide-react"
+import { Plus, Download, Calendar, MoreHorizontal, User, UserCheck, Receipt, MinusCircle, Zap, Scissors, Clock } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -140,10 +140,13 @@ const leaveRecords: LeaveRecord[] = [
     status: "Pending",
   },
 ]
+const PAGE_SIZE = 10
 
 export default function HRPayrollPage() {
   const [isPayrollDialogOpen, setIsPayrollDialogOpen] = useState(false)
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false)
+  const [payrollPage, setPayrollPage] = useState(1)
+  const [leavePage, setLeavePage] = useState(1)
 
   const getInitials = (name: string) => {
     return name
@@ -188,14 +191,19 @@ export default function HRPayrollPage() {
   const pendingPayroll = payrollRecords
     .filter((r) => r.status === "Pending")
     .reduce((sum, r) => sum + r.netSalary, 0)
+  const payrollTotalPages = Math.max(1, Math.ceil(payrollRecords.length / PAGE_SIZE))
+  const leaveTotalPages = Math.max(1, Math.ceil(leaveRecords.length / PAGE_SIZE))
+  const paginatedPayrollRecords = payrollRecords.slice((payrollPage - 1) * PAGE_SIZE, payrollPage * PAGE_SIZE)
+  const paginatedLeaveRecords = leaveRecords.slice((leavePage - 1) * PAGE_SIZE, leavePage * PAGE_SIZE)
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 md:p-8">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Human Resources</p>
             <h1 className="text-2xl font-semibold text-foreground">HR & Payroll</h1>
-            <p className="text-muted-foreground">Manage payroll and employee records</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage payroll and employee records</p>
           </div>
           <Button variant="outline">
             <Download className="w-4 h-4 mr-2" />
@@ -295,64 +303,90 @@ export default function HRPayrollPage() {
                 </Dialog>
               </div>
               <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Base Salary</TableHead>
-                    <TableHead>Bonus</TableHead>
-                    <TableHead>Deductions</TableHead>
-                    <TableHead>Net Salary</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payrollRecords.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {getInitials(record.employeeName)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{record.employeeName}</p>
-                            <p className="text-xs text-muted-foreground">{record.employeeId}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{record.role}</TableCell>
-                      <TableCell>৳{record.baseSalary.toLocaleString()}</TableCell>
-                      <TableCell className="text-green-600">+৳{record.bonus.toLocaleString()}</TableCell>
-                      <TableCell className="text-red-600">-৳{record.deductions.toLocaleString()}</TableCell>
-                      <TableCell className="font-medium">৳{record.netSalary.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                          {record.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Download Slip</DropdownMenuItem>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Role</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Base Salary</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Plus className="w-3.5 h-3.5 text-primary/60" />Bonus</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><MinusCircle className="w-3.5 h-3.5 text-primary/60" />Deductions</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Net Salary</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
+                      <TableHead className="w-12"></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedPayrollRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {getInitials(record.employeeName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{record.employeeName}</p>
+                              <p className="text-xs text-muted-foreground">{record.employeeId}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{record.role}</TableCell>
+                        <TableCell>৳{record.baseSalary.toLocaleString()}</TableCell>
+                        <TableCell className="text-green-600">+৳{record.bonus.toLocaleString()}</TableCell>
+                        <TableCell className="text-red-600">-৳{record.deductions.toLocaleString()}</TableCell>
+                        <TableCell className="font-medium">৳{record.netSalary.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                            {record.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>View Details</DropdownMenuItem>
+                              <DropdownMenuItem>Download Slip</DropdownMenuItem>
+                              <DropdownMenuItem>Edit</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
+              {payrollRecords.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+                  <span>
+                    Showing {(payrollPage - 1) * PAGE_SIZE + 1} to {Math.min(payrollPage * PAGE_SIZE, payrollRecords.length)} of {payrollRecords.length} entries
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={payrollPage === 1}
+                      onClick={() => setPayrollPage((p) => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-xs">Page {payrollPage} of {payrollTotalPages}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={payrollPage === payrollTotalPages}
+                      onClick={() => setPayrollPage((p) => Math.min(payrollTotalPages, p + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -416,57 +450,83 @@ export default function HRPayrollPage() {
                 </Dialog>
               </div>
               <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leaveRecords.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell className="font-medium">{record.employeeName}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-md text-xs font-medium ${getLeaveTypeColor(record.type)}`}>
-                          {record.type}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          {record.startDate} - {record.endDate}
-                        </div>
-                      </TableCell>
-                      <TableCell>{record.days} day(s)</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                          {record.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Approve</DropdownMenuItem>
-                            <DropdownMenuItem>Reject</DropdownMenuItem>
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Type</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Period</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary/60" />Days</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
+                      <TableHead className="w-12"></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedLeaveRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{record.employeeName}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${getLeaveTypeColor(record.type)}`}>
+                            {record.type}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            {record.startDate} - {record.endDate}
+                          </div>
+                        </TableCell>
+                        <TableCell>{record.days} day(s)</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                            {record.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>Approve</DropdownMenuItem>
+                              <DropdownMenuItem>Reject</DropdownMenuItem>
+                              <DropdownMenuItem>View Details</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
+              {leaveRecords.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+                  <span>
+                    Showing {(leavePage - 1) * PAGE_SIZE + 1} to {Math.min(leavePage * PAGE_SIZE, leaveRecords.length)} of {leaveRecords.length} entries
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={leavePage === 1}
+                      onClick={() => setLeavePage((p) => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-xs">Page {leavePage} of {leaveTotalPages}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={leavePage === leaveTotalPages}
+                      onClick={() => setLeavePage((p) => Math.min(leaveTotalPages, p + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

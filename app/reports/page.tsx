@@ -47,7 +47,7 @@ interface ReportData {
   topStaff: { name: string; revenue: number }[]
 }
 
-const COLORS = ["oklch(0.6 0.2 250)", "oklch(0.7 0.15 200)", "oklch(0.65 0.2 30)", "oklch(0.5 0.15 280)", "oklch(0.55 0.18 150)", "oklch(0.6 0.18 320)"]
+const COLORS = ["oklch(0.48 0.16 8)", "oklch(0.60 0.11 330)", "oklch(0.73 0.10 68)", "oklch(0.62 0.09 158)", "oklch(0.58 0.10 224)", "oklch(0.70 0.08 40)"]
 
 const TIME_OPTIONS = [
   { value: "today", label: "Today" },
@@ -175,11 +175,12 @@ export default function ReportsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 md:p-8">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
         <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Report and Analysis</h1>
-            <p className="text-muted-foreground">Business insights and analytics</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Analytics</p>
+            <h1 className="text-2xl font-semibold text-foreground">Reports & Analysis</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Business insights and performance data</p>
           </div>
           <div className="flex items-center gap-3">
             <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
@@ -285,7 +286,7 @@ export default function ReportsPage() {
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
                       <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
-                      <Bar dataKey="revenue" fill="oklch(0.6 0.2 250)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="revenue" fill="oklch(0.48 0.16 8)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -329,7 +330,7 @@ export default function ReportsPage() {
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
                       <Tooltip />
-                      <Bar dataKey="count" name="Appointments" fill="oklch(0.7 0.15 200)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="count" name="Appointments" fill="oklch(0.60 0.11 330)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -344,7 +345,7 @@ export default function ReportsPage() {
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7280" }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
                       <Tooltip />
-                      <Bar dataKey="count" name="Appointments" fill="oklch(0.65 0.2 30)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="count" name="Appointments" fill="oklch(0.73 0.10 68)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -362,7 +363,7 @@ export default function ReportsPage() {
                       <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
                       <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} width={80} />
                       <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
-                      <Bar dataKey="revenue" fill="oklch(0.5 0.15 280)" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="revenue" fill="oklch(0.58 0.10 224)" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

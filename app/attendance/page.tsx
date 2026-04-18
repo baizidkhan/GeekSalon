@@ -16,6 +16,7 @@ import {
   UserPlus,
   Download,
   Search,
+  Calendar,
   CheckCircle2,
   XCircle,
   MinusCircle,
@@ -51,19 +52,19 @@ interface Employee {
 }
 
 // ---------- Mock Data ----------
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 const attendanceRateData = MONTHS.map((month) => ({
   month,
   onTime: Math.floor(Math.random() * 30 + 50),
-  late:   Math.floor(Math.random() * 15 + 10),
+  late: Math.floor(Math.random() * 15 + 10),
   absent: Math.floor(Math.random() * 10 + 5),
 }))
 
 const employeeTypeData = [
-  { name: "Onsite",  value: 800, color: "#2563eb" },
-  { name: "Remote",  value: 105, color: "#f97316" },
-  { name: "Hybrid",  value: 301, color: "#38bdf8" },
+  { name: "Onsite", value: 800, color: "#2563eb" },
+  { name: "Remote", value: 105, color: "#f97316" },
+  { name: "Hybrid", value: 301, color: "#38bdf8" },
 ]
 
 function generateDays(): DayStatus[] {
@@ -77,10 +78,10 @@ function generateDays(): DayStatus[] {
 }
 
 const AVATARS = [
-  { name: "Md. Rafiqul Islam",   initials: "RI", bg: "#dbeafe" },
-  { name: "Fatema Begum",        initials: "FB", bg: "#fce7f3" },
-  { name: "Karim Hossain",       initials: "KH", bg: "#d1fae5" },
-  { name: "Nasrin Akhter",       initials: "NA", bg: "#fef3c7" },
+  { name: "Md. Rafiqul Islam", initials: "RI", bg: "#dbeafe" },
+  { name: "Fatema Begum", initials: "FB", bg: "#fce7f3" },
+  { name: "Karim Hossain", initials: "KH", bg: "#d1fae5" },
+  { name: "Nasrin Akhter", initials: "NA", bg: "#fef3c7" },
 ]
 
 const ALL_EMPLOYEES: Employee[] = AVATARS.map((a, i) => {
@@ -90,8 +91,8 @@ const ALL_EMPLOYEES: Employee[] = AVATARS.map((a, i) => {
 })
 
 const YEARS = ["2022", "2023", "2024", "2025", "2026"]
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"]
-const PAGE_SIZE = 4
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+const PAGE_SIZE = 10
 
 // ---------- Day Status Icon ----------
 function DayIcon({ status }: { status: DayStatus }) {
@@ -124,10 +125,10 @@ export default function AttendancePage() {
     year: "numeric",
   })
 
-  const [search, setSearch]   = useState("")
-  const [year, setYear]       = useState(String(new Date().getFullYear()))
-  const [month, setMonth]     = useState(String(new Date().getMonth()))
-  const [page, setPage]       = useState(1)
+  const [search, setSearch] = useState("")
+  const [year, setYear] = useState(String(new Date().getFullYear()))
+  const [month, setMonth] = useState(String(new Date().getMonth()))
+  const [page, setPage] = useState(1)
 
   const daysInMonth = useMemo(() => {
     return new Date(Number(year), Number(month) + 1, 0).getDate()
@@ -140,7 +141,7 @@ export default function AttendancePage() {
   }, [search])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   function handleDownload() {
     const header = ["Employee Name", ...Array.from({ length: 31 }, (_, i) => String(i + 1)), "Leave"]
@@ -151,15 +152,15 @@ export default function AttendancePage() {
     ])
     const csv = [header, ...rows].map((r) => r.join(",")).join("\n")
     const blob = new Blob([csv], { type: "text/csv" })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
     a.href = url; a.download = `attendance-${MONTH_NAMES[Number(month)]}-${year}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="premium-page p-6 space-y-6">
 
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -222,7 +223,7 @@ export default function AttendancePage() {
                   }
                 />
                 <Bar dataKey="onTime" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="late"   stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="late" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="absent" stackId="a" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -321,7 +322,10 @@ export default function AttendancePage() {
               <thead>
                 <tr className="bg-muted/40 border-b border-border">
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground whitespace-nowrap min-w-[180px]">
-                    Employee Name
+                    <span className="inline-flex items-center gap-1.5">
+                      <UserPlus className="w-3.5 h-3.5 text-primary/60" />
+                      Employee Name
+                    </span>
                     <span className="ml-1 text-xs">↑</span>
                   </th>
                   {Array.from({ length: daysInMonth }, (_, i) => (
@@ -333,7 +337,10 @@ export default function AttendancePage() {
                     </th>
                   ))}
                   <th className="px-4 py-3 font-medium text-muted-foreground text-right whitespace-nowrap">
-                    Leave
+                    <span className="inline-flex items-center gap-1.5 justify-end">
+                      <Calendar className="w-3.5 h-3.5 text-primary/60" />
+                      Leave
+                    </span>
                   </th>
                 </tr>
               </thead>
@@ -341,9 +348,8 @@ export default function AttendancePage() {
                 {paginated.map((emp, idx) => (
                   <tr
                     key={emp.id}
-                    className={`border-b border-border last:border-0 ${
-                      idx % 2 === 0 ? "bg-card" : "bg-muted/20"
-                    } hover:bg-blue-50/40 transition-colors`}
+                    className={`border-b border-border last:border-0 ${idx % 2 === 0 ? "bg-card" : "bg-muted/20"
+                      } hover:bg-blue-50/40 transition-colors`}
                   >
                     {/* Name */}
                     <td className="px-5 py-2.5 whitespace-nowrap">
@@ -369,13 +375,12 @@ export default function AttendancePage() {
                     <td className="px-4 py-2.5 text-right">
                       <Badge
                         variant="secondary"
-                        className={`text-xs font-semibold ${
-                          emp.leaveCount >= 10
-                            ? "bg-red-100 text-red-600"
-                            : emp.leaveCount >= 5
+                        className={`text-xs font-semibold ${emp.leaveCount >= 10
+                          ? "bg-red-100 text-red-600"
+                          : emp.leaveCount >= 5
                             ? "bg-orange-100 text-orange-600"
                             : "bg-blue-100 text-blue-600"
-                        }`}
+                          }`}
                       >
                         {emp.leaveCount} Day
                       </Badge>

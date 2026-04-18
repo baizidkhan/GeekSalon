@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Sidebar } from "./sidebar"
-import { Menu, Scissors } from "lucide-react"
+import { Menu, Sparkles } from "lucide-react"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -12,7 +12,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -21,22 +21,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile top bar */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card md:hidden sticky top-0 z-30">
+        <div className="flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border md:hidden sticky top-0 z-30">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground cursor-pointer"
+            className="p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary">
-              <Scissors className="w-4 h-4 text-primary-foreground" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-sidebar-primary">
+              <Sparkles className="w-3.5 h-3.5 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
             </div>
-            <span className="font-semibold text-foreground text-sm">SalonBOS</span>
+            <span className="font-semibold text-sidebar-foreground text-sm tracking-wide" style={{ fontFamily: 'var(--font-serif, Georgia, serif)' }}>
+              GeekSalon
+            </span>
           </div>
         </div>
 
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto premium-main">{children}</main>
       </div>
     </div>
   )

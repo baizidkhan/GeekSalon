@@ -20,13 +20,14 @@ import {
   ClipboardCheck,
   LogOut,
   X,
+  Sparkles,
 } from "lucide-react"
 import { useState } from "react"
 import { logout } from "@/api/auth/auth"
 
 const navigation = [
   {
-    title: "CORE OPERATIONS",
+    title: "Core Operations",
     items: [
       { name: "Dashboard", href: "/", icon: LayoutDashboard },
       { name: "Appointments", href: "/appointments", icon: Calendar },
@@ -35,29 +36,29 @@ const navigation = [
     ],
   },
   {
-    title: "SERVICE & STAFF",
+    title: "Service & Staff",
     items: [
       { name: "Services", href: "/services", icon: Scissors },
       { name: "Employees", href: "/employees", icon: UserCheck },
     ],
   },
   {
-    title: "BUSINESS OPERATIONS",
+    title: "Business",
     items: [
       { name: "Inventory", href: "/inventory", icon: Package },
-      { name: "Report and Analysis", href: "/reports", icon: BarChart3 },
+      { name: "Reports", href: "/reports", icon: BarChart3 },
       { name: "Staff Reports", href: "/staff-reports", icon: UserCog },
     ],
   },
   {
-    title: "HR & INTERNAL",
+    title: "HR & Internal",
     items: [
       { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
       { name: "HR & Payroll", href: "/hr-payroll", icon: Building2 },
     ],
   },
   {
-    title: "SYSTEM",
+    title: "System",
     items: [{ name: "Settings", href: "/settings", icon: Settings }],
   },
 ]
@@ -88,45 +89,48 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col bg-card border-r border-border transition-all duration-300 z-50",
-        // Mobile: fixed overlay drawer
+        "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 z-50",
         "fixed top-0 left-0 h-full md:sticky md:top-0 md:min-h-screen md:max-h-screen",
-        // Mobile open/close via transform
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        // Width
         collapsed ? "md:w-16 w-64" : "w-64"
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 p-4 border-b border-border shrink-0">
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary shrink-0">
-          <Scissors className="w-5 h-5 text-primary-foreground" />
+      <div className={cn(
+        "flex items-center gap-3 border-b border-sidebar-border shrink-0",
+        collapsed ? "p-4 justify-center" : "p-5"
+      )}>
+        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-sidebar-primary shrink-0 shadow-lg shadow-black/20">
+          <Sparkles className="w-4 h-4 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
         </div>
         {!collapsed && (
           <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-foreground">SalonBOS</h1>
-            <p className="text-xs text-muted-foreground">BUSINESS OS</p>
+            <h1 className="font-semibold text-sidebar-foreground tracking-wide leading-tight" style={{ fontFamily: 'var(--font-serif, Georgia, serif)', fontSize: '1rem' }}>
+              GeekSalon
+            </h1>
+            <p className="text-[9px] text-sidebar-foreground/40 tracking-[0.2em] uppercase mt-0.5">
+              Salon Management
+            </p>
           </div>
         )}
-        {/* Close button — mobile only */}
         <button
           onClick={onClose}
-          className="md:hidden p-1 rounded-md hover:bg-secondary text-muted-foreground"
+          className="md:hidden p-1 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-6">
+      <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-5">
         {navigation.map((section) => (
           <div key={section.title}>
             {!collapsed && (
-              <p className="text-xs font-medium text-muted-foreground mb-2 px-3">
+              <p className="text-[9px] font-semibold tracking-[0.22em] text-sidebar-foreground/35 mb-1.5 px-3 uppercase">
                 {section.title}
               </p>
             )}
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {section.items.map((item) => {
                 const isActive = pathname === item.href
                 return (
@@ -135,14 +139,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       href={item.href}
                       onClick={handleNavClick}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+                        collapsed && "justify-center",
                         isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                          ? "bg-sidebar-primary/14 text-sidebar-primary font-medium"
+                          : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
+                      title={collapsed ? item.name : undefined}
                     >
-                      <item.icon className="w-5 h-5 shrink-0" />
-                      {!collapsed && <span>{item.name}</span>}
+                      <item.icon className={cn(
+                        "w-4 h-4 shrink-0",
+                        isActive ? "text-sidebar-primary" : "text-sidebar-foreground/50"
+                      )} />
+                      {!collapsed && <span className="truncate">{item.name}</span>}
                     </Link>
                   </li>
                 )
@@ -155,23 +164,32 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Logout */}
       <button
         onClick={handleLogout}
-        className="flex items-center gap-3 px-4 py-3 border-t border-border text-muted-foreground hover:text-destructive transition-colors shrink-0 cursor-pointer"
+        className={cn(
+          "flex items-center gap-3 px-5 py-3.5 border-t border-sidebar-border",
+          "text-sidebar-foreground/45 hover:text-rose-400 transition-colors shrink-0 cursor-pointer text-sm",
+          collapsed && "justify-center px-4"
+        )}
+        title={collapsed ? "Sign Out" : undefined}
       >
-        <LogOut className="w-5 h-5 shrink-0" />
-        {!collapsed && <span className="text-sm">Logout</span>}
+        <LogOut className="w-4 h-4 shrink-0" />
+        {!collapsed && <span>Sign Out</span>}
       </button>
 
       {/* Collapse Button — desktop only */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="hidden md:flex items-center gap-3 p-4 border-t border-border text-muted-foreground hover:text-foreground transition-colors shrink-0 cursor-pointer"
+        className={cn(
+          "hidden md:flex items-center gap-3 px-5 py-3.5 border-t border-sidebar-border",
+          "text-sidebar-foreground/35 hover:text-sidebar-foreground/65 transition-colors shrink-0 cursor-pointer text-sm",
+          collapsed && "justify-center px-4"
+        )}
       >
         {collapsed ? (
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         ) : (
           <>
-            <ChevronLeft className="w-5 h-5" />
-            <span className="text-sm">Collapse</span>
+            <ChevronLeft className="w-4 h-4" />
+            <span>Collapse</span>
           </>
         )}
       </button>

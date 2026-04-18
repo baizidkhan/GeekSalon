@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Download } from "lucide-react"
+import { Download, User, UserCheck, Zap, Calendar, Receipt, Clock } from "lucide-react"
 import { getStaffReports } from "@/api/staff-reports/staff-reports"
 
 interface StaffPerformance {
@@ -54,6 +54,7 @@ const TIME_OPTIONS = [
   { value: "year", label: "This Year" },
   { value: "custom", label: "Custom Date" },
 ]
+const PAGE_SIZE = 10
 
 function getDateRange(filter: string): { from: string; to: string } {
   const now = new Date()
@@ -83,6 +84,7 @@ export default function StaffReportsPage() {
   const [customFrom, setCustomFrom] = useState("")
   const [customTo, setCustomTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [data, setData] = useState<StaffReportData | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -136,14 +138,22 @@ export default function StaffReportsPage() {
 
   const topByAppointments = data?.staff.reduce((top, s) => s.appointments > (top?.appointments ?? -1) ? s : top, null as StaffPerformance | null)
   const topByRevenue = data?.staff.reduce((top, s) => s.revenue > (top?.revenue ?? -1) ? s : top, null as StaffPerformance | null)
+  const staffRows = data?.staff ?? []
+  const totalPages = Math.max(1, Math.ceil(staffRows.length / PAGE_SIZE))
+  const paginatedStaff = staffRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [timeFilter, customFrom, customTo, data?.staff.length])
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 md:p-8">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
         <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
           <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Performance</p>
             <h1 className="text-2xl font-semibold text-foreground">Staff Reports</h1>
-            <p className="text-muted-foreground">Employee performance analytics</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Employee performance analytics</p>
           </div>
           <div className="flex items-center gap-3">
             <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
@@ -199,53 +209,79 @@ export default function StaffReportsPage() {
                 <h3 className="font-medium text-foreground">Staff Performance</h3>
               </div>
               <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Appointments</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>Efficiency</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.staff.length === 0 ? (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No staff data found</TableCell>
+                      <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Role</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Appointments</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Revenue</span></TableHead>
+                      <TableHead><span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary/60" />Efficiency</span></TableHead>
                     </TableRow>
-                  ) : data.staff.map(s => (
-                    <TableRow key={s.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback className="bg-primary/10 text-primary">{getInitials(s.name)}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{s.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{s.role}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-md text-xs font-medium ${s.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
-                          {s.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>{s.appointments}</TableCell>
-                      <TableCell className="font-medium">৳{s.revenue.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full" style={{ width: `${s.efficiency}%` }} />
+                  </TableHeader>
+                  <TableBody>
+                    {data.staff.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No staff data found</TableCell>
+                      </TableRow>
+                    ) : paginatedStaff.map(s => (
+                      <TableRow key={s.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarFallback className="bg-primary/10 text-primary">{getInitials(s.name)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{s.name}</span>
                           </div>
-                          <span className="text-sm">{s.efficiency}%</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                        <TableCell>{s.role}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${s.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
+                            {s.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>{s.appointments}</TableCell>
+                        <TableCell className="font-medium">৳{s.revenue.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
+                              <div className="h-full bg-primary rounded-full" style={{ width: `${s.efficiency}%` }} />
+                            </div>
+                            <span className="text-sm">{s.efficiency}%</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
+              {data.staff.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+                  <span>
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, data.staff.length)} of {data.staff.length} entries
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-xs">Page {currentPage} of {totalPages}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Top Performers */}

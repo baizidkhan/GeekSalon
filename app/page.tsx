@@ -46,11 +46,18 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 md:p-8">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back — {today}</p>
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Overview</p>
+            <h1 className="text-3xl font-semibold text-foreground leading-tight">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">{today}</p>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/8 rounded-full border border-primary/15">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs font-medium text-primary/80">Live</span>
+          </div>
         </div>
 
         {error && (

@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Calendar, Clock, MoreHorizontal, Upload, Download, ChevronDown, Eye, Pencil, Trash2 } from "lucide-react"
+import { Plus, Search, Calendar, Clock, MoreHorizontal, Upload, Download, ChevronDown, Eye, Pencil, Trash2, User, Phone, Scissors, UserCheck, Globe, Zap } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,6 +71,7 @@ interface Appointment {
 const statusOptions: AppointmentStatus[] = ["Pending", "Confirmed", "Checked In", "In Service", "Completed", "Cancelled"]
 const sourceOptions: AppointmentSource[] = ["Online", "Walk In", "Call"]
 const timeFilterOptions = ["All Time", "Today", "This Week", "This Month", "Last 6 Months", "This Year", "Custom Date"]
+const PAGE_SIZE = 10
 
 /** Convert any server time value to 24h "HH:MM" for <input type="time"> */
 function toInputTime(t: string): string {
@@ -142,6 +143,7 @@ export default function AppointmentsPage() {
   const [timeFilter, setTimeFilter] = useState("All Time")
   const [sourceFilter, setSourceFilter] = useState("All Sources")
   const [statusFilter, setStatusFilter] = useState("All Status")
+  const [currentPage, setCurrentPage] = useState(1)
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
@@ -216,6 +218,13 @@ export default function AppointmentsPage() {
 
     return matchesName && matchesPhone && matchesSource && matchesStatus && matchesTime
   })
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchName, searchPhone, timeFilter, sourceFilter, statusFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredAppointments.length / PAGE_SIZE))
+  const paginatedAppointments = filteredAppointments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleAddAppointment = async () => {
     if (!newAppointment.client || !newAppointment.service || !newAppointment.date) return
@@ -342,11 +351,12 @@ export default function AppointmentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 md:p-8">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
         <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
           <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Schedule</p>
             <h1 className="text-2xl font-semibold text-foreground">Appointments</h1>
-            <p className="text-muted-foreground">Manage your salon appointments</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage your salon appointments</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="import-csv">
@@ -532,121 +542,147 @@ export default function AppointmentsPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Service</TableHead>
-                <TableHead>Employee</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Actions</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Loading appointments...
-                  </TableCell>
+                  <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Phone</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Service</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Date & Time</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Source</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
-              ) : filteredAppointments.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No appointments found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAppointments.map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell className="font-medium">{appointment.client}</TableCell>
-                    <TableCell>{appointment.phone}</TableCell>
-                    <TableCell>{appointment.service}</TableCell>
-                    <TableCell>{appointment.employee}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span>{appointment.date}</span>
-                        <Clock className="w-4 h-4 text-muted-foreground ml-2" />
-                        <span>{formatTimeDisplay(appointment.time)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{appointment.source}</span>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`${getStatusButtonStyle(appointment.status)} min-w-[110px] justify-between`}
-                          >
-                            {appointment.status}
-                            <ChevronDown className="w-4 h-4 ml-1" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                          {statusOptions.map((status) => (
-                            <DropdownMenuItem
-                              key={status}
-                              onClick={() => handleStatusChange(appointment, status)}
-                              className={appointment.status === status ? "bg-accent" : ""}
-                            >
-                              {status}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedAppointment(appointment)
-                              setViewDialogOpen(true)
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedAppointment({ ...appointment })
-                              setEditDialogOpen(true)
-                            }}
-                          >
-                            <Pencil className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => {
-                              setSelectedAppointment(appointment)
-                              setDeleteDialogOpen(true)
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      Loading appointments...
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : filteredAppointments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      No appointments found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedAppointments.map((appointment) => (
+                    <TableRow key={appointment.id}>
+                      <TableCell className="font-medium">{appointment.client}</TableCell>
+                      <TableCell>{appointment.phone}</TableCell>
+                      <TableCell>{appointment.service}</TableCell>
+                      <TableCell>{appointment.employee}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span>{appointment.date}</span>
+                          <Clock className="w-4 h-4 text-muted-foreground ml-2" />
+                          <span>{formatTimeDisplay(appointment.time)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{appointment.source}</span>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`${getStatusButtonStyle(appointment.status)} min-w-[110px] justify-between`}
+                            >
+                              {appointment.status}
+                              <ChevronDown className="w-4 h-4 ml-1" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {statusOptions.map((status) => (
+                              <DropdownMenuItem
+                                key={status}
+                                onClick={() => handleStatusChange(appointment, status)}
+                                className={appointment.status === status ? "bg-accent" : ""}
+                              >
+                                {status}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedAppointment(appointment)
+                                setViewDialogOpen(true)
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedAppointment({ ...appointment })
+                                setEditDialogOpen(true)
+                              }}
+                            >
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => {
+                                setSelectedAppointment(appointment)
+                                setDeleteDialogOpen(true)
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
+          {!loading && filteredAppointments.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+              <span>
+                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredAppointments.length)} of {filteredAppointments.length} entries
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs">Page {currentPage} of {totalPages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* View Dialog */}

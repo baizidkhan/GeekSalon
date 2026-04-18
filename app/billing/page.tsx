@@ -34,7 +34,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Plus, Search, Receipt, Printer, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2 } from "lucide-react"
+import { Plus, Search, Receipt, Printer, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Scissors, Calendar, Globe, Zap } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +62,7 @@ const TIME_OPTIONS = [
   { value: "year", label: "This Year" },
   { value: "custom", label: "Custom Date" },
 ]
+const PAGE_SIZE = 10
 
 function mapInvoice(inv: any): Invoice {
   return {
@@ -85,6 +86,7 @@ export default function BillingPage() {
   const [customDateFrom, setCustomDateFrom] = useState("")
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [newInvoice, setNewInvoice] = useState({
     staff: "",
     printBy: "",
@@ -144,6 +146,13 @@ export default function BillingPage() {
         filterByDate(inv.date)
     )
   }, [invoices, search, timeFilter, customDateFrom, customDateTo])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, timeFilter, customDateFrom, customDateTo])
+
+  const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / PAGE_SIZE))
+  const paginatedInvoices = filteredInvoices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleAddInvoice = async () => {
     if (!newInvoice.staff) return
@@ -212,11 +221,12 @@ export default function BillingPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 md:p-8">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Finance</p>
             <h1 className="text-2xl font-semibold text-foreground">Billing / POS</h1>
-            <p className="text-muted-foreground">Manage invoices and payments</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage invoices and payments</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={handleExportCSV}><Download className="w-4 h-4 mr-2" />Export CSV</Button>
@@ -315,49 +325,75 @@ export default function BillingPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Services</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
-              ) : filteredInvoices.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No invoices found.</TableCell></TableRow>
-              ) : filteredInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{invoice.invoiceNo}</span></div></TableCell>
-                  <TableCell>{invoice.client}</TableCell>
-                  <TableCell><div className="text-sm">{invoice.services.join(", ")}</div></TableCell>
-                  <TableCell className="font-medium">৳{invoice.amount.toLocaleString()}</TableCell>
-                  <TableCell>{invoice.paymentMethod}</TableCell>
-                  <TableCell>{invoice.date}</TableCell>
-                  <TableCell><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>{invoice.status}</span></TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setViewInvoice(invoice)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditInvoiceState({ ...invoice })}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                        <DropdownMenuItem><Printer className="w-4 h-4 mr-2" />Print</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInvoiceState(invoice)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Invoice</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Services</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Amount</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Payment</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Date</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                ) : filteredInvoices.length === 0 ? (
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No invoices found.</TableCell></TableRow>
+                ) : paginatedInvoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{invoice.invoiceNo}</span></div></TableCell>
+                    <TableCell>{invoice.client}</TableCell>
+                    <TableCell><div className="text-sm">{invoice.services.join(", ")}</div></TableCell>
+                    <TableCell className="font-medium">৳{invoice.amount.toLocaleString()}</TableCell>
+                    <TableCell>{invoice.paymentMethod}</TableCell>
+                    <TableCell>{invoice.date}</TableCell>
+                    <TableCell><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>{invoice.status}</span></TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setViewInvoice(invoice)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEditInvoiceState({ ...invoice })}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                          <DropdownMenuItem><Printer className="w-4 h-4 mr-2" />Print</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInvoiceState(invoice)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
+          {!loading && filteredInvoices.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+              <span>
+                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredInvoices.length)} of {filteredInvoices.length} entries
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs">Page {currentPage} of {totalPages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

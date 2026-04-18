@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, AlertTriangle, Package, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2 } from "lucide-react"
+import { Plus, Search, AlertTriangle, Package, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2, Calendar, Globe, Zap, UserCheck, Receipt } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,12 +63,14 @@ const STOCK_SORT_OPTIONS = [
   { value: "desc", label: "High to Low" },
   { value: "asc", label: "Low to High" },
 ]
+const PAGE_SIZE = 10
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [stockSort, setStockSort] = useState("none")
+  const [currentPage, setCurrentPage] = useState(1)
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newItem, setNewItem] = useState(emptyForm)
@@ -97,6 +99,13 @@ export default function InventoryPage() {
   useEffect(() => {
     fetchInventory()
   }, [fetchInventory])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, stockSort])
+
+  const totalPages = Math.max(1, Math.ceil(inventory.length / PAGE_SIZE))
+  const paginatedInventory = inventory.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleAddItem = async () => {
     if (!newItem.name || !newItem.category || !newItem.stockQty) return
@@ -153,11 +162,12 @@ export default function InventoryPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 md:p-8">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Stock</p>
             <h1 className="text-2xl font-semibold text-foreground">Inventory</h1>
-            <p className="text-muted-foreground">Track products and supplies</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Track products and supplies</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -261,58 +271,84 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Expiry</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">Loading...</TableCell>
+                  <TableHead><span className="flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-primary/60" />Product</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Category</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Quantity</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Price</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Supplier</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Expiry</span></TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
-              ) : inventory.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No items found</TableCell>
-                </TableRow>
-              ) : inventory.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {item.stockQty <= item.minStockLevel && (<AlertTriangle className="w-4 h-4 text-amber-500" />)}
-                      <span className="font-medium">{item.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell><span className="px-2 py-1 bg-secondary rounded-md text-sm">{item.category}</span></TableCell>
-                  <TableCell>
-                    <span className={`font-medium ${item.stockQty <= item.minStockLevel ? "text-amber-600" : ""}`}>{item.stockQty}</span>
-                    <span className="text-muted-foreground text-xs ml-1">(min: {item.minStockLevel})</span>
-                  </TableCell>
-                  <TableCell>৳{Number(item.unitPrice).toLocaleString()}</TableCell>
-                  <TableCell className="text-muted-foreground">{item.supplier}</TableCell>
-                  <TableCell className="text-muted-foreground">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => setViewItem(item)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => setEditItem({ ...item })}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => setDeleteItem(item)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">Loading...</TableCell>
+                  </TableRow>
+                ) : inventory.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No items found</TableCell>
+                  </TableRow>
+                ) : paginatedInventory.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {item.stockQty <= item.minStockLevel && (<AlertTriangle className="w-4 h-4 text-amber-500" />)}
+                        <span className="font-medium">{item.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell><span className="px-2 py-1 bg-secondary rounded-md text-sm">{item.category}</span></TableCell>
+                    <TableCell>
+                      <span className={`font-medium ${item.stockQty <= item.minStockLevel ? "text-amber-600" : ""}`}>{item.stockQty}</span>
+                      <span className="text-muted-foreground text-xs ml-1">(min: {item.minStockLevel})</span>
+                    </TableCell>
+                    <TableCell>৳{Number(item.unitPrice).toLocaleString()}</TableCell>
+                    <TableCell className="text-muted-foreground">{item.supplier}</TableCell>
+                    <TableCell className="text-muted-foreground">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => setViewItem(item)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => setEditItem({ ...item })}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => setDeleteItem(item)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
+          {!loading && inventory.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+              <span>
+                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, inventory.length)} of {inventory.length} entries
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs">Page {currentPage} of {totalPages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

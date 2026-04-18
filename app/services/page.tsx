@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Clock, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2 } from "lucide-react"
+import { Plus, Search, Clock, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2, Scissors, Package, Receipt, Zap } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +59,7 @@ const PRICE_SORT_OPTIONS = [
   { value: "high", label: "High to Low" },
   { value: "low", label: "Low to High" },
 ]
+const PAGE_SIZE = 10
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
@@ -67,6 +68,7 @@ export default function ServicesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [priceSort, setPriceSort] = useState("none")
+  const [currentPage, setCurrentPage] = useState(1)
   const [newService, setNewService] = useState({ name: "", category: "", duration: "", price: "", description: "" })
 
   const [serviceToView, setServiceToView] = useState<Service | null>(null)
@@ -116,6 +118,13 @@ export default function ServicesPage() {
 
     return result
   }, [services, search, categoryFilter, priceSort])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, categoryFilter, priceSort])
+
+  const totalPages = Math.max(1, Math.ceil(filteredServices.length / PAGE_SIZE))
+  const paginatedServices = filteredServices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleAddService = async () => {
     if (newService.name && newService.category && newService.price) {
@@ -193,7 +202,7 @@ export default function ServicesPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
+      <div className="premium-page p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Services</h1>
@@ -314,11 +323,11 @@ export default function ServicesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Service Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Service Name</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-primary/60" />Category</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary/60" />Duration</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Price</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -338,7 +347,7 @@ export default function ServicesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredServices.map((service) => (
+                paginatedServices.map((service) => (
                   <TableRow key={service.id}>
                     <TableCell className="font-medium">{service.name}</TableCell>
                     <TableCell>
@@ -388,6 +397,32 @@ export default function ServicesPage() {
 
             </TableBody>
           </Table>
+          {!loading && filteredServices.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+              <span>
+                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredServices.length)} of {filteredServices.length} entries
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs">Page {currentPage} of {totalPages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

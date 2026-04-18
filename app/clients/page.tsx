@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, ArrowUpDown, Eye, Pencil, Trash2 } from "lucide-react"
+import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, ArrowUpDown, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +69,7 @@ const VISIT_SORT_OPTIONS = [
   { value: "high", label: "Spent: High to Low" },
   { value: "low", label: "Spent: Low to High" },
 ]
+const PAGE_SIZE = 10
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -80,6 +81,7 @@ export default function ClientsPage() {
   const [customDateFrom, setCustomDateFrom] = useState("")
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -152,6 +154,13 @@ export default function ClientsPage() {
 
     return result
   }, [clients, search, timeFilter, visitSort, customDateFrom, customDateTo])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, timeFilter, visitSort, customDateFrom, customDateTo])
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE))
+  const paginatedClients = filteredClients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleAddClient = async () => {
     if (!newClient.name || !newClient.phone)
@@ -229,11 +238,12 @@ export default function ClientsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 md:p-8">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Database</p>
             <h1 className="text-2xl font-semibold text-foreground">Clients</h1>
-            <p className="text-muted-foreground">Manage your client database</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage your client database</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="cursor-pointer">
@@ -357,70 +367,96 @@ export default function ClientsPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Visits</TableHead>
-                <TableHead>Total Spent</TableHead>
-                <TableHead>Last Visit</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredClients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {getInitials(client.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{client.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="w-3 h-3 text-muted-foreground" />
-                        {client.email}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-3 h-3 text-muted-foreground" />
-                        {client.phone}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{client.visits}</TableCell>
-                  <TableCell>৳{(client.totalSpent ?? 0).toLocaleString()}</TableCell>
-                  <TableCell>{client.lastVisit ?? '-'}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setViewClient(client)}>
-                          <Eye className="w-4 h-4 mr-2" />View
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditClient({ ...client })}>
-                          <Pencil className="w-4 h-4 mr-2" />Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteClientState(client)}>
-                          <Trash2 className="w-4 h-4 mr-2" />Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Contact</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Visits</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Total Spent</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Last Visit</span></TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedClients.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {getInitials(client.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{client.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-3 h-3 text-muted-foreground" />
+                          {client.email}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-3 h-3 text-muted-foreground" />
+                          {client.phone}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{client.visits}</TableCell>
+                    <TableCell>৳{(client.totalSpent ?? 0).toLocaleString()}</TableCell>
+                    <TableCell>{client.lastVisit ?? '-'}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setViewClient(client)}>
+                            <Eye className="w-4 h-4 mr-2" />View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEditClient({ ...client })}>
+                            <Pencil className="w-4 h-4 mr-2" />Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteClientState(client)}>
+                            <Trash2 className="w-4 h-4 mr-2" />Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
+          {!loading && filteredClients.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+              <span>
+                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredClients.length)} of {filteredClients.length} entries
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs">Page {currentPage} of {totalPages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
