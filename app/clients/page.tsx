@@ -189,22 +189,23 @@ export default function ClientsPage() {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const text = event.target?.result as string
-      const lines = text.split("\n").slice(1)
-      const imported = lines.filter(l => l.trim()).map((line, i) => {
-        const [name, email, phone, visits, totalSpent, lastVisit] = line.split(",")
-        return {
-          id: `imported-${Date.now()}-${i}`,
-          name: name?.trim() || "",
-          email: email?.trim() || "",
-          phone: phone?.trim() || "",
-          visits: parseInt(visits) || 0,
-          totalSpent: parseFloat(totalSpent) || 0,
-          lastVisit: lastVisit?.trim() || new Date().toISOString().split("T")[0],
+      const lines = text.split("\n").slice(1).filter(l => l.trim())
+      for (const line of lines) {
+        const [name, email, phone] = line.split(",")
+        if (!name?.trim() || !phone?.trim()) continue
+        try {
+          await createClient({
+            name: name.trim(),
+            email: email?.trim() || undefined,
+            phone: phone.trim(),
+          })
+        } catch (err) {
+          console.error(`Failed to import client ${name}`, err)
         }
-      })
-      setClients([...clients, ...imported])
+      }
+      fetchClients()
     }
     reader.readAsText(file)
     e.target.value = ""
