@@ -212,13 +212,13 @@ export default function BillingPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Billing / POS</h1>
             <p className="text-muted-foreground">Manage invoices and payments</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={handleExportCSV}><Download className="w-4 h-4 mr-2" />Export CSV</Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />New Invoice</Button></DialogTrigger>
@@ -314,6 +314,7 @@ export default function BillingPage() {
               <span className="text-sm text-muted-foreground ml-auto">{loading ? "Loading..." : `${filteredInvoices.length} results`}</span>
             </div>
           </div>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -356,6 +357,7 @@ export default function BillingPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </div>
       </div>
 
@@ -365,7 +367,7 @@ export default function BillingPage() {
           <DialogHeader><DialogTitle>Invoice Details</DialogTitle></DialogHeader>
           {viewInvoice && (
             <div className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground">Invoice No</Label><p className="font-medium">{viewInvoice.invoiceNo}</p></div>
                 <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
                 <div><Label className="text-muted-foreground">Services</Label><p className="font-medium">{viewInvoice.services.join(", ")}</p></div>

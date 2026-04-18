@@ -46,7 +46,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>

@@ -139,8 +139,8 @@ export default function StaffReportsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 sm:p-6 md:p-8">
+        <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Staff Reports</h1>
             <p className="text-muted-foreground">Employee performance analytics</p>
@@ -198,6 +198,7 @@ export default function StaffReportsPage() {
               <div className="p-4 border-b border-border">
                 <h3 className="font-medium text-foreground">Staff Performance</h3>
               </div>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -244,6 +245,7 @@ export default function StaffReportsPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
 
             {/* Top Performers */}

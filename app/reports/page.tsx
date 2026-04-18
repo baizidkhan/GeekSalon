@@ -175,8 +175,8 @@ export default function ReportsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 sm:p-6 md:p-8">
+        <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Report and Analysis</h1>
             <p className="text-muted-foreground">Business insights and analytics</p>
@@ -225,7 +225,7 @@ export default function ReportsPage() {
         {!loading && data && (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-card rounded-xl p-5 border border-border">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-lg">

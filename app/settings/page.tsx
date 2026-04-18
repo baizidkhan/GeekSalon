@@ -44,14 +44,14 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
           <p className="text-muted-foreground">Manage your salon preferences</p>
         </div>
 
         <Tabs defaultValue="business" className="space-y-4">
-          <TabsList className="grid w-full max-w-2xl grid-cols-5">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3 sm:grid-cols-5">
             <TabsTrigger value="business" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span className="hidden sm:inline">Business</span>
@@ -213,7 +213,7 @@ export default function SettingsPage() {
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="font-medium text-foreground mb-4">Booking Settings</h3>
               <div className="space-y-4 max-w-xl">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Opening Time</Label>
                     <Input

@@ -342,13 +342,13 @@ export default function AppointmentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 sm:p-6 md:p-8">
+        <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Appointments</h1>
             <p className="text-muted-foreground">Manage your salon appointments</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="import-csv">
               <input
                 id="import-csv"
@@ -428,7 +428,7 @@ export default function AppointmentsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Date</Label>
                       <Input
@@ -531,6 +531,7 @@ export default function AppointmentsPage() {
               </span>
             </div>
           </div>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -645,6 +646,7 @@ export default function AppointmentsPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
 
         {/* View Dialog */}

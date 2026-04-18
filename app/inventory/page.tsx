@@ -153,8 +153,8 @@ export default function InventoryPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 sm:p-6 md:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Inventory</h1>
             <p className="text-muted-foreground">Track products and supplies</p>
@@ -260,6 +260,7 @@ export default function InventoryPage() {
               <span className="text-sm text-muted-foreground ml-auto">{inventory.length} results</span>
             </div>
           </div>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -311,6 +312,7 @@ export default function InventoryPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </div>
       </div>
 

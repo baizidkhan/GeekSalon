@@ -1,7 +1,7 @@
 "use client"
 
 import { getClients, createClient, updateClient, deleteClient } from "@/api/clients/clients"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -86,12 +86,20 @@ export default function ClientsPage() {
     phone: "",
   })
 
-  useEffect(() => {
-    getClients().then((res) => {
+  const fetchClients = useCallback(async () => {
+    try {
+      const res = await getClients()
       setClients(res.data ?? res)
+    } catch (err) {
+      console.error(err)
+    } finally {
       setLoading(false)
-    }).catch(console.error)
+    }
   }, [])
+
+  useEffect(() => {
+    fetchClients()
+  }, [fetchClients])
 
   // View/Edit/Delete dialogs
   const [viewClient, setViewClient] = useState<Client | null>(null)
@@ -221,13 +229,13 @@ export default function ClientsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Clients</h1>
             <p className="text-muted-foreground">Manage your client database</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <label className="cursor-pointer">
               <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
               <Button variant="outline" asChild>
@@ -348,6 +356,7 @@ export default function ClientsPage() {
               <span className="text-sm text-muted-foreground ml-auto">{filteredClients.length} results</span>
             </div>
           </div>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -411,6 +420,7 @@ export default function ClientsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </div>
       </div>
 
@@ -431,7 +441,7 @@ export default function ClientsPage() {
                   <p className="text-sm text-muted-foreground">{viewClient.email}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground">Phone</Label><p className="font-medium">{viewClient.phone}</p></div>
                 <div><Label className="text-muted-foreground">Visits</Label><p className="font-medium">{viewClient.visits}</p></div>
                 <div><Label className="text-muted-foreground">Total Spent</Label><p className="font-medium">৳{viewClient.totalSpent.toLocaleString()}</p></div>

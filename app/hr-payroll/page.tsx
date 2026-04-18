@@ -191,7 +191,7 @@ export default function HRPayrollPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">HR & Payroll</h1>
@@ -204,7 +204,7 @@ export default function HRPayrollPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-card rounded-xl p-5 border border-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
@@ -275,7 +275,7 @@ export default function HRPayrollPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label>Base Salary</Label>
                           <Input type="number" placeholder="0" />
@@ -294,6 +294,7 @@ export default function HRPayrollPage() {
                   </DialogContent>
                 </Dialog>
               </div>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -351,6 +352,7 @@ export default function HRPayrollPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           </TabsContent>
 
@@ -398,7 +400,7 @@ export default function HRPayrollPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label>Start Date</Label>
                           <Input type="date" />
@@ -413,6 +415,7 @@ export default function HRPayrollPage() {
                   </DialogContent>
                 </Dialog>
               </div>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -463,6 +466,7 @@ export default function HRPayrollPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
