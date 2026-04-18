@@ -1,6 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import api from "@/api/base"
+import { getServices, createService, updateService, deleteService } from "@/api/services/services"
+import { toast } from "sonner"
+
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,23 +46,13 @@ interface Service {
   name: string
   category: string
   duration: number
+  description: string
   price: number
   active: boolean
 }
 
-const CATEGORIES = ["All", "Hair", "Beauty", "Skin", "Bridal", "Nails", "Other"]
+const CATEGORIES = ["All", "Hair", "Makeup", "Skin", "Bridal", "Nails", "Other"]
 
-const initialServices: Service[] = [
-  { id: "1", name: "Haircut - Men", category: "Hair", duration: 30, price: 300, active: true },
-  { id: "2", name: "Haircut - Women", category: "Hair", duration: 45, price: 500, active: true },
-  { id: "3", name: "Hair Spa", category: "Hair", duration: 60, price: 1500, active: true },
-  { id: "4", name: "Facial - Basic", category: "Skin", duration: 45, price: 800, active: true },
-  { id: "5", name: "Threading - Eyebrow", category: "Beauty", duration: 15, price: 100, active: true },
-  { id: "6", name: "Manicure", category: "Nails", duration: 30, price: 400, active: true },
-  { id: "7", name: "Pedicure", category: "Nails", duration: 45, price: 500, active: true },
-  { id: "8", name: "Bridal Makeup", category: "Bridal", duration: 120, price: 8000, active: true },
-  { id: "9", name: "Party Makeup", category: "Beauty", duration: 60, price: 2500, active: true },
-]
 
 const PRICE_SORT_OPTIONS = [
   { value: "none", label: "All Prices" },
@@ -67,73 +61,135 @@ const PRICE_SORT_OPTIONS = [
 ]
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>(initialServices)
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [priceSort, setPriceSort] = useState("none")
-  const [newService, setNewService] = useState({ name: "", category: "", duration: "", price: "" })
-  
-  const [viewService, setViewService] = useState<Service | null>(null)
-  const [editService, setEditService] = useState<Service | null>(null)
-  const [deleteService, setDeleteService] = useState<Service | null>(null)
+  const [newService, setNewService] = useState({ name: "", category: "", duration: "", price: "", description: "" })
+
+  const [serviceToView, setServiceToView] = useState<Service | null>(null)
+  const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null)
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null)
+
+
+  const fetchServices = async () => {
+    try {
+      setLoading(true)
+      const data = await getServices()
+      const mappedServices = data.map((s: any) => ({
+        ...s,
+        price: parseFloat(s.price) || 0,
+        duration: parseInt(s.duration) || 0,
+        description: s.description || "",
+        active: s.status === 'active'
+      }))
+      setServices(mappedServices)
+
+    } catch (error) {
+      console.error("Failed to fetch services:", error)
+      toast.error("Failed to load services")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchServices()
+  }, [])
+
 
   const filteredServices = useMemo(() => {
     let result = services.filter(
       (service) =>
         (service.name.toLowerCase().includes(search.toLowerCase()) ||
-        service.category.toLowerCase().includes(search.toLowerCase())) &&
+          service.category.toLowerCase().includes(search.toLowerCase())) &&
         (categoryFilter === "All" || service.category === categoryFilter)
     )
-    
+
     if (priceSort === "high") {
       result = [...result].sort((a, b) => b.price - a.price)
     } else if (priceSort === "low") {
       result = [...result].sort((a, b) => a.price - b.price)
     }
-    
+
     return result
   }, [services, search, categoryFilter, priceSort])
 
-  const handleAddService = () => {
+  const handleAddService = async () => {
     if (newService.name && newService.category && newService.price) {
-      setServices([
-        ...services,
-        {
-          id: Date.now().toString(),
+      try {
+        const payload = {
           name: newService.name,
           category: newService.category,
           duration: parseInt(newService.duration) || 30,
           price: parseFloat(newService.price),
-          active: true,
-        },
-      ])
-      setNewService({ name: "", category: "", duration: "", price: "" })
-      setIsDialogOpen(false)
+          status: 'active',
+          description: newService.description
+        }
+        await createService(payload)
+        toast.success("Service added successfully")
+        setNewService({ name: "", category: "", duration: "", price: "", description: "" })
+        setIsDialogOpen(false)
+        fetchServices()
+      } catch (error) {
+        console.error("Failed to add service:", error)
+        toast.error("Failed to add service")
+      }
     }
   }
 
-  const handleEditSave = () => {
-    if (editService) {
-      setServices(services.map(s => s.id === editService.id ? editService : s))
-      setEditService(null)
+  const handleEditSave = async () => {
+    if (serviceToEdit) {
+      try {
+        const payload = {
+          name: serviceToEdit.name,
+          category: serviceToEdit.category,
+          duration: Number(serviceToEdit.duration),
+          price: Number(serviceToEdit.price),
+          status: serviceToEdit.active ? 'active' : 'hidden',
+          description: serviceToEdit.description || ""
+        }
+
+
+        await updateService(serviceToEdit.id, payload)
+        toast.success("Service updated successfully")
+        setServiceToEdit(null)
+        fetchServices()
+      } catch (error) {
+        console.error("Failed to update service:", error)
+        toast.error("Failed to update service")
+      }
     }
   }
 
-  const handleDelete = () => {
-    if (deleteService) {
-      setServices(services.filter(s => s.id !== deleteService.id))
-      setDeleteService(null)
+  const handleDelete = async () => {
+    if (serviceToDelete) {
+      try {
+        await deleteService(serviceToDelete.id)
+        toast.success("Service deleted successfully")
+        setServiceToDelete(null)
+        fetchServices()
+      } catch (error) {
+        console.error("Failed to delete service:", error)
+        toast.error("Failed to delete service")
+      }
     }
   }
 
-  const toggleServiceActive = (id: string) => {
-    setServices(
-      services.map((service) =>
-        service.id === id ? { ...service, active: !service.active } : service
-      )
-    )
+
+  const toggleServiceActive = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateService(id, { status: !currentStatus ? 'active' : 'hidden' })
+      toast.success(`Service ${!currentStatus ? 'activated' : 'deactivated'}`)
+      fetchServices()
+    } catch (error) {
+      console.error("Failed to toggle service status:", error)
+      toast.error("Failed to update status")
+    }
   }
+
 
   return (
     <DashboardLayout>
@@ -178,6 +234,15 @@ export default function ServicesPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div>
+                  <Label>Describtion</Label>
+                  <Input
+                    type="text"
+                    value={newService.description}
+                    onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                    placeholder="Give a short description"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -258,91 +323,112 @@ export default function ServicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredServices.map((service) => (
-                <TableRow key={service.id}>
-                  <TableCell className="font-medium">{service.name}</TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 bg-secondary rounded-md text-sm">
-                      {service.category}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span>{service.duration} min</span>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-10">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">
-                    ৳{service.price.toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={service.active}
-                      onCheckedChange={() => toggleServiceActive(service.id)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setViewService(service)}>
-                          <Eye className="w-4 h-4 mr-2" />View
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditService({...service})}>
-                          <Pencil className="w-4 h-4 mr-2" />Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteService(service)}>
-                          <Trash2 className="w-4 h-4 mr-2" />Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                </TableRow>
+              ) : filteredServices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                    No services found.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredServices.map((service) => (
+                  <TableRow key={service.id}>
+                    <TableCell className="font-medium">{service.name}</TableCell>
+                    <TableCell>
+                      <span className="px-2 py-1 bg-secondary rounded-md text-sm">
+                        {service.category}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span>{service.duration} min</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      ৳{service.price.toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={service.active}
+                        onCheckedChange={() => toggleServiceActive(service.id, service.active)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setServiceToView(service)}>
+                            <Eye className="w-4 h-4 mr-2" />View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setServiceToEdit({ ...service })}>
+                            <Pencil className="w-4 h-4 mr-2" />Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => setServiceToDelete(service)}>
+                            <Trash2 className="w-4 h-4 mr-2" />Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+
             </TableBody>
           </Table>
         </div>
       </div>
 
       {/* View Dialog */}
-      <Dialog open={!!viewService} onOpenChange={() => setViewService(null)}>
+      <Dialog open={!!serviceToView} onOpenChange={() => setServiceToView(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Service Details</DialogTitle></DialogHeader>
-          {viewService && (
+          {serviceToView && (
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><Label className="text-muted-foreground">Name</Label><p className="font-medium">{viewService.name}</p></div>
-                <div><Label className="text-muted-foreground">Category</Label><p className="font-medium">{viewService.category}</p></div>
-                <div><Label className="text-muted-foreground">Duration</Label><p className="font-medium">{viewService.duration} min</p></div>
-                <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">৳{viewService.price.toLocaleString()}</p></div>
-                <div><Label className="text-muted-foreground">Status</Label><p className="font-medium">{viewService.active ? "Active" : "Inactive"}</p></div>
+                <div><Label className="text-muted-foreground">Name</Label><p className="font-medium">{serviceToView.name}</p></div>
+                <div><Label className="text-muted-foreground">Category</Label><p className="font-medium">{serviceToView.category}</p></div>
+                <div><Label className="text-muted-foreground">Duration</Label><p className="font-medium">{serviceToView.duration} min</p></div>
+                <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">৳{serviceToView.price.toLocaleString()}</p></div>
+                <div><Label className="text-muted-foreground">Status</Label><p className="font-medium">{serviceToView.active ? "Active" : "Inactive"}</p></div>
               </div>
+              <div><Label className="text-muted-foreground">Description</Label><p className="font-medium whitespace-pre-wrap">{serviceToView.description || "No description provided"}</p></div>
             </div>
+
           )}
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editService} onOpenChange={() => setEditService(null)}>
+      <Dialog open={!!serviceToEdit} onOpenChange={() => setServiceToEdit(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Service</DialogTitle></DialogHeader>
-          {editService && (
+          {serviceToEdit && (
             <div className="space-y-4 mt-4">
-              <div><Label>Name</Label><Input value={editService.name} onChange={(e) => setEditService({...editService, name: e.target.value})} /></div>
+              <div><Label>Name</Label><Input value={serviceToEdit.name} onChange={(e) => setServiceToEdit({ ...serviceToEdit, name: e.target.value })} /></div>
               <div>
                 <Label>Category</Label>
-                <Select value={editService.category} onValueChange={(v) => setEditService({...editService, category: v})}>
+                <Select value={serviceToEdit.category} onValueChange={(v) => setServiceToEdit({ ...serviceToEdit, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{CATEGORIES.filter(c => c !== "All").map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
+              <div><Label>Description</Label><Input type="text" value={serviceToEdit.description} onChange={(e) => setServiceToEdit({ ...serviceToEdit, description: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Duration (min)</Label><Input type="number" value={editService.duration} onChange={(e) => setEditService({...editService, duration: parseInt(e.target.value) || 0})} /></div>
-                <div><Label>Price (৳)</Label><Input type="number" value={editService.price} onChange={(e) => setEditService({...editService, price: parseFloat(e.target.value) || 0})} /></div>
+                <div><Label>Duration (min)</Label><Input type="number" value={serviceToEdit.duration} onChange={(e) => setServiceToEdit({ ...serviceToEdit, duration: parseInt(e.target.value) || 0 })} /></div>
+                <div><Label>Price (৳)</Label><Input type="number" value={serviceToEdit.price} onChange={(e) => setServiceToEdit({ ...serviceToEdit, price: parseFloat(e.target.value) || 0 })} /></div>
               </div>
               <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
             </div>
@@ -351,16 +437,17 @@ export default function ServicesPage() {
       </Dialog>
 
       {/* Delete Dialog */}
-      <Dialog open={!!deleteService} onOpenChange={() => setDeleteService(null)}>
+      <Dialog open={!!serviceToDelete} onOpenChange={() => setServiceToDelete(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Delete Service</DialogTitle></DialogHeader>
-          <p className="text-muted-foreground">Are you sure you want to delete <strong>{deleteService?.name}</strong>?</p>
+          <p className="text-muted-foreground">Are you sure you want to delete <strong>{serviceToDelete?.name}</strong>?</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteService(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setServiceToDelete(null)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDelete}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </DashboardLayout>
   )
 }
