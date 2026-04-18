@@ -1,3 +1,6 @@
-import api from '../base';
+import api from '../base'
 
-// Reports API calls will go here
+export async function getReports(from: string, to: string) {
+  const { data } = await api.get('/reports', { params: { from, to } })
+  return data
+}
