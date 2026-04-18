@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,98 +35,121 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getInventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } from "@/api/inventory/inventory"
 
 interface InventoryItem {
   id: string
   name: string
   category: string
-  sku: string
-  quantity: number
-  minStock: number
-  price: number
+  stockQty: number
+  minStockLevel: number
+  unitPrice: number
   supplier: string
+  expiryDate: string
 }
 
-const initialInventory: InventoryItem[] = [
-  { id: "1", name: "Shampoo - Professional", category: "Hair Products", sku: "HP-001", quantity: 3, minStock: 5, price: 450, supplier: "Beauty Wholesale Co." },
-  { id: "2", name: "Conditioner - Premium", category: "Hair Products", sku: "HP-002", quantity: 8, minStock: 5, price: 380, supplier: "Beauty Wholesale Co." },
-  { id: "3", name: "Hair Color - Black", category: "Hair Products", sku: "HP-003", quantity: 12, minStock: 10, price: 250, supplier: "Color Pro Supplies" },
-  { id: "4", name: "Facial Cream - Anti-aging", category: "Skin Products", sku: "SP-001", quantity: 6, minStock: 3, price: 850, supplier: "Skin Care International" },
-  { id: "5", name: "Nail Polish Set", category: "Nail Products", sku: "NP-001", quantity: 2, minStock: 5, price: 180, supplier: "Nail Art Supplies" },
-  { id: "6", name: "Threading Thread", category: "Grooming", sku: "GR-001", quantity: 20, minStock: 10, price: 50, supplier: "Beauty Essentials" },
-]
+const emptyForm = {
+  name: "",
+  category: "",
+  stockQty: "",
+  minStockLevel: "",
+  unitPrice: "",
+  supplier: "",
+  expiryDate: "",
+}
 
 const STOCK_SORT_OPTIONS = [
   { value: "none", label: "All Stock" },
-  { value: "high", label: "High to Low" },
-  { value: "low", label: "Low to High" },
+  { value: "desc", label: "High to Low" },
+  { value: "asc", label: "Low to High" },
 ]
 
 export default function InventoryPage() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory)
+  const [inventory, setInventory] = useState<InventoryItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [stockSort, setStockSort] = useState("none")
-  const [newItem, setNewItem] = useState({ name: "", category: "", sku: "", quantity: "", minStock: "", price: "", supplier: "" })
-  
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [newItem, setNewItem] = useState(emptyForm)
+
   const [viewItem, setViewItem] = useState<InventoryItem | null>(null)
   const [editItem, setEditItem] = useState<InventoryItem | null>(null)
   const [deleteItem, setDeleteItem] = useState<InventoryItem | null>(null)
 
-  const filteredInventory = useMemo(() => {
-    let result = inventory.filter(
-      (item) =>
-        item.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.sku.toLowerCase().includes(search.toLowerCase()) ||
-        item.category.toLowerCase().includes(search.toLowerCase())
-    )
-    
-    if (stockSort === "high") {
-      result = [...result].sort((a, b) => b.quantity - a.quantity)
-    } else if (stockSort === "low") {
-      result = [...result].sort((a, b) => a.quantity - b.quantity)
+  const fetchInventory = useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await getInventory({
+        name: search || undefined,
+        sortStock: stockSort !== "none" ? (stockSort as 'asc' | 'desc') : undefined,
+        limit: 100,
+      })
+      const list: InventoryItem[] = res?.data ?? res ?? []
+      setInventory(list)
+    } catch (err) {
+      console.error("Failed to fetch inventory", err)
+    } finally {
+      setLoading(false)
     }
-    
-    return result
-  }, [inventory, search, stockSort])
+  }, [search, stockSort])
 
-  const handleAddItem = () => {
-    if (newItem.name && newItem.category && newItem.quantity) {
-      setInventory([
-        ...inventory,
-        {
-          id: Date.now().toString(),
-          name: newItem.name,
-          category: newItem.category,
-          sku: newItem.sku || `SKU-${Date.now()}`,
-          quantity: parseInt(newItem.quantity),
-          minStock: parseInt(newItem.minStock) || 5,
-          price: parseFloat(newItem.price) || 0,
-          supplier: newItem.supplier,
-        },
-      ])
-      setNewItem({ name: "", category: "", sku: "", quantity: "", minStock: "", price: "", supplier: "" })
+  useEffect(() => {
+    fetchInventory()
+  }, [fetchInventory])
+
+  const handleAddItem = async () => {
+    if (!newItem.name || !newItem.category || !newItem.stockQty) return
+    try {
+      await createInventoryItem({
+        name: newItem.name,
+        category: newItem.category,
+        stockQty: parseInt(newItem.stockQty),
+        minStockLevel: parseInt(newItem.minStockLevel) || 5,
+        unitPrice: parseFloat(newItem.unitPrice) || 0,
+        supplier: newItem.supplier,
+        expiryDate: newItem.expiryDate,
+      })
+      setNewItem(emptyForm)
       setIsDialogOpen(false)
+      fetchInventory()
+    } catch (err) {
+      console.error("Failed to create inventory item", err)
     }
   }
 
-  const handleEditSave = () => {
-    if (editItem) {
-      setInventory(inventory.map(i => i.id === editItem.id ? editItem : i))
+  const handleEditSave = async () => {
+    if (!editItem) return
+    try {
+      await updateInventoryItem(editItem.id, {
+        name: editItem.name,
+        stockQty: editItem.stockQty,
+        minStockLevel: editItem.minStockLevel,
+        unitPrice: editItem.unitPrice,
+        supplier: editItem.supplier,
+        expiryDate: editItem.expiryDate,
+      })
       setEditItem(null)
+      fetchInventory()
+    } catch (err) {
+      console.error("Failed to update inventory item", err)
     }
   }
 
-  const handleDelete = () => {
-    if (deleteItem) {
-      setInventory(inventory.filter(i => i.id !== deleteItem.id))
+  const handleDelete = async () => {
+    if (!deleteItem) return
+    try {
+      await deleteInventoryItem(deleteItem.id)
       setDeleteItem(null)
+      fetchInventory()
+    } catch (err) {
+      console.error("Failed to delete inventory item", err)
     }
   }
 
-  const lowStockCount = inventory.filter((item) => item.quantity <= item.minStock).length
-  const totalItems = inventory.reduce((sum, item) => sum + item.quantity, 0)
-  const totalValue = inventory.reduce((sum, item) => sum + item.quantity * item.price, 0)
+  const lowStockCount = inventory.filter((item) => item.stockQty <= item.minStockLevel).length
+  const totalItems = inventory.reduce((sum, item) => sum + item.stockQty, 0)
+  const totalValue = inventory.reduce((sum, item) => sum + item.stockQty * item.unitPrice, 0)
 
   return (
     <DashboardLayout>
@@ -155,23 +178,23 @@ export default function InventoryPage() {
                 <div>
                   <Label>Category</Label>
                   <Select value={newItem.category} onValueChange={(value) => setNewItem({ ...newItem, category: value })}>
-                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectTrigger className="cursor-pointer"><SelectValue placeholder="Select category" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Hair Products">Hair Products</SelectItem>
-                      <SelectItem value="Skin Products">Skin Products</SelectItem>
-                      <SelectItem value="Nail Products">Nail Products</SelectItem>
-                      <SelectItem value="Grooming">Grooming</SelectItem>
-                      <SelectItem value="Equipment">Equipment</SelectItem>
+                      <SelectItem className="cursor-pointer" value="Hair Products">Hair Products</SelectItem>
+                      <SelectItem className="cursor-pointer" value="Skin Products">Skin Products</SelectItem>
+                      <SelectItem className="cursor-pointer" value="Nail Products">Nail Products</SelectItem>
+                      <SelectItem className="cursor-pointer" value="Grooming">Grooming</SelectItem>
+                      <SelectItem className="cursor-pointer" value="Equipment">Equipment</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>SKU</Label><Input value={newItem.sku} onChange={(e) => setNewItem({ ...newItem, sku: e.target.value })} placeholder="SKU-001" /></div>
-                  <div><Label>Price (৳)</Label><Input type="number" value={newItem.price} onChange={(e) => setNewItem({ ...newItem, price: e.target.value })} placeholder="0" /></div>
+                  <div><Label>Price (৳)</Label><Input type="number" value={newItem.unitPrice} onChange={(e) => setNewItem({ ...newItem, unitPrice: e.target.value })} placeholder="0" /></div>
+                  <div><Label>Expiry Date</Label><Input type="date" value={newItem.expiryDate} onChange={(e) => setNewItem({ ...newItem, expiryDate: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Quantity</Label><Input type="number" value={newItem.quantity} onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })} placeholder="0" /></div>
-                  <div><Label>Min Stock Level</Label><Input type="number" value={newItem.minStock} onChange={(e) => setNewItem({ ...newItem, minStock: e.target.value })} placeholder="5" /></div>
+                  <div><Label>Quantity</Label><Input type="number" value={newItem.stockQty} onChange={(e) => setNewItem({ ...newItem, stockQty: e.target.value })} placeholder="0" /></div>
+                  <div><Label>Min Stock Level</Label><Input type="number" value={newItem.minStockLevel} onChange={(e) => setNewItem({ ...newItem, minStockLevel: e.target.value })} placeholder="5" /></div>
                 </div>
                 <div><Label>Supplier</Label><Input value={newItem.supplier} onChange={(e) => setNewItem({ ...newItem, supplier: e.target.value })} placeholder="Enter supplier name" /></div>
                 <Button onClick={handleAddItem} className="w-full">Add Item</Button>
@@ -223,56 +246,64 @@ export default function InventoryPage() {
               </div>
 
               <Select value={stockSort} onValueChange={setStockSort}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-36 cursor-pointer">
                   <ArrowUpDown className="w-4 h-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {STOCK_SORT_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    <SelectItem className="cursor-pointer" key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <span className="text-sm text-muted-foreground ml-auto">{filteredInventory.length} results</span>
+              <span className="text-sm text-muted-foreground ml-auto">{inventory.length} results</span>
             </div>
           </div>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>SKU</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Supplier</TableHead>
+                <TableHead>Expiry</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredInventory.map((item) => (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">Loading...</TableCell>
+                </TableRow>
+              ) : inventory.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No items found</TableCell>
+                </TableRow>
+              ) : inventory.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {item.quantity <= item.minStock && (<AlertTriangle className="w-4 h-4 text-amber-500" />)}
+                      {item.stockQty <= item.minStockLevel && (<AlertTriangle className="w-4 h-4 text-amber-500" />)}
                       <span className="font-medium">{item.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{item.sku}</TableCell>
                   <TableCell><span className="px-2 py-1 bg-secondary rounded-md text-sm">{item.category}</span></TableCell>
                   <TableCell>
-                    <span className={`font-medium ${item.quantity <= item.minStock ? "text-amber-600" : ""}`}>{item.quantity}</span>
-                    <span className="text-muted-foreground text-xs ml-1">(min: {item.minStock})</span>
+                    <span className={`font-medium ${item.stockQty <= item.minStockLevel ? "text-amber-600" : ""}`}>{item.stockQty}</span>
+                    <span className="text-muted-foreground text-xs ml-1">(min: {item.minStockLevel})</span>
                   </TableCell>
-                  <TableCell>৳{item.price.toLocaleString()}</TableCell>
+                  <TableCell>৳{Number(item.unitPrice).toLocaleString()}</TableCell>
                   <TableCell className="text-muted-foreground">{item.supplier}</TableCell>
+                  <TableCell className="text-muted-foreground">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setViewItem(item)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditItem({...item})}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteItem(item)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => setViewItem(item)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => setEditItem({ ...item })}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => setDeleteItem(item)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -291,11 +322,11 @@ export default function InventoryPage() {
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground">Name</Label><p className="font-medium">{viewItem.name}</p></div>
-                <div><Label className="text-muted-foreground">SKU</Label><p className="font-medium">{viewItem.sku}</p></div>
                 <div><Label className="text-muted-foreground">Category</Label><p className="font-medium">{viewItem.category}</p></div>
-                <div><Label className="text-muted-foreground">Quantity</Label><p className="font-medium">{viewItem.quantity} (min: {viewItem.minStock})</p></div>
-                <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">৳{viewItem.price.toLocaleString()}</p></div>
+                <div><Label className="text-muted-foreground">Quantity</Label><p className="font-medium">{viewItem.stockQty} (min: {viewItem.minStockLevel})</p></div>
+                <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">৳{Number(viewItem.unitPrice).toLocaleString()}</p></div>
                 <div><Label className="text-muted-foreground">Supplier</Label><p className="font-medium">{viewItem.supplier}</p></div>
+                <div><Label className="text-muted-foreground">Expiry Date</Label><p className="font-medium">{viewItem.expiryDate ? new Date(viewItem.expiryDate).toLocaleDateString() : "—"}</p></div>
               </div>
             </div>
           )}
@@ -308,13 +339,16 @@ export default function InventoryPage() {
           <DialogHeader><DialogTitle>Edit Inventory Item</DialogTitle></DialogHeader>
           {editItem && (
             <div className="space-y-4 mt-4">
-              <div><Label>Name</Label><Input value={editItem.name} onChange={(e) => setEditItem({...editItem, name: e.target.value})} /></div>
+              <div><Label>Name</Label><Input value={editItem.name} onChange={(e) => setEditItem({ ...editItem, name: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Quantity</Label><Input type="number" value={editItem.quantity} onChange={(e) => setEditItem({...editItem, quantity: parseInt(e.target.value) || 0})} /></div>
-                <div><Label>Min Stock</Label><Input type="number" value={editItem.minStock} onChange={(e) => setEditItem({...editItem, minStock: parseInt(e.target.value) || 0})} /></div>
+                <div><Label>Quantity</Label><Input type="number" value={editItem.stockQty} onChange={(e) => setEditItem({ ...editItem, stockQty: parseInt(e.target.value) || 0 })} /></div>
+                <div><Label>Min Stock</Label><Input type="number" value={editItem.minStockLevel} onChange={(e) => setEditItem({ ...editItem, minStockLevel: parseInt(e.target.value) || 0 })} /></div>
               </div>
-              <div><Label>Price (৳)</Label><Input type="number" value={editItem.price} onChange={(e) => setEditItem({...editItem, price: parseFloat(e.target.value) || 0})} /></div>
-              <div><Label>Supplier</Label><Input value={editItem.supplier} onChange={(e) => setEditItem({...editItem, supplier: e.target.value})} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Price (৳)</Label><Input type="number" value={editItem.unitPrice} onChange={(e) => setEditItem({ ...editItem, unitPrice: parseFloat(e.target.value) || 0 })} /></div>
+                <div><Label>Expiry Date</Label><Input type="date" value={editItem.expiryDate?.toString().split('T')[0] ?? ""} onChange={(e) => setEditItem({ ...editItem, expiryDate: e.target.value })} /></div>
+              </div>
+              <div><Label>Supplier</Label><Input value={editItem.supplier} onChange={(e) => setEditItem({ ...editItem, supplier: e.target.value })} /></div>
               <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
             </div>
           )}
