@@ -31,16 +31,25 @@ export const metadata: Metadata = {
 }
 
 import { Toaster } from 'sonner'
+import { AuthGuard } from '@/components/auth-guard'
+import { cookies } from 'next/headers'
+import { getUserFromToken } from '@/lib/auth-utils'
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('accessToken')?.value || cookieStore.get('token')?.value
+  const initialUser = token ? getUserFromToken(token) : null
+
   return (
     <html lang="en" className={playfair.variable}>
       <body className="font-sans antialiased">
-        {children}
+        <AuthGuard initialUser={initialUser}>
+          {children}
+        </AuthGuard>
         <Toaster position="top-right" richColors />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
