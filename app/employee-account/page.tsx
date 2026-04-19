@@ -86,15 +86,26 @@ export default function EmployeeAccountPage() {
     const fetchUsers = async () => {
         try {
             setLoading(true)
-            const [data, empData] = await Promise.all([
-                 getAllUsers(),
-                 getBasicEmployees()
-            ]);
-            setUsers(Array.isArray(data) ? data : (data?.data || []))
-            setEmployees(Array.isArray(empData) ? empData : (empData?.data || []))
+            
+            // Fetch users (with individual error handling)
+            try {
+                const data = await getAllUsers();
+                setUsers(Array.isArray(data) ? data : (data?.data || []));
+            } catch (err) {
+                console.error("Failed to fetch users:", err);
+                toast.error("Could not load system accounts");
+            }
+
+            // Fetch employees (with individual error handling)
+            try {
+                const empData = await getBasicEmployees();
+                setEmployees(Array.isArray(empData) ? empData : (empData?.data || []));
+            } catch (err) {
+                console.error("Failed to fetch employees:", err);
+            }
+            
         } catch (error) {
-            console.error("Failed to fetch data:", error)
-            toast.error("Failed to load user accounts")
+            console.error("Unexpected error in fetchUsers:", error)
         } finally {
             setLoading(false)
         }
