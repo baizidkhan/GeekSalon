@@ -5,13 +5,30 @@ const api = axios.create({
   withCredentials: true,
 })
 
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  }
+  return config
+})
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Clear the cookie server-side before redirecting, so proxy doesn't loop
+      // Clear the session and redirect
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('token')
+        // Only redirect if not already on login page to avoid loops
+        if (window.location.pathname !== '/login') {
+          window.location.replace('/login')
+        }
+      }
       try { await api.post('/auth/logout') } catch {}
-      window.location.replace('/login')
     }
     return Promise.reject(error)
   }
