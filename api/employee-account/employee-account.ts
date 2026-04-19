@@ -5,6 +5,12 @@ export interface UserManagement {
   useremail: string
   role: string
   permissions: string[]
+  employeeId?: string
+  employee?: {
+    id: string
+    name: string
+    role?: string
+  }
   createdAt: string
   updatedAt: string
 }
