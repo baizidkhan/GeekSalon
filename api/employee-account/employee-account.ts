@@ -21,7 +21,7 @@ export async function createUser(userData: any) {
 }
 
 export async function getAllUsers(email?: string) {
-  const { data } = await api.get('/user-management', { params: { email } })
+  const { data } = await api.get('/user-management', email ? { params: { email } } : {})
   return data
 }
 
