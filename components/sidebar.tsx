@@ -25,43 +25,46 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { logout } from "@/api/auth/auth"
+import { useAuth } from "@/hooks/use-auth"
+import { hasPermission } from "@/lib/auth-utils"
 
 const navigation = [
   {
     title: "Core Operations",
     items: [
-      { name: "Dashboard", href: "/", icon: LayoutDashboard },
-      { name: "Appointments", href: "/appointments", icon: Calendar },
-      { name: "Clients", href: "/clients", icon: Users },
-      { name: "Billing / POS", href: "/billing", icon: CreditCard },
+      { name: "Dashboard", href: "/", icon: LayoutDashboard, permission: "dashboard" },
+      { name: "Appointments", href: "/appointments", icon: Calendar, permission: "appointments" },
+      { name: "Clients", href: "/clients", icon: Users, permission: "clients" },
+      { name: "Billing / POS", href: "/billing", icon: CreditCard, permission: "invoice" },
     ],
   },
   {
     title: "Service & Staff",
     items: [
-      { name: "Services", href: "/services", icon: Scissors },
-      { name: "Employee Account", href: "/employee-account", icon: UserLock },
-      { name: "Employees", href: "/employees", icon: UserCheck },
+      { name: "Services", href: "/services", icon: Scissors, permission: "service" },
+      { name: "Employee Account", href: "/employee-account", icon: UserLock, permission: "user-management" },
+      { name: "Employees", href: "/employees", icon: UserCheck, permission: "employee" },
     ],
   },
   {
     title: "Business",
     items: [
-      { name: "Inventory", href: "/inventory", icon: Package },
-      { name: "Reports", href: "/reports", icon: BarChart3 },
-      { name: "Staff Reports", href: "/staff-reports", icon: UserCog },
+      { name: "Inventory", href: "/inventory", icon: Package, permission: "inventory" },
+      { name: "Reports", href: "/reports", icon: BarChart3, permission: "reports" },
+      { name: "Staff Reports", href: "/staff-reports", icon: UserCog, permission: "reports" },
     ],
   },
   {
     title: "HR & Internal",
     items: [
-      { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
-      { name: "HR & Payroll", href: "/hr-payroll", icon: Building2 },
+      { name: "Attendance", href: "/attendance", icon: ClipboardCheck, permission: "attendance" },
+      { name: "Leave Requests", href: "/leave-request", icon: Calendar, permission: "leave-request" },
+      { name: "HR & Payroll", href: "/hr-payroll", icon: Building2, permission: "hr-payroll" },
     ],
   },
   {
     title: "System",
-    items: [{ name: "Settings", href: "/settings", icon: Settings }],
+    items: [{ name: "Settings", href: "/settings", icon: Settings, permission: "settings" }],
   },
 ]
 
@@ -74,6 +77,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const { user, loading } = useAuth()
 
   const handleLogout = async () => {
     try {
@@ -81,6 +85,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     } catch {
       // ignore errors — redirect regardless
     }
+    localStorage.removeItem('accessToken')
     router.push("/login")
   }
 
@@ -123,44 +128,67 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </button>
       </div>
 
+      {/* User Info */}
+      {!collapsed && user && (
+        <div className="px-5 py-4 border-b border-sidebar-border bg-sidebar-accent/30">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary font-bold text-xs uppercase">
+              {user.useremail.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-sidebar-foreground truncate">{user.useremail}</p>
+              <p className="text-[10px] text-sidebar-foreground/50 capitalize">{user.role}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-5">
-        {navigation.map((section) => (
-          <div key={section.title}>
-            {!collapsed && (
-              <p className="text-[9px] font-semibold tracking-[0.22em] text-sidebar-foreground/35 mb-1.5 px-3 uppercase">
-                {section.title}
-              </p>
-            )}
-            <ul className="space-y-0.5">
-              {section.items.map((item) => {
-                const isActive = pathname === item.href
-                return (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      onClick={handleNavClick}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
-                        collapsed && "justify-center",
-                        isActive
-                          ? "bg-sidebar-primary/14 text-sidebar-primary font-medium"
-                          : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      )}
-                      title={collapsed ? item.name : undefined}
-                    >
-                      <item.icon className={cn(
-                        "w-4 h-4 shrink-0",
-                        isActive ? "text-sidebar-primary" : "text-sidebar-foreground/50"
-                      )} />
-                      {!collapsed && <span className="truncate">{item.name}</span>}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
+        {navigation.map((section) => {
+          const visibleItems = section.items.filter(item =>
+            item.name === "Dashboard" || hasPermission(user, item.permission)
+          )
+
+          if (visibleItems.length === 0) return null
+
+          return (
+            <div key={section.title}>
+              {!collapsed && (
+                <p className="text-[9px] font-semibold tracking-[0.22em] text-sidebar-foreground/35 mb-1.5 px-3 uppercase">
+                  {section.title}
+                </p>
+              )}
+              <ul className="space-y-0.5">
+                {visibleItems.map((item) => {
+                  const isActive = pathname === item.href
+                  return (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
+                        onClick={handleNavClick}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+                          collapsed && "justify-center",
+                          isActive
+                            ? "bg-sidebar-primary/14 text-sidebar-primary font-medium"
+                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        )}
+                        title={collapsed ? item.name : undefined}
+                      >
+                        <item.icon className={cn(
+                          "w-4 h-4 shrink-0",
+                          isActive ? "text-sidebar-primary" : "text-sidebar-foreground/50"
+                        )} />
+                        {!collapsed && <span className="truncate">{item.name}</span>}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )
+        })}
       </nav>
 
       {/* Logout */}
