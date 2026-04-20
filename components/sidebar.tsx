@@ -64,7 +64,10 @@ const navigation = [
   },
   {
     title: "System",
-    items: [{ name: "Settings", href: "/settings", icon: Settings, permission: "settings" }],
+    items: [
+      { name: "Settings", href: "/settings", icon: Settings, permission: "settings" },
+      { name: "Change Password", href: "/update-password", icon: UserLock, permission: "dashboard" },
+    ],
   },
 ]
 
