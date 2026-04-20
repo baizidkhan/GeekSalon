@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:docker": "next dev --turbopack -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint ."
@@ -40,6 +41,7 @@
     "@vercel/analytics": "1.6.1",
     "autoprefixer": "^10.4.20",
     "axios": "^1.15.0",
+    "axios-cache-interceptor": "^1.6.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.1.1",
