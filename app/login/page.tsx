@@ -20,9 +20,21 @@ export default function LoginPage() {
     setError("")
     setLoading(true)
     try {
-      await login(useremail, password)
-      router.push("/")
-    } catch {
+      const data = await login(useremail, password)
+      console.log('Login successful, response data:', data)
+
+      const token = data?.accessToken
+      if (token) {
+        console.log('Storing token in localStorage:', token.substring(0, 10) + '...')
+        localStorage.setItem('accessToken', token)
+      } else {
+        console.warn('No token found in login response!')
+      }
+
+      // Hard redirect to ensure server-side auth gets correct cookies on initial page load
+      window.location.href = "/"
+    } catch (err: any) {
+      console.error('Login failed:', err)
       setError("Invalid email or password. Please try again.")
     } finally {
       setLoading(false)

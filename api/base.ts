@@ -17,25 +17,25 @@ const axiosInstance = axios.create({
 const storage = isServerSide
   ? buildMemoryStorage()
   : buildStorage({
-      find(key) {
-        try {
-          const raw = localStorage.getItem(`aci:${key}`)
-          return raw ? JSON.parse(raw) : undefined
-        } catch {
-          return undefined
-        }
-      },
-      set(key, value) {
-        try {
-          localStorage.setItem(`aci:${key}`, JSON.stringify(value))
-        } catch {
-          // Ignore QuotaExceededError — graceful degradation to in-memory only
-        }
-      },
-      remove(key) {
-        try { localStorage.removeItem(`aci:${key}`) } catch { }
-      },
-    })
+    find(key) {
+      try {
+        const raw = localStorage.getItem(`aci:${key}`)
+        return raw ? JSON.parse(raw) : undefined
+      } catch {
+        return undefined
+      }
+    },
+    set(key, value) {
+      try {
+        localStorage.setItem(`aci:${key}`, JSON.stringify(value))
+      } catch {
+        // Ignore QuotaExceededError — graceful degradation to in-memory only
+      }
+    },
+    remove(key) {
+      try { localStorage.removeItem(`aci:${key}`) } catch { }
+    },
+  })
 
 const api = setupCache(axiosInstance, {
   storage,

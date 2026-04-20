@@ -41,24 +41,26 @@ import {
     deleteUser,
     UserManagement
 } from "@/api/employee-account/employee-account"
+import { getBasicEmployees } from "@/api/employees/employees"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 const AVAILABLE_PERMISSIONS = [
-    { id: "admin", label: "admin" },
-    { id: "storemanger", label: "storemanger" },
     { id: "clients", label: "Clients" },
     { id: "appointments", label: "Appointments" },
     { id: "service", label: "Services" },
     { id: "inventory", label: "Inventory" },
-    { id: "invoice", label: "Invoices" },
+    { id: "invoice", label: "Invoices / POS" },
     { id: "employee", label: "Employees" },
     { id: "attendance", label: "Attendance" },
     { id: "leave-request", label: "Leave Requests" },
     { id: "announcement", label: "Announcements" },
     { id: "user-management", label: "User Management" },
+    { id: "reports", label: "Reports & Analytics" },
+    { id: "hr-payroll", label: "HR & Payroll" },
+    { id: "settings", label: "System Settings" },
 ]
 
 
@@ -68,11 +70,13 @@ export default function EmployeeAccountPage() {
     const [search, setSearch] = useState("")
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
+    const [employees, setEmployees] = useState<any[]>([])
     const [newUser, setNewUser] = useState({
         useremail: "",
         password: "",
         role: "staff",
-        permissions: [] as string[]
+        permissions: [] as string[],
+        employeeId: "none"
     })
 
     const [userToEdit, setUserToEdit] = useState<UserManagement | null>(null)
@@ -81,11 +85,26 @@ export default function EmployeeAccountPage() {
     const fetchUsers = async () => {
         try {
             setLoading(true)
-            const data = await getAllUsers()
-            setUsers(data)
+            
+            // Fetch users (with individual error handling)
+            try {
+                const data = await getAllUsers();
+                setUsers(Array.isArray(data) ? data : (data?.data || []));
+            } catch (err) {
+                console.error("Failed to fetch users:", err);
+                toast.error("Could not load system accounts");
+            }
+
+            // Fetch employees (with individual error handling)
+            try {
+                const empData = await getBasicEmployees();
+                setEmployees(Array.isArray(empData) ? empData : (empData?.data || []));
+            } catch (err) {
+                console.error("Failed to fetch employees:", err);
+            }
+            
         } catch (error) {
-            console.error("Failed to fetch users:", error)
-            toast.error("Failed to load user accounts")
+            console.error("Unexpected error in fetchUsers:", error)
         } finally {
             setLoading(false)
         }
@@ -104,9 +123,13 @@ export default function EmployeeAccountPage() {
     const handleAddUser = async () => {
         if (newUser.useremail && newUser.password && newUser.role) {
             try {
-                await createUser(newUser)
+                const payload = {
+                    ...newUser,
+                    ...(newUser.employeeId && newUser.employeeId !== "none" && { employeeId: newUser.employeeId })
+                };
+                await createUser(payload)
                 toast.success("User account created successfully")
-                setNewUser({ useremail: "", password: "", role: "staff", permissions: [] })
+                setNewUser({ useremail: "", password: "", role: "staff", permissions: [], employeeId: "none" })
                 setIsAddDialogOpen(false)
                 fetchUsers()
             } catch (error: any) {
@@ -203,6 +226,21 @@ export default function EmployeeAccountPage() {
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                                 <div className="space-y-2">
+                                    <Label>Link an Employee Record (Optional)</Label>
+                                    <Select
+                                        value={newUser.employeeId}
+                                        onValueChange={(v) => setNewUser({ ...newUser, employeeId: v })}
+                                    >
+                                        <SelectTrigger><SelectValue placeholder="Select Employee..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No Employee (System User)</SelectItem>
+                                            {employees.map(emp => (
+                                                <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
                                     <Label>Email Address</Label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -285,7 +323,7 @@ export default function EmployeeAccountPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Email Account</TableHead>
+                                <TableHead>Account User</TableHead>
                                 <TableHead>Role</TableHead>
                                 <TableHead>Permissions</TableHead>
                                 <TableHead>Created</TableHead>
@@ -300,7 +338,14 @@ export default function EmployeeAccountPage() {
                             ) : (
                                 filteredUsers.map((user) => (
                                     <TableRow key={user.id}>
-                                        <TableCell className="font-medium">{user.useremail}</TableCell>
+                                        <TableCell>
+                                            <p className="font-medium text-foreground">
+                                                {user.employee?.name || user.useremail}
+                                            </p>
+                                            {user.employee?.name && (
+                                                <p className="text-xs text-muted-foreground">{user.useremail}</p>
+                                            )}
+                                        </TableCell>
                                         <TableCell>{getRoleBadge(user.role)}</TableCell>
                                         <TableCell>
                                             <div className="flex flex-wrap gap-1">
