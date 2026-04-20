@@ -1,4 +1,7 @@
 import api from '../base'
+import { CACHE, consumeStale, markStale } from '@/lib/cache'
+
+const TTL = 60 * 1000 // 1 min — appointments change very frequently
 
 export async function getAppointments(filters?: {
   date?: string
@@ -8,7 +11,11 @@ export async function getAppointments(filters?: {
   page?: number
   limit?: number
 }) {
-  const { data } = await api.get('/appointments', { params: filters })
+  const override = consumeStale(CACHE.APPOINTMENTS)
+  const { data } = await api.get('/appointments', {
+    params: filters,
+    cache: { ttl: TTL, override },
+  })
   return data
 }
 
@@ -25,15 +32,19 @@ export async function createAppointment(payload: {
   status?: string
 }) {
   const { data } = await api.post('/appointments', payload)
+  // Backend auto-creates the client inside the same transaction — invalidate clients cache so the page refreshes
+  markStale(CACHE.APPOINTMENTS, CACHE.DASHBOARD, CACHE.CLIENTS, CACHE.BILLING)
   return data
 }
 
 export async function updateAppointment(phone: string, payload: object) {
   const { data } = await api.patch(`/appointments/${encodeURIComponent(phone)}`, payload)
+  markStale(CACHE.APPOINTMENTS, CACHE.DASHBOARD, CACHE.BILLING, CACHE.CLIENTS)
   return data
 }
 
 export async function deleteAppointment(id: string) {
   const { data } = await api.delete(`/appointments/${id}`)
+  markStale(CACHE.APPOINTMENTS, CACHE.DASHBOARD, CACHE.BILLING, CACHE.CLIENTS)
   return data
 }
