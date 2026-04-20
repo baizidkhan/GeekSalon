@@ -1,14 +1,21 @@
 import api from '../base'
+import { CACHE, consumeStale, markStale } from '@/lib/cache'
+
+const TTL = 2 * 60 * 1000 // 2 min — invoices/transactions are high-frequency
 
 export async function getInvoices(page = 1, limit = 20) {
-  const { data } = await api.get('/invoice', { params: { page, limit } })
+  const override = consumeStale(CACHE.BILLING)
+  const { data } = await api.get('/invoice', {
+    params: { page, limit },
+    cache: { ttl: TTL, override },
+  })
   return data
 }
 
 export async function createInvoice(payload: {
   clientId?: string
   services?: string[]
-  staff: string
+  staff?: string
   assistant?: string
   printBy?: string
   total?: number
@@ -16,15 +23,18 @@ export async function createInvoice(payload: {
   status?: 'Paid' | 'Unpaid' | 'Partial'
 }) {
   const { data } = await api.post('/invoice', payload)
+  markStale(CACHE.BILLING, CACHE.DASHBOARD)
   return data
 }
 
 export async function updateInvoice(id: string, payload: object) {
   const { data } = await api.patch(`/invoice/${id}`, payload)
+  markStale(CACHE.BILLING, CACHE.DASHBOARD)
   return data
 }
 
 export async function deleteInvoice(id: string) {
   const { data } = await api.delete(`/invoice/${id}`)
+  markStale(CACHE.BILLING, CACHE.DASHBOARD)
   return data
 }
