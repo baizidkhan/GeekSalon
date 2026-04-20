@@ -13,14 +13,20 @@ export const CACHE = {
   REPORTS: 'reports',
   STAFF_REPORTS: 'staff-reports',
   USER_MANAGEMENT: 'user-management',
+  BUSINESS_INFO: 'business-info',
+  INVOICE_SETTING: 'invoice-setting',
+  APPOINTMENT_SETTING: 'appointment-setting',
 } as const
-
-// Keys queued for bypass on the very next fetch
-const stale = new Set<string>()
 
 /** Mark one or more resources as stale so the next GET bypasses cache */
 export function markStale(...keys: string[]) {
-  keys.forEach(k => stale.add(k))
+  if (typeof window === 'undefined') return
+  try {
+    const raw = localStorage.getItem('aci-stale-keys')
+    const stale = new Set<string>(raw ? JSON.parse(raw) : [])
+    keys.forEach(k => stale.add(k))
+    localStorage.setItem('aci-stale-keys', JSON.stringify(Array.from(stale)))
+  } catch { }
 }
 
 /**
@@ -28,9 +34,18 @@ export function markStale(...keys: string[]) {
  * Returns true exactly once after markStale — subsequent calls return false.
  */
 export function consumeStale(key: string): boolean {
-  if (stale.has(key)) {
-    stale.delete(key)
-    return true
-  }
+  if (typeof window === 'undefined') return false
+  try {
+    const raw = localStorage.getItem('aci-stale-keys')
+    if (!raw) return false
+    const staleList = JSON.parse(raw) as string[]
+    const stale = new Set<string>(staleList)
+    
+    if (stale.has(key)) {
+      stale.delete(key)
+      localStorage.setItem('aci-stale-keys', JSON.stringify(Array.from(stale)))
+      return true
+    }
+  } catch { }
   return false
 }
