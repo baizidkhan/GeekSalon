@@ -1,4 +1,7 @@
 import api from '../base'
+import { CACHE, consumeStale, markStale } from '@/lib/cache'
+
+const TTL = 10 * 60 * 1000 // 10 min — user accounts rarely change
 
 export interface UserManagement {
   id: string
@@ -9,27 +12,35 @@ export interface UserManagement {
   updatedAt: string
 }
 
-export async function createUser(userData: any) {
-  const { data } = await api.post('/user-management', userData)
-  return data
-}
-
 export async function getAllUsers(email?: string) {
-  const { data } = await api.get('/user-management', { params: { email } })
+  const override = consumeStale(CACHE.USER_MANAGEMENT)
+  const { data } = await api.get('/user-management', {
+    id: CACHE.USER_MANAGEMENT,
+    params: { email },
+    cache: { ttl: TTL, override },
+  })
   return data
 }
 
 export async function getUserById(id: string) {
-  const { data } = await api.get(`/user-management/${id}`)
+  const { data } = await api.get(`/user-management/${id}`, { cache: { ttl: TTL } })
+  return data
+}
+
+export async function createUser(userData: any) {
+  const { data } = await api.post('/user-management', userData)
+  markStale(CACHE.USER_MANAGEMENT)
   return data
 }
 
 export async function updateUser(id: string, userData: any) {
   const { data } = await api.patch(`/user-management/${id}`, userData)
+  markStale(CACHE.USER_MANAGEMENT)
   return data
 }
 
 export async function deleteUser(id: string) {
   const { data } = await api.delete(`/user-management/${id}`)
+  markStale(CACHE.USER_MANAGEMENT)
   return data
 }
