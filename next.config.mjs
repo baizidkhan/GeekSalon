@@ -7,6 +7,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
+  },
 }
 
 export default nextConfig
