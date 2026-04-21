@@ -128,21 +128,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </button>
       </div>
 
-      {/* User Info */}
-      {!collapsed && user && (
-        <div className="px-5 py-4 border-b border-sidebar-border bg-sidebar-accent/30">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary font-bold text-xs uppercase">
-              {user.useremail.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-sidebar-foreground truncate">{user.useremail}</p>
-              <p className="text-[10px] text-sidebar-foreground/50 capitalize">{user.role}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-5">
         {navigation.map((section) => {
@@ -190,6 +175,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           )
         })}
       </nav>
+
+      {/* User Info */}
+      {!collapsed && user && (
+        <div className="px-5 py-4 border-t border-sidebar-border bg-sidebar-accent/30">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary font-bold text-xs uppercase">
+              {user.useremail.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-sidebar-foreground truncate">{user.useremail}</p>
+              <p className="text-[10px] text-sidebar-foreground/50 capitalize">{user.role}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Logout */}
       <button
