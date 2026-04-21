@@ -36,6 +36,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "@/api/appointments/appointments"
+import { getClients } from "@/api/clients/clients"
 import { getActiveServices } from "@/api/services/services"
 import { getBasicEmployees } from "@/api/employees/employees"
 
@@ -49,6 +50,12 @@ interface AppointmentRecord {
   services: string[] | null
   source: string
   status: string
+}
+
+interface ClientOption {
+  id: string
+  name: string
+  phone: string
 }
 
 type AppointmentStatus = "Pending" | "Confirmed" | "Checked In" | "In Service" | "Completed" | "Cancelled"
@@ -136,6 +143,7 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true)
   const [serviceOptions, setServiceOptions] = useState<string[]>([])
   const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
+  const [clientOptions, setClientOptions] = useState<ClientOption[]>([])
 
   const [searchName, setSearchName] = useState("")
   const [searchPhone, setSearchPhone] = useState("")
@@ -150,11 +158,37 @@ export default function AppointmentsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [newAppointment, setNewAppointment] = useState(emptyForm)
+  const [nameLocked, setNameLocked] = useState(false)
+
+  const normalizePhone = (value: string) => value.replace(/\D/g, "")
+
+  const syncClientFromPhone = useCallback((phoneValue: string) => {
+    const normalizedPhone = normalizePhone(phoneValue)
+    if (!normalizedPhone) {
+      setNameLocked(false)
+      setNewAppointment((current) => ({ ...current, client: "" }))
+      return
+    }
+
+    const matchedClient = clientOptions.find((client) => normalizePhone(client.phone) === normalizedPhone)
+    if (matchedClient) {
+      setNameLocked(true)
+      setNewAppointment((current) => ({ ...current, client: matchedClient.name }))
+      return
+    }
+
+    setNameLocked(false)
+    setNewAppointment((current) => ({ ...current, client: "" }))
+  }, [clientOptions])
+
+  useEffect(() => {
+    syncClientFromPhone(newAppointment.phone)
+  }, [newAppointment.phone, clientOptions, syncClientFromPhone])
 
   const fetchAppointments = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await getAppointments()
+      const res = await getAppointments({ page: 1, limit: 1000 })
       const list: AppointmentRecord[] = res?.data ?? res ?? []
       setAppointments(list.map(toUIAppointment))
     } catch (err) {
@@ -162,6 +196,12 @@ export default function AppointmentsPage() {
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  const fetchClients = useCallback(async () => {
+    const res = await getClients(1, 1000)
+    const list = res?.data ?? res ?? []
+    setClientOptions(list.map((client: any) => ({ id: client.id, name: client.name, phone: client.phone })))
   }, [])
 
   useEffect(() => {
@@ -172,7 +212,9 @@ export default function AppointmentsPage() {
     getBasicEmployees()
       .then((list: { name: string }[]) => setEmployeeOptions(list.map((e) => e.name)))
       .catch(console.error)
-  }, [fetchAppointments])
+    fetchClients()
+      .catch(console.error)
+  }, [fetchAppointments, fetchClients])
 
   const filteredAppointments = appointments.filter((apt) => {
     const matchesName = apt.client.toLowerCase().includes(searchName.toLowerCase())
@@ -238,6 +280,7 @@ export default function AppointmentsPage() {
         source: newAppointment.source,
       })
       setNewAppointment(emptyForm)
+      setNameLocked(false)
       setIsDialogOpen(false)
       fetchAppointments()
     } catch (err) {
@@ -349,422 +392,87 @@ export default function AppointmentsPage() {
   }
 
   return (
-      <div className="premium-page p-4 sm:p-6 md:p-8">
-        <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Schedule</p>
-            <h1 className="text-2xl font-semibold text-foreground">Appointments</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Manage your salon appointments</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="import-csv">
-              <input
-                id="import-csv"
-                type="file"
-                accept=".csv"
-                onChange={handleImportCSV}
-                className="hidden"
-              />
-              <Button variant="outline" asChild>
-                <span className="cursor-pointer">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Import CSV
-                </span>
-              </Button>
-            </label>
-            <Button variant="outline" onClick={exportToCSV}>
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
+    <div className="premium-page p-4 sm:p-6 md:p-8">
+      <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Schedule</p>
+          <h1 className="text-2xl font-semibold text-foreground">Appointments</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Manage your salon appointments</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="import-csv">
+            <input
+              id="import-csv"
+              type="file"
+              accept=".csv"
+              onChange={handleImportCSV}
+              className="hidden"
+            />
+            <Button variant="outline" asChild>
+              <span className="cursor-pointer">
+                <Upload className="w-4 h-4 mr-2" />
+                Import CSV
+              </span>
             </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Appointment
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Schedule New Appointment</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <div>
-                    <Label>Client Name</Label>
-                    <Input
-                      value={newAppointment.client}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, client: e.target.value })}
-                      placeholder="Enter client name"
-                    />
-                  </div>
-                  <div>
-                    <Label>Phone Number</Label>
-                    <Input
-                      value={newAppointment.phone}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, phone: e.target.value })}
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                  <div>
-                    <Label>Service</Label>
-                    <Select
-                      value={newAppointment.service}
-                      onValueChange={(value) => setNewAppointment({ ...newAppointment, service: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {serviceOptions.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Employee</Label>
-                    <Select
-                      value={newAppointment.employee}
-                      onValueChange={(value) => setNewAppointment({ ...newAppointment, employee: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select employee" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employeeOptions.map((e) => (
-                          <SelectItem key={e} value={e}>{e}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Date</Label>
-                      <Input
-                        type="date"
-                        value={newAppointment.date}
-                        onChange={(e) => setNewAppointment({ ...newAppointment, date: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Time</Label>
-                      <Input
-                        type="time"
-                        value={newAppointment.time}
-                        onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Source</Label>
-                    <Select
-                      value={newAppointment.source}
-                      onValueChange={(value: AppointmentSource) =>
-                        setNewAppointment({ ...newAppointment, source: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Online">Online</SelectItem>
-                        <SelectItem value="Walk In">Walk In</SelectItem>
-                        <SelectItem value="Call">Call</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button onClick={handleAddAppointment} className="w-full">
-                    Schedule Appointment
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
-        <div className="bg-card rounded-xl border border-border">
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="relative flex-1 min-w-[200px] max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by client name..."
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <div className="relative flex-1 min-w-[200px] max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by phone number..."
-                  value={searchPhone}
-                  onChange={(e) => setSearchPhone(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={timeFilter} onValueChange={setTimeFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeFilterOptions.map((option) => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All Sources">All Sources</SelectItem>
-                  {sourceOptions.map((option) => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All Status">All Status</SelectItem>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                {loading ? "Loading..." : `${filteredAppointments.length} results`}
-              </span>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Phone</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Service</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Date & Time</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Source</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Loading appointments...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredAppointments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No appointments found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedAppointments.map((appointment) => (
-                    <TableRow key={appointment.id}>
-                      <TableCell className="font-medium">{appointment.client}</TableCell>
-                      <TableCell>{appointment.phone}</TableCell>
-                      <TableCell>{appointment.service}</TableCell>
-                      <TableCell>{appointment.employee}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <span>{appointment.date}</span>
-                          <Clock className="w-4 h-4 text-muted-foreground ml-2" />
-                          <span>{formatTimeDisplay(appointment.time)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{appointment.source}</span>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className={`${getStatusButtonStyle(appointment.status)} min-w-[110px] justify-between`}
-                            >
-                              {appointment.status}
-                              <ChevronDown className="w-4 h-4 ml-1" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            {statusOptions.map((status) => (
-                              <DropdownMenuItem
-                                key={status}
-                                onClick={() => handleStatusChange(appointment, status)}
-                                className={appointment.status === status ? "bg-accent" : ""}
-                              >
-                                {status}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedAppointment(appointment)
-                                setViewDialogOpen(true)
-                              }}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedAppointment({ ...appointment })
-                                setEditDialogOpen(true)
-                              }}
-                            >
-                              <Pencil className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => {
-                                setSelectedAppointment(appointment)
-                                setDeleteDialogOpen(true)
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          {!loading && filteredAppointments.length > 0 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
-              <span>
-                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredAppointments.length)} of {filteredAppointments.length} entries
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </Button>
-                <span className="text-xs">Page {currentPage} of {totalPages}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* View Dialog */}
-        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Appointment Details</DialogTitle>
-            </DialogHeader>
-            {selectedAppointment && (
-              <div className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground">Client Name</Label>
-                    <p className="font-medium">{selectedAppointment.client}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Phone</Label>
-                    <p className="font-medium">{selectedAppointment.phone}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Service</Label>
-                    <p className="font-medium">{selectedAppointment.service}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Employee</Label>
-                    <p className="font-medium">{selectedAppointment.employee}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Date</Label>
-                    <p className="font-medium">{selectedAppointment.date}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Time</Label>
-                    <p className="font-medium">{formatTimeDisplay(selectedAppointment.time)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Source</Label>
-                    <p className="font-medium">{selectedAppointment.source}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Status</Label>
-                    <p className="font-medium">{selectedAppointment.status}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Appointment</DialogTitle>
-            </DialogHeader>
-            {selectedAppointment && (
-              <div className="space-y-4 mt-4">
-                <div>
-                  <Label>Client Name</Label>
+          </label>
+          <Button variant="outline" onClick={exportToCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Dialog
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open)
+              if (!open) {
+                setNewAppointment(emptyForm)
+                setNameLocked(false)
+                return
+              }
+              fetchClients().catch(console.error)
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                New Appointment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[620px]">
+              <DialogHeader>
+                <DialogTitle>Schedule New Appointment</DialogTitle>
+              </DialogHeader>
+              <div className="mt-2 space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold tracking-wide">Phone Number</Label>
                   <Input
-                    value={selectedAppointment.client}
-                    onChange={(e) =>
-                      setSelectedAppointment({ ...selectedAppointment, client: e.target.value })
-                    }
+                    value={newAppointment.phone}
+                    onChange={(e) => {
+                      const nextPhone = e.target.value
+                      setNewAppointment({ ...newAppointment, phone: nextPhone })
+                      syncClientFromPhone(nextPhone)
+                    }}
+                    placeholder="Enter phone number"
                   />
                 </div>
-                <div>
-                  <Label>Phone Number</Label>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold tracking-wide">Client Name</Label>
                   <Input
-                    value={selectedAppointment.phone}
-                    readOnly
-                    className="bg-muted cursor-not-allowed"
+                    value={newAppointment.client}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, client: e.target.value })}
+                    placeholder={nameLocked ? "Client name matched from phone" : "Enter client name"}
+                    readOnly={nameLocked}
+                    disabled={nameLocked}
+                    className={nameLocked ? "bg-muted cursor-not-allowed" : undefined}
                   />
                 </div>
-                <div>
-                  <Label>Service</Label>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold tracking-wide">Service</Label>
                   <Select
-                    value={selectedAppointment.service}
-                    onValueChange={(value) =>
-                      setSelectedAppointment({ ...selectedAppointment, service: value })
-                    }
+                    value={newAppointment.service}
+                    onValueChange={(value) => setNewAppointment({ ...newAppointment, service: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select service" />
                     </SelectTrigger>
                     <SelectContent>
                       {serviceOptions.map((s) => (
@@ -773,16 +481,14 @@ export default function AppointmentsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Employee</Label>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold tracking-wide">Employee</Label>
                   <Select
-                    value={selectedAppointment.employee}
-                    onValueChange={(value) =>
-                      setSelectedAppointment({ ...selectedAppointment, employee: value })
-                    }
+                    value={newAppointment.employee}
+                    onValueChange={(value) => setNewAppointment({ ...newAppointment, employee: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select employee" />
                     </SelectTrigger>
                     <SelectContent>
                       {employeeOptions.map((e) => (
@@ -791,75 +497,430 @@ export default function AppointmentsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Date</Label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-semibold tracking-wide">Date</Label>
                     <Input
                       type="date"
-                      value={selectedAppointment.date}
-                      onChange={(e) =>
-                        setSelectedAppointment({ ...selectedAppointment, date: e.target.value })
-                      }
+                      value={newAppointment.date}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, date: e.target.value })}
                     />
                   </div>
-                  <div>
-                    <Label>Time</Label>
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-semibold tracking-wide">Time</Label>
                     <Input
                       type="time"
-                      value={selectedAppointment.time}
-                      onChange={(e) =>
-                        setSelectedAppointment({ ...selectedAppointment, time: e.target.value })
-                      }
+                      value={newAppointment.time}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
                     />
                   </div>
                 </div>
-                <div>
-                  <Label>Status</Label>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold tracking-wide">Source</Label>
                   <Select
-                    value={selectedAppointment.status}
-                    onValueChange={(value: AppointmentStatus) =>
-                      setSelectedAppointment({ ...selectedAppointment, status: value })
+                    value={newAppointment.source}
+                    onValueChange={(value: AppointmentSource) =>
+                      setNewAppointment({ ...newAppointment, source: value })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {statusOptions.map((status) => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                      ))}
+                      <SelectItem value="Online">Online</SelectItem>
+                      <SelectItem value="Walk In">Walk In</SelectItem>
+                      <SelectItem value="Call">Call</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={handleEditAppointment} className="w-full">
-                  Save Changes
+                <Button onClick={handleAddAppointment} className="mt-1 w-full h-10">
+                  Schedule Appointment
                 </Button>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Appointment</DialogTitle>
-            </DialogHeader>
-            <p className="text-muted-foreground">
-              Are you sure you want to delete the appointment for{" "}
-              <span className="font-medium text-foreground">{selectedAppointment?.client}</span>?
-              This action cannot be undone.
-            </p>
-            <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteAppointment}>
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      <div className="bg-card rounded-xl border border-border">
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by client name..."
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by phone number..."
+                value={searchPhone}
+                onChange={(e) => setSearchPhone(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {timeFilterOptions.map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Sources">All Sources</SelectItem>
+                {sourceOptions.map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Status">All Status</SelectItem>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              {loading ? "Loading..." : `${filteredAppointments.length} results`}
+            </span>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Phone</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Service</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Date & Time</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Source</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    Loading appointments...
+                  </TableCell>
+                </TableRow>
+              ) : filteredAppointments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    No appointments found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedAppointments.map((appointment) => (
+                  <TableRow key={appointment.id}>
+                    <TableCell className="font-medium">{appointment.client}</TableCell>
+                    <TableCell>{appointment.phone}</TableCell>
+                    <TableCell>{appointment.service}</TableCell>
+                    <TableCell>{appointment.employee}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span>{appointment.date}</span>
+                        <Clock className="w-4 h-4 text-muted-foreground ml-2" />
+                        <span>{formatTimeDisplay(appointment.time)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{appointment.source}</span>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`${getStatusButtonStyle(appointment.status)} min-w-[110px] justify-between`}
+                          >
+                            {appointment.status}
+                            <ChevronDown className="w-4 h-4 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          {statusOptions.map((status) => (
+                            <DropdownMenuItem
+                              key={status}
+                              onClick={() => handleStatusChange(appointment, status)}
+                              className={appointment.status === status ? "bg-accent" : ""}
+                            >
+                              {status}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedAppointment(appointment)
+                              setViewDialogOpen(true)
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedAppointment({ ...appointment })
+                              setEditDialogOpen(true)
+                            }}
+                          >
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => {
+                              setSelectedAppointment(appointment)
+                              setDeleteDialogOpen(true)
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        {!loading && filteredAppointments.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+            <span>
+              Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredAppointments.length)} of {filteredAppointments.length} entries
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              <span className="text-xs">Page {currentPage} of {totalPages}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* View Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Appointment Details</DialogTitle>
+          </DialogHeader>
+          {selectedAppointment && (
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Client Name</Label>
+                  <p className="font-medium">{selectedAppointment.client}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Phone</Label>
+                  <p className="font-medium">{selectedAppointment.phone}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Service</Label>
+                  <p className="font-medium">{selectedAppointment.service}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Employee</Label>
+                  <p className="font-medium">{selectedAppointment.employee}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Date</Label>
+                  <p className="font-medium">{selectedAppointment.date}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Time</Label>
+                  <p className="font-medium">{formatTimeDisplay(selectedAppointment.time)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Source</Label>
+                  <p className="font-medium">{selectedAppointment.source}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Status</Label>
+                  <p className="font-medium">{selectedAppointment.status}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[620px]">
+          <DialogHeader>
+            <DialogTitle>Edit Appointment</DialogTitle>
+          </DialogHeader>
+          {selectedAppointment && (
+            <div className="mt-2 space-y-5">
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Client Name</Label>
+                <Input
+                  value={selectedAppointment.client}
+                  onChange={(e) =>
+                    setSelectedAppointment({ ...selectedAppointment, client: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Phone Number</Label>
+                <Input
+                  value={selectedAppointment.phone}
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Service</Label>
+                <Select
+                  value={selectedAppointment.service}
+                  onValueChange={(value) =>
+                    setSelectedAppointment({ ...selectedAppointment, service: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceOptions.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Employee</Label>
+                <Select
+                  value={selectedAppointment.employee}
+                  onValueChange={(value) =>
+                    setSelectedAppointment({ ...selectedAppointment, employee: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employeeOptions.map((e) => (
+                      <SelectItem key={e} value={e}>{e}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold tracking-wide">Date</Label>
+                  <Input
+                    type="date"
+                    value={selectedAppointment.date}
+                    onChange={(e) =>
+                      setSelectedAppointment({ ...selectedAppointment, date: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold tracking-wide">Time</Label>
+                  <Input
+                    type="time"
+                    value={selectedAppointment.time}
+                    onChange={(e) =>
+                      setSelectedAppointment({ ...selectedAppointment, time: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Status</Label>
+                <Select
+                  value={selectedAppointment.status}
+                  onValueChange={(value: AppointmentStatus) =>
+                    setSelectedAppointment({ ...selectedAppointment, status: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((status) => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleEditAppointment} className="mt-1 h-10 w-full">
+                Save Changes
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Appointment</DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            Are you sure you want to delete the appointment for{" "}
+            <span className="font-medium text-foreground">{selectedAppointment?.client}</span>?
+            This action cannot be undone.
+          </p>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAppointment}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
