@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -14,6 +15,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -38,7 +40,8 @@ import {
 import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "@/api/appointments/appointments"
 import { getClients } from "@/api/clients/clients"
 import { getActiveServices } from "@/api/services/services"
-import { getBasicEmployees } from "@/api/employees/employees"
+import { getStylists } from "@/api/employees/employees"
+import { toast } from "sonner"
 
 interface AppointmentRecord {
   id: string
@@ -138,7 +141,10 @@ const emptyForm = {
   source: "Online" as AppointmentSource,
 }
 
+type NewAppointmentField = "phone" | "client" | "service" | "employee" | "date" | "time"
+
 export default function AppointmentsPage() {
+  const router = useRouter()
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [serviceOptions, setServiceOptions] = useState<string[]>([])
@@ -159,8 +165,15 @@ export default function AppointmentsPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [newAppointment, setNewAppointment] = useState(emptyForm)
   const [nameLocked, setNameLocked] = useState(false)
+  const [newAppointmentErrors, setNewAppointmentErrors] = useState<Partial<Record<NewAppointmentField, string>>>({})
 
-  const normalizePhone = (value: string) => value.replace(/\D/g, "")
+  const normalizePhone = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "")
+    if (digitsOnly.startsWith("8801") && digitsOnly.length === 13) return digitsOnly
+    if (digitsOnly.startsWith("01") && digitsOnly.length === 11) return digitsOnly
+    if (digitsOnly.startsWith("1") && digitsOnly.length === 10) return `0${digitsOnly}`
+    return digitsOnly
+  }
 
   const syncClientFromPhone = useCallback((phoneValue: string) => {
     const normalizedPhone = normalizePhone(phoneValue)
@@ -209,7 +222,7 @@ export default function AppointmentsPage() {
     getActiveServices()
       .then((list: { name: string }[]) => setServiceOptions(list.map((s) => s.name)))
       .catch(console.error)
-    getBasicEmployees()
+    getStylists()
       .then((list: { name: string }[]) => setEmployeeOptions(list.map((e) => e.name)))
       .catch(console.error)
     fetchClients()
@@ -267,12 +280,35 @@ export default function AppointmentsPage() {
   const totalPages = Math.max(1, Math.ceil(filteredAppointments.length / PAGE_SIZE))
   const paginatedAppointments = filteredAppointments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
+  const clearNewAppointmentError = (field: NewAppointmentField) => {
+    setNewAppointmentErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+  }
+
+  const validateNewAppointment = () => {
+    const errors: Partial<Record<NewAppointmentField, string>> = {}
+    if (!newAppointment.phone.trim()) errors.phone = "Please fill this field."
+    if (!newAppointment.client.trim()) errors.client = "Please fill this field."
+    if (!newAppointment.service.trim()) errors.service = "Please fill this field."
+    if (!newAppointment.employee.trim()) errors.employee = "Please fill this field."
+    if (!newAppointment.date.trim()) errors.date = "Please fill this field."
+    if (!newAppointment.time.trim()) errors.time = "Please fill this field."
+    return errors
+  }
+
   const handleAddAppointment = async () => {
-    if (!newAppointment.client || !newAppointment.service || !newAppointment.date) return
+    const errors = validateNewAppointment()
+    setNewAppointmentErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
     try {
       await createAppointment({
         clientName: newAppointment.client,
-        phoneNumber: newAppointment.phone,
+        phoneNumber: normalizePhone(newAppointment.phone),
         date: newAppointment.date,
         time: newAppointment.time,
         staff: newAppointment.employee || undefined,
@@ -280,18 +316,36 @@ export default function AppointmentsPage() {
         source: newAppointment.source,
       })
       setNewAppointment(emptyForm)
+      setNewAppointmentErrors({})
       setNameLocked(false)
       setIsDialogOpen(false)
       fetchAppointments()
-    } catch (err) {
+      toast.success("Appointment created successfully")
+    } catch (err: any) {
+      const backendMessage = err?.response?.data?.message
+      const parsedMessage = Array.isArray(backendMessage)
+        ? backendMessage.join(", ")
+        : backendMessage || "Failed to create appointment"
+      toast.error(parsedMessage)
       console.error("Failed to create appointment", err)
     }
   }
 
   const handleStatusChange = async (appointment: Appointment, newStatus: AppointmentStatus) => {
+    if (newStatus === "Confirmed" && !appointment.employee?.trim()) {
+      console.error("Cannot confirm appointment without assigning a stylist")
+      return
+    }
+
     try {
-      await updateAppointment(appointment.phone, { status: newStatus })
+      await updateAppointment(appointment.id, {
+        status: newStatus,
+        staff: appointment.employee || undefined,
+      })
       fetchAppointments()
+      if (newStatus === "Confirmed") {
+        router.push("/billing")
+      }
     } catch (err) {
       console.error("Failed to update status", err)
     }
@@ -300,7 +354,7 @@ export default function AppointmentsPage() {
   const handleEditAppointment = async () => {
     if (!selectedAppointment) return
     try {
-      await updateAppointment(selectedAppointment.phone, {
+      await updateAppointment(selectedAppointment.id, {
         clientName: selectedAppointment.client,
         date: selectedAppointment.date,
         time: selectedAppointment.time,
@@ -425,6 +479,7 @@ export default function AppointmentsPage() {
               setIsDialogOpen(open)
               if (!open) {
                 setNewAppointment(emptyForm)
+                setNewAppointmentErrors({})
                 setNameLocked(false)
                 return
               }
@@ -440,36 +495,53 @@ export default function AppointmentsPage() {
             <DialogContent className="sm:max-w-[620px]">
               <DialogHeader>
                 <DialogTitle>Schedule New Appointment</DialogTitle>
+                <DialogDescription>
+                  Fill in the required details to create a new appointment.
+                </DialogDescription>
               </DialogHeader>
               <div className="mt-2 space-y-5">
                 <div className="space-y-2">
-                  <Label className="text-[13px] font-semibold tracking-wide">Phone Number</Label>
+                  <Label className="text-[13px] font-semibold tracking-wide">Phone Number <span className="text-destructive">*</span></Label>
                   <Input
                     value={newAppointment.phone}
                     onChange={(e) => {
                       const nextPhone = e.target.value
                       setNewAppointment({ ...newAppointment, phone: nextPhone })
+                      if (nextPhone.trim()) clearNewAppointmentError("phone")
                       syncClientFromPhone(nextPhone)
                     }}
                     placeholder="Enter phone number"
                   />
+                  {newAppointmentErrors.phone && (
+                    <p className="text-xs text-destructive">{newAppointmentErrors.phone}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[13px] font-semibold tracking-wide">Client Name</Label>
+                  <Label className="text-[13px] font-semibold tracking-wide">Client Name <span className="text-destructive">*</span></Label>
                   <Input
                     value={newAppointment.client}
-                    onChange={(e) => setNewAppointment({ ...newAppointment, client: e.target.value })}
+                    onChange={(e) => {
+                      const nextClient = e.target.value
+                      setNewAppointment({ ...newAppointment, client: nextClient })
+                      if (nextClient.trim()) clearNewAppointmentError("client")
+                    }}
                     placeholder={nameLocked ? "Client name matched from phone" : "Enter client name"}
                     readOnly={nameLocked}
                     disabled={nameLocked}
                     className={nameLocked ? "bg-muted cursor-not-allowed" : undefined}
                   />
+                  {newAppointmentErrors.client && (
+                    <p className="text-xs text-destructive">{newAppointmentErrors.client}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[13px] font-semibold tracking-wide">Service</Label>
+                  <Label className="text-[13px] font-semibold tracking-wide">Service <span className="text-destructive">*</span></Label>
                   <Select
                     value={newAppointment.service}
-                    onValueChange={(value) => setNewAppointment({ ...newAppointment, service: value })}
+                    onValueChange={(value) => {
+                      setNewAppointment({ ...newAppointment, service: value })
+                      if (value.trim()) clearNewAppointmentError("service")
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select service" />
@@ -480,12 +552,18 @@ export default function AppointmentsPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {newAppointmentErrors.service && (
+                    <p className="text-xs text-destructive">{newAppointmentErrors.service}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[13px] font-semibold tracking-wide">Employee</Label>
+                  <Label className="text-[13px] font-semibold tracking-wide">Employee <span className="text-destructive">*</span></Label>
                   <Select
                     value={newAppointment.employee}
-                    onValueChange={(value) => setNewAppointment({ ...newAppointment, employee: value })}
+                    onValueChange={(value) => {
+                      setNewAppointment({ ...newAppointment, employee: value })
+                      if (value.trim()) clearNewAppointmentError("employee")
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select employee" />
@@ -496,23 +574,40 @@ export default function AppointmentsPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {newAppointmentErrors.employee && (
+                    <p className="text-xs text-destructive">{newAppointmentErrors.employee}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[13px] font-semibold tracking-wide">Date</Label>
+                    <Label className="text-[13px] font-semibold tracking-wide">Date <span className="text-destructive">*</span></Label>
                     <Input
                       type="date"
                       value={newAppointment.date}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, date: e.target.value })}
+                      onChange={(e) => {
+                        const nextDate = e.target.value
+                        setNewAppointment({ ...newAppointment, date: nextDate })
+                        if (nextDate.trim()) clearNewAppointmentError("date")
+                      }}
                     />
+                    {newAppointmentErrors.date && (
+                      <p className="text-xs text-destructive">{newAppointmentErrors.date}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[13px] font-semibold tracking-wide">Time</Label>
+                    <Label className="text-[13px] font-semibold tracking-wide">Time <span className="text-destructive">*</span></Label>
                     <Input
                       type="time"
                       value={newAppointment.time}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
+                      onChange={(e) => {
+                        const nextTime = e.target.value
+                        setNewAppointment({ ...newAppointment, time: nextTime })
+                        if (nextTime.trim()) clearNewAppointmentError("time")
+                      }}
                     />
+                    {newAppointmentErrors.time && (
+                      <p className="text-xs text-destructive">{newAppointmentErrors.time}</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -749,6 +844,9 @@ export default function AppointmentsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Appointment Details</DialogTitle>
+            <DialogDescription>
+              Review the selected appointment information.
+            </DialogDescription>
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-4 mt-4">
@@ -796,6 +894,9 @@ export default function AppointmentsPage() {
         <DialogContent className="sm:max-w-[620px]">
           <DialogHeader>
             <DialogTitle>Edit Appointment</DialogTitle>
+            <DialogDescription>
+              Update appointment information and save your changes.
+            </DialogDescription>
           </DialogHeader>
           {selectedAppointment && (
             <div className="mt-2 space-y-5">
@@ -905,6 +1006,9 @@ export default function AppointmentsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Appointment</DialogTitle>
+            <DialogDescription>
+              This action permanently removes the selected appointment.
+            </DialogDescription>
           </DialogHeader>
           <p className="text-muted-foreground">
             Are you sure you want to delete the appointment for{" "}
