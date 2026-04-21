@@ -54,6 +54,7 @@ interface Invoice {
   } | null
   services: string[]
   amount: number
+  paidAmount?: number
   paymentMethod: "Cash" | "bKash" | "Card"
   sortAt: string
   date: string
@@ -87,6 +88,7 @@ function mapInvoice(inv: any): Invoice {
       : null,
     services: inv.services ?? [],
     amount: Number(inv.total),
+    paidAmount: inv.paidAmount != null ? Number(inv.paidAmount) : undefined,
     paymentMethod: inv.paymentMethod,
     sortAt,
     date: sortAt ? sortAt.split("T")[0] : "",
@@ -105,6 +107,7 @@ export default function BillingPage() {
   const [search, setSearch] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [customDateFrom, setCustomDateFrom] = useState("")
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
@@ -114,6 +117,7 @@ export default function BillingPage() {
     printBy: "",
     services: "",
     total: "",
+    paidAmount: "",
     paymentMethod: "Cash" as "Cash" | "bKash" | "Card",
     status: "Unpaid" as "Paid" | "Unpaid" | "Partial",
   })
@@ -167,17 +171,17 @@ export default function BillingPage() {
   }
 
   const filteredInvoices = useMemo(() => {
-    return invoices.filter(
-      (inv) =>
-        (inv.client.toLowerCase().includes(search.toLowerCase()) ||
-          inv.invoiceNo.toLowerCase().includes(search.toLowerCase())) &&
-        filterByDate(inv.date)
-    )
-  }, [invoices, search, timeFilter, customDateFrom, customDateTo])
+    return invoices.filter((inv) => {
+      const matchesSearch = inv.client.toLowerCase().includes(search.toLowerCase()) || inv.invoiceNo.toLowerCase().includes(search.toLowerCase())
+      const matchesDate = filterByDate(inv.date)
+      const matchesStatus = statusFilter === "all" || inv.status === statusFilter
+      return matchesSearch && matchesDate && matchesStatus
+    })
+  }, [invoices, search, timeFilter, customDateFrom, customDateTo, statusFilter])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, timeFilter, customDateFrom, customDateTo])
+  }, [search, timeFilter, customDateFrom, customDateTo, statusFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / PAGE_SIZE))
   const paginatedInvoices = filteredInvoices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -189,10 +193,11 @@ export default function BillingPage() {
         printBy: newInvoice.status === "Paid" ? newInvoice.printBy || undefined : undefined,
         services: newInvoice.services ? newInvoice.services.split(",").map(s => s.trim()) : [],
         total: newInvoice.total ? parseFloat(newInvoice.total) : undefined,
+        paidAmount: newInvoice.status === "Partial" && newInvoice.paidAmount ? parseFloat(newInvoice.paidAmount) : undefined,
         paymentMethod: newInvoice.paymentMethod,
         status: newInvoice.status,
       })
-      setNewInvoice({ clientId: "", printBy: "", services: "", total: "", paymentMethod: "Cash", status: "Unpaid" })
+      setNewInvoice({ clientId: "", printBy: "", services: "", total: "", paidAmount: "", paymentMethod: "Cash", status: "Unpaid" })
       setIsDialogOpen(false)
       fetchInvoices()
     } catch (err) {
@@ -207,6 +212,7 @@ export default function BillingPage() {
         total: editInvoiceState.amount,
         status: editInvoiceState.status,
         paymentMethod: editInvoiceState.paymentMethod,
+        paidAmount: editInvoiceState.status === "Partial" ? (editInvoiceState.paidAmount ?? null) : null,
       })
       setEditInvoiceState(null)
       fetchInvoices()
@@ -309,6 +315,15 @@ export default function BillingPage() {
                       <Input value={newInvoice.printBy} onChange={(e) => setNewInvoice({ ...newInvoice, printBy: e.target.value })} placeholder="Employee name who printed" />
                     </div>
                   )}
+                  {newInvoice.status === "Partial" && (
+                    <div>
+                      <Label>Amount Paid (৳)</Label>
+                      <Input type="number" value={newInvoice.paidAmount} onChange={(e) => setNewInvoice({ ...newInvoice, paidAmount: e.target.value })} placeholder="Enter amount paid so far" />
+                      {newInvoice.paidAmount && newInvoice.total && (
+                        <p className="text-xs text-muted-foreground mt-1">Due: ৳{Math.max(0, parseFloat(newInvoice.total) - parseFloat(newInvoice.paidAmount)).toLocaleString()}</p>
+                      )}
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground bg-muted/40 rounded-md p-3">
                     <div>
                       <p className="font-medium text-foreground/70">Invoice No</p>
@@ -342,6 +357,25 @@ export default function BillingPage() {
         </div>
 
         <div className="bg-card rounded-xl border border-border">
+          <div className="flex gap-1 p-3 border-b border-border">
+            {[
+              { value: "all", label: "All" },
+              { value: "Paid", label: "Paid" },
+              { value: "Partial", label: "Partial" },
+              { value: "Unpaid", label: "Pending" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setStatusFilter(opt.value)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${statusFilter === opt.value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+              >
+                {opt.label}
+                <span className="ml-1.5 text-xs opacity-70">
+                  ({invoices.filter(i => opt.value === "all" ? true : i.status === opt.value).length})
+                </span>
+              </button>
+            ))}
+          </div>
           <div className="p-4 border-b border-border">
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-[200px] max-w-sm">
@@ -406,7 +440,14 @@ export default function BillingPage() {
                     <TableCell>{invoice.client}</TableCell>
                     <TableCell>{invoice.appointment ? `${invoice.appointment.date ?? ''}${invoice.appointment.date && invoice.appointment.time ? ' ' : ''}${invoice.appointment.time ?? ''}`.trim() : 'Linked appointment'}</TableCell>
                     <TableCell><div className="text-sm">{invoice.services.join(", ")}</div></TableCell>
-                    <TableCell className="font-medium">৳{invoice.amount.toLocaleString()}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>৳{invoice.amount.toLocaleString()}</div>
+                      {invoice.status === "Partial" && (
+                        <div className="text-xs text-muted-foreground font-normal">
+                          Paid: ৳{(invoice.paidAmount ?? 0).toLocaleString()} · Due: ৳{Math.max(0, invoice.amount - (invoice.paidAmount ?? 0)).toLocaleString()}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>{invoice.paymentMethod}</TableCell>
                     <TableCell>{invoice.date}</TableCell>
                     <TableCell><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>{getStatusLabel(invoice.status)}</span></TableCell>
@@ -466,6 +507,12 @@ export default function BillingPage() {
                 <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
                 <div><Label className="text-muted-foreground">Services</Label><p className="font-medium">{viewInvoice.services.join(", ")}</p></div>
                 <div><Label className="text-muted-foreground">Amount</Label><p className="font-medium">৳{viewInvoice.amount.toLocaleString()}</p></div>
+                {viewInvoice.status === "Partial" && (
+                  <>
+                    <div><Label className="text-muted-foreground">Amount Paid</Label><p className="font-medium text-green-600">৳{(viewInvoice.paidAmount ?? 0).toLocaleString()}</p></div>
+                    <div><Label className="text-muted-foreground">Amount Due</Label><p className="font-medium text-red-500">৳{Math.max(0, viewInvoice.amount - (viewInvoice.paidAmount ?? 0)).toLocaleString()}</p></div>
+                  </>
+                )}
                 <div><Label className="text-muted-foreground">Payment Method</Label><p className="font-medium">{viewInvoice.paymentMethod}</p></div>
                 <div><Label className="text-muted-foreground">Date</Label><p className="font-medium">{viewInvoice.date}</p></div>
                 <div><Label className="text-muted-foreground">Status</Label><p className="font-medium">{getStatusLabel(viewInvoice.status)}</p></div>
@@ -507,6 +554,22 @@ export default function BillingPage() {
                   </SelectContent>
                 </Select>
               </div>
+              {editInvoiceState.status === "Partial" && (
+                <div>
+                  <Label>Amount Paid (৳)</Label>
+                  <Input
+                    type="number"
+                    value={editInvoiceState.paidAmount ?? ""}
+                    onChange={(e) => setEditInvoiceState({ ...editInvoiceState, paidAmount: parseFloat(e.target.value) || 0 })}
+                    placeholder="Enter amount paid so far"
+                  />
+                  {editInvoiceState.paidAmount != null && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Due: ৳{Math.max(0, editInvoiceState.amount - editInvoiceState.paidAmount).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
               <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
             </div>
           )}
