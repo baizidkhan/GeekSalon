@@ -19,7 +19,7 @@ const pathPermissionMap: Record<string, string> = {
   "/staff-reports": "reports",
   "/attendance": "attendance",
   "/leave-request": "leave-request",
-  "/hr-payroll": "hr-payroll",
+  "/manage-payrolls": "hr-payroll",
   "/settings": "settings",
 }
 
