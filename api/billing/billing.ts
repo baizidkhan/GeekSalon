@@ -14,6 +14,7 @@ export async function getInvoices(page = 1, limit = 20) {
 
 export async function createInvoice(payload: {
   clientId?: string
+  appointmentId?: string
   services?: string[]
   staff?: string
   assistant?: string
