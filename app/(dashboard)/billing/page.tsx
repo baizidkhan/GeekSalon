@@ -46,6 +46,12 @@ interface Invoice {
   id: string
   invoiceNo: string
   client: string
+  appointment?: {
+    id: string
+    date?: string
+    time?: string
+    status?: string
+  } | null
   services: string[]
   amount: number
   paymentMethod: "Cash" | "bKash" | "Card"
@@ -71,6 +77,14 @@ function mapInvoice(inv: any): Invoice {
     id: inv.id,
     invoiceNo: inv.invoiceNumber,
     client: inv.client?.name ?? "Walk-in",
+    appointment: inv.appointment
+      ? {
+        id: inv.appointment.id,
+        date: inv.appointment.date,
+        time: inv.appointment.time,
+        status: inv.appointment.status,
+      }
+      : null,
     services: inv.services ?? [],
     amount: Number(inv.total),
     paymentMethod: inv.paymentMethod,
@@ -360,6 +374,7 @@ export default function BillingPage() {
                 <TableRow>
                   <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Invoice</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Appointment</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Services</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Amount</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Payment</span></TableHead>
@@ -372,17 +387,30 @@ export default function BillingPage() {
                 {loading ? (
                   <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
                 ) : filteredInvoices.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No invoices found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No invoices found.</TableCell></TableRow>
                 ) : paginatedInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
+                  <TableRow
+                    key={invoice.id}
+                    className="cursor-pointer transition-colors hover:bg-muted/50"
+                    onClick={() => setViewInvoice(invoice)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        setViewInvoice(invoice)
+                      }
+                    }}
+                  >
                     <TableCell><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{invoice.invoiceNo}</span></div></TableCell>
                     <TableCell>{invoice.client}</TableCell>
+                    <TableCell>{invoice.appointment ? `${invoice.appointment.date ?? ''}${invoice.appointment.date && invoice.appointment.time ? ' ' : ''}${invoice.appointment.time ?? ''}`.trim() : 'Linked appointment'}</TableCell>
                     <TableCell><div className="text-sm">{invoice.services.join(", ")}</div></TableCell>
                     <TableCell className="font-medium">৳{invoice.amount.toLocaleString()}</TableCell>
                     <TableCell>{invoice.paymentMethod}</TableCell>
                     <TableCell>{invoice.date}</TableCell>
                     <TableCell><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>{getStatusLabel(invoice.status)}</span></TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
