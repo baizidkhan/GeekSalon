@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt, History } from "lucide-react"
+import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt, History, LayoutList, LayoutGrid } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,6 +88,7 @@ export default function ClientsPage() {
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list")
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -439,66 +440,122 @@ export default function ClientsPage() {
               </Popover>
 
               <span className="text-sm text-muted-foreground ml-auto">{filteredClients.length} results</span>
+
+              <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                  title="List view"
+                >
+                  <LayoutList className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                  title="Grid view"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Contact</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Total Appointments</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Total Spent</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Last Visit</span></TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedClients.map((client) => (
-                  <TableRow
-                    key={client.id}
-                    className="cursor-pointer transition-colors hover:bg-muted/50"
-                    onClick={() => router.push(`/clients/${client.id}`)}
-                    role="link"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault()
-                        router.push(`/clients/${client.id}`)
-                      }
-                    }}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {getInitials(client.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{client.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {client.email && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Mail className="w-3 h-3 text-muted-foreground" />
-                            {client.email}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="w-3 h-3 text-muted-foreground" />
-                          {client.phone}
+          {viewMode === "list" ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Contact</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Total Appointments</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Total Spent</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Last Visit</span></TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedClients.map((client) => (
+                    <TableRow
+                      key={client.id}
+                      className="cursor-pointer transition-colors hover:bg-muted/50"
+                      onClick={() => router.push(`/clients/${client.id}`)}
+                      role="link"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault()
+                          router.push(`/clients/${client.id}`)
+                        }
+                      }}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {getInitials(client.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{client.name}</span>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{client.visits} {client.visits === 1 ? 'time' : 'times'}</TableCell>
-                    <TableCell>৳{(client.totalSpent ?? 0).toLocaleString()}</TableCell>
-                    <TableCell>{client.lastVisit ?? '-'}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {client.email && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Mail className="w-3 h-3 text-muted-foreground" />
+                              {client.email}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-sm">
+                            <Phone className="w-3 h-3 text-muted-foreground" />
+                            {client.phone}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{client.visits} {client.visits === 1 ? 'time' : 'times'}</TableCell>
+                      <TableCell>৳{(client.totalSpent ?? 0).toLocaleString()}</TableCell>
+                      <TableCell>{client.lastVisit ?? '-'}</TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setViewClient(client)}>
+                              <Eye className="w-4 h-4 mr-2" />View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditClient({ ...client, name: client.name ?? "", email: client.email ?? "", phone: client.phone ?? "" })}>
+                              <Pencil className="w-4 h-4 mr-2" />Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)}>
+                              <History className="w-4 h-4 mr-2" />History
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteClientState(client)}>
+                              <Trash2 className="w-4 h-4 mr-2" />Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {paginatedClients.map((client) => (
+                <div
+                  key={client.id}
+                  className="bg-background border border-border rounded-2xl overflow-hidden flex flex-col cursor-pointer hover:border-primary/50 hover:shadow-md transition-all duration-200 group"
+                  onClick={() => router.push(`/clients/${client.id}`)}
+                >
+                  {/* Card Header with gradient */}
+                  <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-5 pt-5 pb-8">
+                    <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/60 hover:bg-background">
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -506,16 +563,7 @@ export default function ClientsPage() {
                           <DropdownMenuItem onClick={() => setViewClient(client)}>
                             <Eye className="w-4 h-4 mr-2" />View
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              setEditClient({
-                                ...client,
-                                name: client.name ?? "",
-                                email: client.email ?? "",
-                                phone: client.phone ?? "",
-                              })
-                            }
-                          >
+                          <DropdownMenuItem onClick={() => setEditClient({ ...client, name: client.name ?? "", email: client.email ?? "", phone: client.phone ?? "" })}>
                             <Pencil className="w-4 h-4 mr-2" />Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)}>
@@ -526,12 +574,71 @@ export default function ClientsPage() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+                    <Avatar className="h-14 w-14 ring-2 ring-background shadow-sm">
+                      <AvatarFallback className="bg-primary/20 text-primary font-bold text-lg">
+                        {getInitials(client.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="flex flex-col flex-1 px-5 -mt-4">
+                    <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-3 flex-1">
+                      <div>
+                        <p className="font-semibold text-base leading-tight">{client.name}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <Phone className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <p className="text-xs text-muted-foreground">{client.phone}</p>
+                        </div>
+                        {client.email && (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <p className="text-xs text-muted-foreground truncate">{client.email}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-1 pt-3 border-t border-border">
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-foreground">{client.visits}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Visits</p>
+                        </div>
+                        <div className="text-center border-l border-border">
+                          <p className="text-lg font-bold text-foreground">৳{(client.totalSpent ?? 0) >= 1000 ? ((client.totalSpent ?? 0) / 1000).toFixed(1) + 'k' : (client.totalSpent ?? 0).toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Spent</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 mt-1 border-t border-border">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Calendar className="w-3.5 h-3.5 shrink-0" />
+                          <p className="text-[10px] uppercase tracking-wide">Last Visit</p>
+                        </div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {client.lastVisit
+                            ? new Date(client.lastVisit).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                            : '—'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer actions */}
+                  <div className="flex items-center gap-1 px-5 py-3" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => setViewClient(client)}>
+                      <Eye className="w-3 h-3 mr-1" />View
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => setEditClient({ ...client, name: client.name ?? "", email: client.email ?? "", phone: client.phone ?? "" })}>
+                      <Pencil className="w-3 h-3 mr-1" />Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => router.push(`/clients/${client.id}`)}>
+                      <History className="w-3 h-3 mr-1" />History
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {!loading && filteredClients.length > 0 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
               <span>
