@@ -2,6 +2,8 @@
 
 import { getClients, createClient, updateClient, deleteClient } from "@/api/clients/clients"
 import { useState, useMemo, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -28,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, ArrowUpDown, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt } from "lucide-react"
+import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt, History } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,7 +47,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 interface Client {
   id: string
   name: string
-  email: string
+  email: string | null
   phone: string
   visits: number
   totalSpent: number
@@ -64,22 +66,24 @@ const TIME_OPTIONS = [
   { value: "custom", label: "Custom Date" },
 ]
 
-const VISIT_SORT_OPTIONS = [
-  { value: "none", label: "Sort by Spent" },
-  { value: "high", label: "Spent: High to Low" },
-  { value: "low", label: "Spent: Low to High" },
-]
 const PAGE_SIZE = 10
 
 const normalizePhone = (value: string) => value.replace(/\D/g, "")
 
+// Bangladeshi phone validation: 01[3-9]XXXXXXXX or +8801[3-9]XXXXXXXX
+const isValidPhone = (phone: string) => {
+  const normalized = normalizePhone(phone)
+  return /^(?:88)?01[3-9]\d{8}$/.test(normalized)
+}
+
 export default function ClientsPage() {
+  const router = useRouter()
+  const { toast } = useToast()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState("all")
-  const [visitSort, setVisitSort] = useState("none")
   const [customDateFrom, setCustomDateFrom] = useState("")
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
@@ -158,18 +162,25 @@ export default function ClientsPage() {
       }
     )
 
-    if (visitSort === "high") {
-      result = [...result].sort((a, b) => b.totalSpent - a.totalSpent)
-    } else if (visitSort === "low") {
-      result = [...result].sort((a, b) => a.totalSpent - b.totalSpent)
-    }
+    // Primary sort: most appointments first. Tie-breaker: latest visit first.
+    result = [...result].sort((a, b) => {
+      if ((b.visits ?? 0) !== (a.visits ?? 0)) {
+        return (b.visits ?? 0) - (a.visits ?? 0)
+      }
+
+      const aLastVisit = new Date(a.lastVisit ?? "").getTime()
+      const bLastVisit = new Date(b.lastVisit ?? "").getTime()
+      const safeALastVisit = Number.isNaN(aLastVisit) ? 0 : aLastVisit
+      const safeBLastVisit = Number.isNaN(bLastVisit) ? 0 : bLastVisit
+      return safeBLastVisit - safeALastVisit
+    })
 
     return result
-  }, [clients, search, timeFilter, visitSort, customDateFrom, customDateTo])
+  }, [clients, search, timeFilter, customDateFrom, customDateTo])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, timeFilter, visitSort, customDateFrom, customDateTo])
+  }, [search, timeFilter, customDateFrom, customDateTo])
 
   const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE))
   const paginatedClients = filteredClients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -177,28 +188,92 @@ export default function ClientsPage() {
   const handleAddClient = async () => {
     if (!newClient.name || !newClient.phone)
       return
+    if (!isValidPhone(newClient.phone)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Phone Number",
+        description: "Phone must be in format: 01712345678 or +8801712345678"
+      })
+      return
+    }
     await createClient(newClient)
     const res = await getClients(1, 1000)
     setClients(res.data ?? res)
     setIsDialogOpen(false)
     setNewClient({ name: "", email: "", phone: "" })
-
+    toast({
+      title: "Success",
+      description: "Client created successfully"
+    })
   }
 
   const handleEditSave = async () => {
     if (!editClient) return
-    await updateClient(editClient.id, editClient)
-    const res = await getClients(1, 1000)
-    setClients(res.data ?? res)
-    setEditClient(null)
 
+    // Validate name and phone
+    if (!editClient.name.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Client name is required"
+      })
+      return
+    }
+
+    if (!isValidPhone(editClient.phone)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Phone Number",
+        description: "Phone must be in format: 01712345678 or +8801712345678"
+      })
+      return
+    }
+
+    try {
+      // Send only the necessary fields to the server (not computed fields like visits, totalSpent)
+      await updateClient(editClient.id, {
+        name: editClient.name,
+        phone: editClient.phone,
+        email: editClient.email || null,
+      })
+
+      // Refresh the client list to show updated data
+      const res = await getClients(1, 1000)
+      setClients(res.data ?? res)
+      setEditClient(null)
+
+      toast({
+        title: "Success",
+        description: "Client updated successfully. Changes will reflect across all pages."
+      })
+    } catch (error) {
+      console.error("Error updating client:", error)
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update client. Please try again."
+      })
+    }
   }
 
   const handleDelete = async () => {
     if (!deleteClientState) return
-    await deleteClient(deleteClientState.id)
-    setClients(clients.filter(c => c.id !== deleteClientState.id))
-    setDeleteClientState(null)
+    try {
+      await deleteClient(deleteClientState.id)
+      setClients(clients.filter(c => c.id !== deleteClientState.id))
+      setDeleteClientState(null)
+      toast({
+        title: "Success",
+        description: "Client deleted successfully"
+      })
+    } catch (error) {
+      console.error("Error deleting client:", error)
+      toast({
+        variant: "destructive",
+        title: "Delete Failed",
+        description: "Failed to delete client. Please try again."
+      })
+    }
   }
 
 
@@ -275,13 +350,13 @@ export default function ClientsPage() {
                   Add Client
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[620px]">
                 <DialogHeader>
                   <DialogTitle>Add New Client</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <div>
-                    <Label>Full Name</Label>
+                <div className="mt-2 space-y-5">
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-semibold tracking-wide">Full Name</Label>
                     <Input
                       value={newClient.name}
                       onChange={(e) =>
@@ -290,8 +365,8 @@ export default function ClientsPage() {
                       placeholder="Enter full name"
                     />
                   </div>
-                  <div>
-                    <Label>Email</Label>
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-semibold tracking-wide">Email</Label>
                     <Input
                       type="email"
                       value={newClient.email}
@@ -301,17 +376,17 @@ export default function ClientsPage() {
                       placeholder="Enter email address"
                     />
                   </div>
-                  <div>
-                    <Label>Phone Number</Label>
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-semibold tracking-wide">Phone Number</Label>
                     <Input
                       value={newClient.phone}
                       onChange={(e) =>
                         setNewClient({ ...newClient, phone: e.target.value })
                       }
-                      placeholder="Enter phone number"
+                      placeholder="01712345678 or +8801712345678"
                     />
                   </div>
-                  <Button onClick={handleAddClient} className="w-full">
+                  <Button onClick={handleAddClient} className="mt-1 h-10 w-full">
                     Add Client
                   </Button>
                 </div>
@@ -363,18 +438,6 @@ export default function ClientsPage() {
                 </PopoverContent>
               </Popover>
 
-              <Select value={visitSort} onValueChange={setVisitSort}>
-                <SelectTrigger className="w-36">
-                  <ArrowUpDown className="w-4 h-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {VISIT_SORT_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <span className="text-sm text-muted-foreground ml-auto">{filteredClients.length} results</span>
             </div>
           </div>
@@ -392,7 +455,19 @@ export default function ClientsPage() {
               </TableHeader>
               <TableBody>
                 {paginatedClients.map((client) => (
-                  <TableRow key={client.id}>
+                  <TableRow
+                    key={client.id}
+                    className="cursor-pointer transition-colors hover:bg-muted/50"
+                    onClick={() => router.push(`/clients/${client.id}`)}
+                    role="link"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        router.push(`/clients/${client.id}`)
+                      }
+                    }}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
@@ -405,20 +480,22 @@ export default function ClientsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="w-3 h-3 text-muted-foreground" />
-                          {client.email}
-                        </div>
+                        {client.email && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Mail className="w-3 h-3 text-muted-foreground" />
+                            {client.email}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="w-3 h-3 text-muted-foreground" />
                           {client.phone}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{client.visits} {client.visits === 1 ? 'Appointment' : 'Appointments'}</TableCell>
+                    <TableCell>{client.visits} {client.visits === 1 ? 'time' : 'times'}</TableCell>
                     <TableCell>৳{(client.totalSpent ?? 0).toLocaleString()}</TableCell>
                     <TableCell>{client.lastVisit ?? '-'}</TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -429,8 +506,20 @@ export default function ClientsPage() {
                           <DropdownMenuItem onClick={() => setViewClient(client)}>
                             <Eye className="w-4 h-4 mr-2" />View
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setEditClient({ ...client })}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              setEditClient({
+                                ...client,
+                                name: client.name ?? "",
+                                email: client.email ?? "",
+                                phone: client.phone ?? "",
+                              })
+                            }
+                          >
                             <Pencil className="w-4 h-4 mr-2" />Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)}>
+                            <History className="w-4 h-4 mr-2" />History
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onClick={() => setDeleteClientState(client)}>
                             <Trash2 className="w-4 h-4 mr-2" />Delete
@@ -474,26 +563,28 @@ export default function ClientsPage() {
 
       {/* View Dialog */}
       <Dialog open={!!viewClient} onOpenChange={() => setViewClient(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[620px]">
           <DialogHeader>
             <DialogTitle>Client Details</DialogTitle>
           </DialogHeader>
           {viewClient && (
-            <div className="space-y-4 mt-4">
+            <div className="mt-2 space-y-5">
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
                   <AvatarFallback className="bg-primary/10 text-primary text-xl">{getInitials(viewClient.name)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="text-lg font-semibold">{viewClient.name}</p>
-                  <p className="text-sm text-muted-foreground">{viewClient.email}</p>
+                  {viewClient.email && (
+                    <p className="text-sm text-muted-foreground">{viewClient.email}</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><Label className="text-muted-foreground">Phone</Label><p className="font-medium">{viewClient.phone}</p></div>
-                <div><Label className="text-muted-foreground">Visits</Label><p className="font-medium">{viewClient.visits}</p></div>
-                <div><Label className="text-muted-foreground">Total Spent</Label><p className="font-medium">৳{viewClient.totalSpent.toLocaleString()}</p></div>
-                <div><Label className="text-muted-foreground">Last Visit</Label><p className="font-medium">{viewClient.lastVisit ?? '-'}</p></div>
+                <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Phone</Label><p className="font-medium">{viewClient.phone}</p></div>
+                <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Visits</Label><p className="font-medium">{viewClient.visits}</p></div>
+                <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Total Spent</Label><p className="font-medium">৳{viewClient.totalSpent.toLocaleString()}</p></div>
+                <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Last Visit</Label><p className="font-medium">{viewClient.lastVisit ?? '-'}</p></div>
               </div>
             </div>
           )}
@@ -502,16 +593,32 @@ export default function ClientsPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editClient} onOpenChange={() => setEditClient(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[620px]">
           <DialogHeader>
             <DialogTitle>Edit Client</DialogTitle>
           </DialogHeader>
           {editClient && (
-            <div className="space-y-4 mt-4">
-              <div><Label>Full Name</Label><Input value={editClient.name} onChange={(e) => setEditClient({ ...editClient, name: e.target.value })} /></div>
-              <div><Label>Email</Label><Input value={editClient.email} onChange={(e) => setEditClient({ ...editClient, email: e.target.value })} /></div>
-              <div><Label>Phone</Label><Input value={editClient.phone} onChange={(e) => setEditClient({ ...editClient, phone: e.target.value })} /></div>
-              <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
+            <div className="mt-2 space-y-5">
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Full Name</Label>
+                <Input value={editClient.name ?? ""} onChange={(e) => setEditClient({ ...editClient, name: e.target.value })} placeholder="Enter full name" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Email</Label>
+                <Input type="email" value={editClient.email ?? ""} onChange={(e) => setEditClient({ ...editClient, email: e.target.value })} placeholder="Enter email address" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Phone Number</Label>
+                <Input
+                  value={editClient.phone ?? ""}
+                  onChange={(e) => setEditClient({ ...editClient, phone: e.target.value })}
+                  placeholder="01712345678 or +8801712345678"
+                />
+                {editClient.phone && !isValidPhone(editClient.phone) && (
+                  <p className="text-sm text-destructive mt-1">Invalid phone number format</p>
+                )}
+              </div>
+              <Button className="mt-1 h-10 w-full" onClick={handleEditSave}>Save Changes</Button>
             </div>
           )}
         </DialogContent>
@@ -519,11 +626,11 @@ export default function ClientsPage() {
 
       {/* Delete Dialog */}
       <Dialog open={!!deleteClientState} onOpenChange={() => setDeleteClientState(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
             <DialogTitle>Delete Client</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground">Are you sure you want to delete <strong>{deleteClientState?.name}</strong>? This action cannot be undone.</p>
+          <p className="mt-1 text-muted-foreground leading-relaxed">Are you sure you want to delete <strong>{deleteClientState?.name}</strong>? This action cannot be undone.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteClientState(null)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDelete}>Delete</Button>
