@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Building2, Bell, Clock, Shield, CreditCard, Globe, Loader2 } from "lucide-react"
+import { Building2, Clock, Shield, CreditCard, Loader2 } from "lucide-react"
 import { getBusinessInfo, updateBusinessInfo, getAppointmentSettings, updateAppointmentSettings, getInvoiceSettings, updateInvoiceSettings, type BusinessInfo, type AppointmentSetting, type InvoiceSetting } from "@/api/settings/settings"
 import { toast } from "sonner"
 
@@ -43,20 +43,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function loadSettings() {
-      try {
-        const [businessInfo, appointmentInfo, invoiceInfo] = await Promise.all([
-          getBusinessInfo(),
-          getAppointmentSettings(),
-          getInvoiceSettings()
-        ])
-        if (businessInfo) setBusinessSettings(businessInfo)
-        if (appointmentInfo) setBookingSettings(appointmentInfo)
-        if (invoiceInfo) setInvoiceSettings(invoiceInfo)
-      } catch (error) {
-        toast.error("Failed to load settings")
-      } finally {
-        setLoading(false)
-      }
+      const [businessResult, appointmentResult, invoiceResult] = await Promise.allSettled([
+        getBusinessInfo(),
+        getAppointmentSettings(),
+        getInvoiceSettings(),
+      ])
+      if (businessResult.status === 'fulfilled' && businessResult.value) setBusinessSettings(businessResult.value)
+      if (appointmentResult.status === 'fulfilled' && appointmentResult.value) setBookingSettings(appointmentResult.value)
+      if (invoiceResult.status === 'fulfilled' && invoiceResult.value) setInvoiceSettings(invoiceResult.value)
+      setLoading(false)
     }
     loadSettings()
   }, [])
@@ -118,14 +113,10 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="grid w-full max-w-2xl grid-cols-3 sm:grid-cols-5">
+        <TabsList className="grid w-full max-w-2xl grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">Business</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="w-4 h-4" />
-            <span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
           <TabsTrigger value="booking" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
@@ -192,84 +183,6 @@ export default function SettingsPage() {
                   }
                 />
               </div>
-            </div>
-        </TabsContent>
-
-        <TabsContent value="notifications">
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-medium text-foreground mb-4">Notification Preferences</h3>
-            <div className="space-y-6 max-w-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Email Appointment Notifications</p>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email when appointments are booked or cancelled
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.emailAppointments}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, emailAppointments: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">SMS Reminders</p>
-                  <p className="text-sm text-muted-foreground">
-                    Send SMS reminders to clients before appointments
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.smsReminders}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, smsReminders: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Low Stock Alerts</p>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified when inventory items are running low
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.lowStock}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, lowStock: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Daily Reports</p>
-                  <p className="text-sm text-muted-foreground">
-                    Receive daily summary reports via email
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.dailyReport}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, dailyReport: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Weekly Reports</p>
-                  <p className="text-sm text-muted-foreground">
-                    Receive weekly summary reports via email
-                  </p>
-                </div>
-                <Switch
-                  checked={notifications.weeklyReport}
-                  onCheckedChange={(checked) =>
-                    setNotifications({ ...notifications, weeklyReport: checked })
-                  }
-                />
-              </div>
-              <Button>Save Preferences</Button>
             </div>
           </div>
         </TabsContent>
