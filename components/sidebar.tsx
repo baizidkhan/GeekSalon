@@ -59,7 +59,7 @@ const navigation = [
     items: [
       { name: "Attendance", href: "/attendance", icon: ClipboardCheck, permission: "attendance" },
       { name: "Leave Requests", href: "/leave-request", icon: Calendar, permission: "leave-request" },
-      { name: "HR & Payroll", href: "/hr-payroll", icon: Building2, permission: "hr-payroll" },
+      { name: "Manage Payrolls", href: "/manage-payrolls", icon: Building2, permission: "hr-payroll" },
     ],
   },
   {
