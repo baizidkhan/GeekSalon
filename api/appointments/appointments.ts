@@ -37,8 +37,8 @@ export async function createAppointment(payload: {
   return data
 }
 
-export async function updateAppointment(phone: string, payload: object) {
-  const { data } = await api.patch(`/appointments/${encodeURIComponent(phone)}`, payload)
+export async function updateAppointment(id: string, payload: object) {
+  const { data } = await api.patch(`/appointments/id/${encodeURIComponent(id)}`, payload)
   markStale(CACHE.APPOINTMENTS, CACHE.DASHBOARD, CACHE.BILLING, CACHE.CLIENTS)
   return data
 }
