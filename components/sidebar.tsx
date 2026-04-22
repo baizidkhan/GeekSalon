@@ -27,6 +27,7 @@ import { useState } from "react"
 import { logout } from "@/api/auth/auth"
 import { useAuth } from "@/hooks/use-auth"
 import { hasPermission } from "@/lib/auth-utils"
+import { useBusinessName } from "@/context/business-context"
 
 const navigation = [
   {
@@ -81,6 +82,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const { user, loading } = useAuth()
+  const { businessName } = useBusinessName()
 
   const handleLogout = async () => {
     try {
@@ -116,7 +118,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {!collapsed && (
           <div className="flex-1 min-w-0">
             <h1 className="font-semibold text-sidebar-foreground tracking-wide leading-tight" style={{ fontFamily: 'var(--font-serif, Georgia, serif)', fontSize: '1rem' }}>
-              GeekSalon
+              {businessName}
             </h1>
             <p className="text-[9px] text-sidebar-foreground/40 tracking-[0.2em] uppercase mt-0.5">
               Salon Management
