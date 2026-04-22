@@ -62,7 +62,7 @@ export function TodaysAppointments({ appointments }: TodaysAppointmentsProps) {
           <span>No appointments today</span>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[332px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
           {appointments.map((appt) => (
             <div key={appt.id} className="flex items-start gap-3 p-3 bg-secondary/40 rounded-xl border border-border/50 hover:bg-secondary/70 transition-colors">
               <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${getStatusDot(appt.status)}`} />
