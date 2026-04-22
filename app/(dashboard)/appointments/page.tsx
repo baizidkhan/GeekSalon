@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Calendar, Clock, MoreHorizontal, Upload, Download, ChevronDown, Eye, Pencil, Trash2, User, Phone, Scissors, UserCheck, Globe, Zap } from "lucide-react"
+import { Plus, Search, Calendar, Clock, MoreHorizontal, Upload, Download, ChevronDown, Eye, Pencil, Trash2, User, Phone, Scissors, UserCheck, Globe, Zap, Check } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +37,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
 import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "@/api/appointments/appointments"
 import { getClients } from "@/api/clients/clients"
 import { getActiveServices } from "@/api/services/services"
@@ -134,17 +140,18 @@ function toUIAppointment(r: AppointmentRecord): Appointment {
 const emptyForm = {
   client: "",
   phone: "",
-  service: "",
+  services: [] as string[],
   employee: "",
   date: "",
   time: "",
   source: "Online" as AppointmentSource,
 }
 
-type NewAppointmentField = "phone" | "client" | "service" | "employee" | "date" | "time"
+type NewAppointmentField = "phone" | "client" | "services" | "employee" | "date" | "time"
 
 export default function AppointmentsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [serviceOptions, setServiceOptions] = useState<string[]>([])
@@ -153,7 +160,10 @@ export default function AppointmentsPage() {
 
   const [searchName, setSearchName] = useState("")
   const [searchPhone, setSearchPhone] = useState("")
-  const [timeFilter, setTimeFilter] = useState("All Time")
+  const [timeFilter, setTimeFilter] = useState(() => {
+    const param = searchParams.get("timeFilter")
+    return param && timeFilterOptions.includes(param) ? param : "All Time"
+  })
   const [sourceFilter, setSourceFilter] = useState("All Sources")
   const [statusFilter, setStatusFilter] = useState("All Status")
   const [currentPage, setCurrentPage] = useState(1)
@@ -293,7 +303,7 @@ export default function AppointmentsPage() {
     const errors: Partial<Record<NewAppointmentField, string>> = {}
     if (!newAppointment.phone.trim()) errors.phone = "Please fill this field."
     if (!newAppointment.client.trim()) errors.client = "Please fill this field."
-    if (!newAppointment.service.trim()) errors.service = "Please fill this field."
+    if (newAppointment.services.length === 0) errors.services = "Please select at least one service."
     if (!newAppointment.employee.trim()) errors.employee = "Please fill this field."
     if (!newAppointment.date.trim()) errors.date = "Please fill this field."
     if (!newAppointment.time.trim()) errors.time = "Please fill this field."
@@ -312,7 +322,7 @@ export default function AppointmentsPage() {
         date: newAppointment.date,
         time: newAppointment.time,
         staff: newAppointment.employee || undefined,
-        services: newAppointment.service ? [newAppointment.service] : undefined,
+        services: newAppointment.services.length > 0 ? newAppointment.services : undefined,
         source: newAppointment.source,
       })
       setNewAppointment(emptyForm)
@@ -536,49 +546,87 @@ export default function AppointmentsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[13px] font-semibold tracking-wide">Service <span className="text-destructive">*</span></Label>
-                  <Select
-                    value={newAppointment.service}
-                    onValueChange={(value) => {
-                      setNewAppointment({ ...newAppointment, service: value })
-                      if (value.trim()) clearNewAppointmentError("service")
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      >
+                        <span className={newAppointment.services.length === 0 ? "text-muted-foreground" : "text-foreground"}>
+                          {newAppointment.services.length === 0
+                            ? "Select services"
+                            : newAppointment.services.join(", ")}
+                        </span>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
                       {serviceOptions.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                        <div
+                          key={s}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                          onClick={() => {
+                            const selected = newAppointment.services
+                            const next = selected.includes(s)
+                              ? selected.filter((x) => x !== s)
+                              : [...selected, s]
+                            setNewAppointment({ ...newAppointment, services: next })
+                            if (next.length > 0) clearNewAppointmentError("services")
+                          }}
+                        >
+                          <Checkbox checked={newAppointment.services.includes(s)} readOnly />
+                          <span className="text-sm">{s}</span>
+                        </div>
                       ))}
-                    </SelectContent>
-                  </Select>
-                  {newAppointmentErrors.service && (
-                    <p className="text-xs text-destructive">{newAppointmentErrors.service}</p>
+                    </PopoverContent>
+                  </Popover>
+                  {newAppointmentErrors.services && (
+                    <p className="text-xs text-destructive">{newAppointmentErrors.services}</p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[13px] font-semibold tracking-wide">Employee <span className="text-destructive">*</span></Label>
-                  <Select
-                    value={newAppointment.employee}
-                    onValueChange={(value) => {
-                      setNewAppointment({ ...newAppointment, employee: value })
-                      if (value.trim()) clearNewAppointmentError("employee")
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select employee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employeeOptions.map((e) => (
-                        <SelectItem key={e} value={e}>{e}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {newAppointmentErrors.employee && (
-                    <p className="text-xs text-destructive">{newAppointmentErrors.employee}</p>
-                  )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-semibold tracking-wide">Employee <span className="text-destructive">*</span></Label>
+                    <Select
+                      value={newAppointment.employee}
+                      onValueChange={(value) => {
+                        setNewAppointment({ ...newAppointment, employee: value })
+                        if (value.trim()) clearNewAppointmentError("employee")
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employeeOptions.map((e) => (
+                          <SelectItem key={e} value={e}>{e}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {newAppointmentErrors.employee && (
+                      <p className="text-xs text-destructive">{newAppointmentErrors.employee}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-semibold tracking-wide">Source</Label>
+                    <Select
+                      value={newAppointment.source}
+                      onValueChange={(value: AppointmentSource) =>
+                        setNewAppointment({ ...newAppointment, source: value })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Online">Online</SelectItem>
+                        <SelectItem value="Walk In">Walk In</SelectItem>
+                        <SelectItem value="Call">Call</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[13px] font-semibold tracking-wide">Date <span className="text-destructive">*</span></Label>
                     <Input
@@ -609,24 +657,6 @@ export default function AppointmentsPage() {
                       <p className="text-xs text-destructive">{newAppointmentErrors.time}</p>
                     )}
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[13px] font-semibold tracking-wide">Source</Label>
-                  <Select
-                    value={newAppointment.source}
-                    onValueChange={(value: AppointmentSource) =>
-                      setNewAppointment({ ...newAppointment, source: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Online">Online</SelectItem>
-                      <SelectItem value="Walk In">Walk In</SelectItem>
-                      <SelectItem value="Call">Call</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 <Button onClick={handleAddAppointment} className="mt-1 w-full h-10">
                   Schedule Appointment
