@@ -124,6 +124,46 @@ function normalizeSource(raw: string): AppointmentSource {
   return "Online"
 }
 
+function escapeCsvValue(value: string | null | undefined): string {
+  const safeValue = (value ?? "").toString()
+  const escapedValue = safeValue.replace(/"/g, '""')
+  if (/[",\n]/.test(escapedValue)) {
+    return `"${escapedValue}"`
+  }
+  return escapedValue
+}
+
+function parseCsvLine(line: string): string[] {
+  const values: string[] = []
+  let current = ""
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"'
+        i++
+      } else {
+        inQuotes = !inQuotes
+      }
+      continue
+    }
+
+    if (char === "," && !inQuotes) {
+      values.push(current)
+      current = ""
+      continue
+    }
+
+    current += char
+  }
+
+  values.push(current)
+  return values
+}
+
 function toUIAppointment(r: AppointmentRecord): Appointment {
   return {
     id: r.id,
@@ -429,7 +469,9 @@ export default function AppointmentsPage() {
   const exportToCSV = () => {
     const headers = ["Client", "Phone", "Service", "Employee", "Date", "Time", "Status", "Source"]
     const csvData = filteredAppointments.map((apt) =>
-      [apt.client, apt.phone, apt.service, apt.employee, apt.date, apt.time, apt.status, apt.source].join(",")
+      [apt.client, apt.phone, apt.service, apt.employee, apt.date, apt.time, apt.status, apt.source]
+        .map((value) => escapeCsvValue(value ?? ""))
+        .join(",")
     )
     const csv = [headers.join(","), ...csvData].join("\n")
     const blob = new Blob([csv], { type: "text/csv" })
@@ -451,11 +493,13 @@ export default function AppointmentsPage() {
         const promises = lines
           .filter((line) => line.trim())
           .map((line) => {
-            const [client, phone, service, employee, date, time, , source] = line.split(",")
+            const [client, phone, service, employee, date, time, , source] = parseCsvLine(line.trim())
             return createAppointment({
               clientName: client?.trim() ?? "",
               phoneNumber: phone?.trim() ?? "",
-              services: service?.trim() ? [service.trim()] : undefined,
+              services: service?.trim()
+                ? service.split(",").map((svc) => svc.trim()).filter(Boolean)
+                : undefined,
               staff: employee?.trim() || undefined,
               date: date?.trim() ?? "",
               time: time?.trim() ?? "",
