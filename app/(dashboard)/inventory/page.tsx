@@ -34,18 +34,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getInventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } from "@/api/inventory/inventory"
-
-interface InventoryItem {
-  id: string
-  name: string
-  category: string
-  stockQty: number
-  minStockLevel: number
-  unitPrice: number
-  supplier: string
-  expiryDate: string
-}
+import { getInventory, createInventoryItem, updateInventoryItem, deleteInventoryItem, type InventoryItem } from "@/api/inventory/inventory"
+import { toast } from "sonner"
 
 const emptyForm = {
   name: "",
@@ -107,13 +97,16 @@ export default function InventoryPage() {
   const paginatedInventory = inventory.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleAddItem = async () => {
-    if (!newItem.name || !newItem.category || !newItem.stockQty) return
+    if (!newItem.name || !newItem.category || !newItem.stockQty) {
+      toast.error("Please fill in required fields")
+      return
+    }
     try {
       await createInventoryItem({
         name: newItem.name,
         category: newItem.category,
-        stockQty: parseInt(newItem.stockQty),
-        minStockLevel: parseInt(newItem.minStockLevel) || 5,
+        stockQty: parseInt(newItem.stockQty) || 0,
+        minStockLevel: parseInt(newItem.minStockLevel) || 0,
         unitPrice: parseFloat(newItem.unitPrice) || 0,
         supplier: newItem.supplier,
         expiryDate: newItem.expiryDate,
@@ -121,8 +114,10 @@ export default function InventoryPage() {
       setNewItem(emptyForm)
       setIsDialogOpen(false)
       fetchInventory()
+      toast.success("Item added successfully")
     } catch (err) {
       console.error("Failed to create inventory item", err)
+      toast.error("Failed to add item")
     }
   }
 
@@ -131,16 +126,19 @@ export default function InventoryPage() {
     try {
       await updateInventoryItem(editItem.id, {
         name: editItem.name,
-        stockQty: editItem.stockQty,
-        minStockLevel: editItem.minStockLevel,
-        unitPrice: editItem.unitPrice,
+        category: editItem.category,
+        stockQty: Number(editItem.stockQty) || 0,
+        minStockLevel: Number(editItem.minStockLevel) || 0,
+        unitPrice: Number(editItem.unitPrice) || 0,
         supplier: editItem.supplier,
         expiryDate: editItem.expiryDate,
       })
       setEditItem(null)
       fetchInventory()
+      toast.success("Item updated successfully")
     } catch (err) {
       console.error("Failed to update inventory item", err)
+      toast.error("Failed to update item")
     }
   }
 
@@ -150,8 +148,10 @@ export default function InventoryPage() {
       await deleteInventoryItem(deleteItem.id)
       setDeleteItem(null)
       fetchInventory()
+      toast.success("Item deleted successfully")
     } catch (err) {
       console.error("Failed to delete inventory item", err)
+      toast.error("Failed to delete item")
     }
   }
 
@@ -377,12 +377,25 @@ export default function InventoryPage() {
           {editItem && (
             <div className="space-y-4 mt-4">
               <div><Label>Name</Label><Input value={editItem.name} onChange={(e) => setEditItem({ ...editItem, name: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Quantity</Label><Input type="number" value={editItem.stockQty} onChange={(e) => setEditItem({ ...editItem, stockQty: parseInt(e.target.value) || 0 })} /></div>
-                <div><Label>Min Stock</Label><Input type="number" value={editItem.minStockLevel} onChange={(e) => setEditItem({ ...editItem, minStockLevel: parseInt(e.target.value) || 0 })} /></div>
+              <div>
+                <Label>Category</Label>
+                <Select value={editItem.category} onValueChange={(value) => setEditItem({ ...editItem, category: value })}>
+                  <SelectTrigger className="cursor-pointer"><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem className="cursor-pointer" value="Hair Products">Hair Products</SelectItem>
+                    <SelectItem className="cursor-pointer" value="Skin Products">Skin Products</SelectItem>
+                    <SelectItem className="cursor-pointer" value="Nail Products">Nail Products</SelectItem>
+                    <SelectItem className="cursor-pointer" value="Grooming">Grooming</SelectItem>
+                    <SelectItem className="cursor-pointer" value="Equipment">Equipment</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Price (৳)</Label><Input type="number" value={editItem.unitPrice} onChange={(e) => setEditItem({ ...editItem, unitPrice: parseFloat(e.target.value) || 0 })} /></div>
+                <div><Label>Quantity</Label><Input type="number" value={editItem.stockQty.toString()} onChange={(e) => setEditItem({ ...editItem, stockQty: parseInt(e.target.value) || 0 })} /></div>
+                <div><Label>Min Stock</Label><Input type="number" value={editItem.minStockLevel.toString()} onChange={(e) => setEditItem({ ...editItem, minStockLevel: parseInt(e.target.value) || 0 })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Price (৳)</Label><Input type="number" value={editItem.unitPrice.toString()} onChange={(e) => setEditItem({ ...editItem, unitPrice: parseFloat(e.target.value) || 0 })} /></div>
                 <div><Label>Expiry Date</Label><Input type="date" value={editItem.expiryDate?.toString().split('T')[0] ?? ""} onChange={(e) => setEditItem({ ...editItem, expiryDate: e.target.value })} /></div>
               </div>
               <div><Label>Supplier</Label><Input value={editItem.supplier} onChange={(e) => setEditItem({ ...editItem, supplier: e.target.value })} /></div>
