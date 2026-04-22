@@ -3,9 +3,11 @@
 import { useState } from "react"
 import { Sidebar } from "./sidebar"
 import { Menu, Sparkles } from "lucide-react"
+import { BusinessProvider, useBusinessName } from "@/context/business-context"
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { businessName } = useBusinessName()
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -33,7 +35,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Sparkles className="w-3.5 h-3.5 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
             </div>
             <span className="font-semibold text-sidebar-foreground text-sm tracking-wide" style={{ fontFamily: 'var(--font-serif, Georgia, serif)' }}>
-              GeekSalon
+              {businessName}
             </span>
           </div>
         </div>
@@ -41,5 +43,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-auto premium-main">{children}</main>
       </div>
     </div>
+  )
+}
+
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <BusinessProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </BusinessProvider>
   )
 }
