@@ -47,7 +47,7 @@ import { getAppointments, createAppointment, updateAppointment, deleteAppointmen
 import { getClients } from "@/api/clients/clients"
 import { getActiveServices } from "@/api/services/services"
 import { getStylists } from "@/api/employees/employees"
-import { getAppointmentSettings } from "@/api/settings/settings"
+import { getAppointmentSettings, getInvoiceSettings } from "@/api/settings/settings"
 import { toast } from "sonner"
 
 interface AppointmentRecord {
@@ -195,7 +195,7 @@ export default function AppointmentsPage() {
   const searchParams = useSearchParams()
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
-  const [serviceOptions, setServiceOptions] = useState<string[]>([])
+  const [serviceOptions, setServiceOptions] = useState<{ name: string; price: number }[]>([])
   const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
   const [clientOptions, setClientOptions] = useState<ClientOption[]>([])
 
@@ -208,6 +208,8 @@ export default function AppointmentsPage() {
   const [sourceFilter, setSourceFilter] = useState("All Sources")
   const [statusFilter, setStatusFilter] = useState("All Status")
   const [currentPage, setCurrentPage] = useState(1)
+  const [taxRate, setTaxRate] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
@@ -286,7 +288,7 @@ export default function AppointmentsPage() {
   useEffect(() => {
     fetchAppointments()
     getActiveServices()
-      .then((list: { name: string }[]) => setServiceOptions(list.map((s) => s.name)))
+      .then((list: { name: string; price: number }[]) => setServiceOptions(list.map((s) => ({ name: s.name, price: s.price }))))
       .catch(console.error)
     getStylists()
       .then((list: { name: string }[]) => setEmployeeOptions(list.map((e) => e.name)))
@@ -297,6 +299,11 @@ export default function AppointmentsPage() {
       .then((settings) => {
         if (settings?.openingTime) setOpenTime(settings.openingTime.substring(0, 5))
         if (settings?.closingTime) setCloseTime(settings.closingTime.substring(0, 5))
+      })
+      .catch(console.error)
+    getInvoiceSettings()
+      .then((settings) => {
+        if (settings?.taxRate) setTaxRate(Number(settings.taxRate))
       })
       .catch(console.error)
   }, [fetchAppointments, fetchClients])
@@ -389,6 +396,7 @@ export default function AppointmentsPage() {
     if (Object.keys(errors).length > 0) return
 
     try {
+      setIsSubmitting(true)
       await createAppointment({
         clientName: newAppointment.client,
         phoneNumber: normalizePhone(newAppointment.phone),
@@ -411,16 +419,21 @@ export default function AppointmentsPage() {
         : backendMessage || "Failed to create appointment"
       toast.error(parsedMessage)
       console.error("Failed to create appointment", err)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleStatusChange = async (appointment: Appointment, newStatus: AppointmentStatus) => {
     if (newStatus === "Confirmed" && !appointment.employee?.trim()) {
-      console.error("Cannot confirm appointment without assigning a stylist")
+      toast.error("Employee should be selected for updating the status")
+      setSelectedAppointment({ ...appointment, status: "Confirmed" })
+      setEditDialogOpen(true)
       return
     }
 
     try {
+      setIsSubmitting(true)
       await updateAppointment(appointment.id, {
         status: newStatus,
         staff: appointment.employee || undefined,
@@ -431,12 +444,15 @@ export default function AppointmentsPage() {
       }
     } catch (err) {
       console.error("Failed to update status", err)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleEditAppointment = async () => {
     if (!selectedAppointment) return
     try {
+      setIsSubmitting(true)
       await updateAppointment(selectedAppointment.id, {
         clientName: selectedAppointment.client,
         date: selectedAppointment.date,
@@ -451,18 +467,23 @@ export default function AppointmentsPage() {
       fetchAppointments()
     } catch (err) {
       console.error("Failed to update appointment", err)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleDeleteAppointment = async () => {
     if (!selectedAppointment) return
     try {
+      setIsSubmitting(true)
       await deleteAppointment(selectedAppointment.id)
       setDeleteDialogOpen(false)
       setSelectedAppointment(null)
       fetchAppointments()
     } catch (err) {
       console.error("Failed to delete appointment", err)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -640,19 +661,22 @@ export default function AppointmentsPage() {
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
                       {serviceOptions.map((s) => (
                         <div
-                          key={s}
-                          className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                          key={s.name}
+                          className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
                           onClick={() => {
                             const selected = newAppointment.services
-                            const next = selected.includes(s)
-                              ? selected.filter((x) => x !== s)
-                              : [...selected, s]
+                            const next = selected.includes(s.name)
+                              ? selected.filter((x) => x !== s.name)
+                              : [...selected, s.name]
                             setNewAppointment({ ...newAppointment, services: next })
                             if (next.length > 0) clearNewAppointmentError("services")
                           }}
                         >
-                          <Checkbox checked={newAppointment.services.includes(s)} />
-                          <span className="text-sm">{s}</span>
+                          <div className="flex items-center gap-2">
+                            <Checkbox checked={newAppointment.services.includes(s.name)} />
+                            <span className="text-sm">{s.name}</span>
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground">${parseFloat(s.price.toString()).toFixed(2)}</span>
                         </div>
                       ))}
                     </PopoverContent>
@@ -660,6 +684,21 @@ export default function AppointmentsPage() {
                   {newAppointmentErrors.services && (
                     <p className="text-xs text-destructive">{newAppointmentErrors.services}</p>
                   )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold tracking-wide">Total Price (incl. tax)</Label>
+                  <Input
+                    value={`$${(() => {
+                      const subtotal = newAppointment.services.reduce((acc, serviceName) => {
+                        const service = serviceOptions.find((s) => s.name === serviceName)
+                        return acc + parseFloat((service?.price || 0).toString())
+                      }, 0)
+                      const tax = (subtotal * parseFloat(taxRate.toString())) / 100
+                      return (subtotal + tax).toFixed(2)
+                    })()}`}
+                    readOnly
+                    className="bg-muted cursor-not-allowed font-medium text-primary"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -739,8 +778,8 @@ export default function AppointmentsPage() {
                     )}
                   </div>
                 </div>
-                <Button onClick={handleAddAppointment} className="mt-1 w-full h-10">
-                  Schedule Appointment
+                <Button onClick={handleAddAppointment} className="mt-1 w-full h-10" disabled={isSubmitting}>
+                  {isSubmitting ? "Save Changes...." : "Schedule Appointment"}
                 </Button>
               </div>
             </DialogContent>
@@ -864,15 +903,25 @@ export default function AppointmentsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          {statusOptions.map((status) => (
-                            <DropdownMenuItem
-                              key={status}
-                              onClick={() => handleStatusChange(appointment, status)}
-                              className={appointment.status === status ? "bg-accent" : ""}
-                            >
-                              {status}
-                            </DropdownMenuItem>
-                          ))}
+                          {statusOptions.map((status) => {
+                            const isRestricted = ["Checked In", "In Service", "Completed"].includes(status)
+                            const canAccess = appointment.status !== "Pending" && appointment.status !== "Cancelled"
+                            const isDisabled = isRestricted && !canAccess
+
+                            return (
+                              <DropdownMenuItem
+                                key={status}
+                                onClick={() => !isDisabled && handleStatusChange(appointment, status)}
+                                className={`
+                                  ${appointment.status === status ? "bg-accent" : ""}
+                                  ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                                `}
+                                disabled={isDisabled}
+                              >
+                                {status}
+                              </DropdownMenuItem>
+                            )
+                          })}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -1041,10 +1090,32 @@ export default function AppointmentsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {serviceOptions.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                      <SelectItem key={s.name} value={s.name}>
+                        <div className="flex items-center justify-between w-full gap-4">
+                          <span>{s.name}</span>
+                          <span className="text-muted-foreground">${parseFloat(s.price.toString()).toFixed(2)}</span>
+                        </div>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-semibold tracking-wide">Total Price (incl. tax)</Label>
+                <Input
+                  value={`$${(() => {
+                    // Split the service string if it contains multiple (though Select only supports one here)
+                    const services = selectedAppointment.service ? selectedAppointment.service.split(", ").map(s => s.trim()) : []
+                    const subtotal = services.reduce((acc, serviceName) => {
+                      const service = serviceOptions.find((s) => s.name === serviceName)
+                      return acc + parseFloat((service?.price || 0).toString())
+                    }, 0)
+                    const tax = (subtotal * parseFloat(taxRate.toString())) / 100
+                    return (subtotal + tax).toFixed(2)
+                  })()}`}
+                  readOnly
+                  className="bg-muted cursor-not-allowed font-medium text-primary"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-[13px] font-semibold tracking-wide">Employee</Label>
@@ -1108,8 +1179,8 @@ export default function AppointmentsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleEditAppointment} className="mt-1 h-10 w-full">
-                Save Changes
+              <Button onClick={handleEditAppointment} className="mt-1 h-10 w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Save Changes...." : "Save Changes"}
               </Button>
             </div>
           )}
@@ -1134,8 +1205,8 @@ export default function AppointmentsPage() {
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteAppointment}>
-              Delete
+            <Button variant="destructive" onClick={handleDeleteAppointment} disabled={isSubmitting}>
+              {isSubmitting ? "Save Changes...." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

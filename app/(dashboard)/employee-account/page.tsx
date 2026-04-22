@@ -81,6 +81,8 @@ export default function EmployeeAccountPage() {
 
     const [userToEdit, setUserToEdit] = useState<UserManagement | null>(null)
     const [userToDelete, setUserToDelete] = useState<UserManagement | null>(null)
+    const [isCreating, setIsCreating] = useState(false)
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
     const fetchUsers = async () => {
         try {
@@ -120,21 +122,42 @@ export default function EmployeeAccountPage() {
         )
     }, [users, search])
 
+    const unlinkedEmployees = useMemo(() => {
+        return employees.filter(emp => !users.some(user => user.employeeId === emp.id || user.employee?.id === emp.id))
+    }, [employees, users])
+
     const handleAddUser = async () => {
-        if (newUser.useremail && newUser.password && newUser.role) {
-            try {
-                const payload = {
-                    ...newUser,
-                    ...(newUser.employeeId && newUser.employeeId !== "none" && { employeeId: newUser.employeeId })
-                };
-                await createUser(payload)
-                toast.success("User account created successfully")
-                setNewUser({ useremail: "", password: "", role: "staff", permissions: [], employeeId: "none" })
-                setIsAddDialogOpen(false)
-                fetchUsers()
-            } catch (error: any) {
-                toast.error(error.response?.data?.message || "Failed to create user")
-            }
+        const errors: Record<string, string> = {}
+        if (!newUser.useremail) errors.useremail = "Email is required"
+        else if (!/\S+@\S+\.\S+/.test(newUser.useremail)) errors.useremail = "Invalid email format"
+        
+        if (!newUser.password) errors.password = "Password is required"
+        else if (newUser.password.length < 6) errors.password = "Password must be at least 6 characters"
+        
+        if (!newUser.role) errors.role = "Role is required"
+        if (newUser.employeeId === "none") errors.employeeId = "Please link an employee account"
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors)
+            return
+        }
+
+        try {
+            setIsCreating(true)
+            setFormErrors({})
+            const payload = {
+                ...newUser,
+                ...(newUser.employeeId && newUser.employeeId !== "none" && { employeeId: newUser.employeeId })
+            };
+            await createUser(payload)
+            toast.success("User account created successfully")
+            setNewUser({ useremail: "", password: "", role: "staff", permissions: [], employeeId: "none" })
+            setIsAddDialogOpen(false)
+            fetchUsers()
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to create user")
+        } finally {
+            setIsCreating(false)
         }
     }
 
@@ -226,52 +249,83 @@ export default function EmployeeAccountPage() {
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                                 <div className="space-y-2">
-                                    <Label>Link an Employee Record (Optional)</Label>
+                                    <Label className={formErrors.employeeId ? "text-destructive" : ""}>Link an Employee Account <span className="text-destructive">*</span></Label>
                                     <Select
                                         value={newUser.employeeId}
-                                        onValueChange={(v) => setNewUser({ ...newUser, employeeId: v })}
+                                        onValueChange={(v) => {
+                                            setNewUser({ ...newUser, employeeId: v })
+                                            if (v !== "none") setFormErrors(prev => {
+                                                const next = { ...prev }
+                                                delete next.employeeId
+                                                return next
+                                            })
+                                        }}
                                     >
-                                        <SelectTrigger><SelectValue placeholder="Select Employee..." /></SelectTrigger>
+                                        <SelectTrigger className={formErrors.employeeId ? "border-destructive" : ""}><SelectValue placeholder="Select Employee..." /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">No Employee (System User)</SelectItem>
-                                            {employees.map(emp => (
+                                            <SelectItem value="none">Select Employee...</SelectItem>
+                                            {unlinkedEmployees.map(emp => (
                                                 <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {formErrors.employeeId && <p className="text-xs text-destructive">{formErrors.employeeId}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Email Address</Label>
+                                    <Label className={formErrors.useremail ? "text-destructive" : ""}>Email Address <span className="text-destructive">*</span></Label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            className="pl-9"
+                                            className={`pl-9 ${formErrors.useremail ? "border-destructive" : ""}`}
                                             placeholder="staff@example.com"
                                             value={newUser.useremail}
-                                            onChange={(e) => setNewUser({ ...newUser, useremail: e.target.value })}
+                                            onChange={(e) => {
+                                                setNewUser({ ...newUser, useremail: e.target.value })
+                                                if (e.target.value) setFormErrors(prev => {
+                                                    const next = { ...prev }
+                                                    delete next.useremail
+                                                    return next
+                                                })
+                                            }}
                                         />
                                     </div>
+                                    {formErrors.useremail && <p className="text-xs text-destructive">{formErrors.useremail}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Initial Password</Label>
+                                    <Label className={formErrors.password ? "text-destructive" : ""}>Initial Password <span className="text-destructive">*</span></Label>
                                     <div className="relative">
                                         <Key className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="password"
-                                            className="pl-9"
+                                            className={`pl-9 ${formErrors.password ? "border-destructive" : ""}`}
                                             placeholder="••••••••"
                                             value={newUser.password}
-                                            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                                            onChange={(e) => {
+                                                setNewUser({ ...newUser, password: e.target.value })
+                                                if (e.target.value) setFormErrors(prev => {
+                                                    const next = { ...prev }
+                                                    delete next.password
+                                                    return next
+                                                })
+                                            }}
                                         />
                                     </div>
+                                    {formErrors.password && <p className="text-xs text-destructive">{formErrors.password}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>System Role</Label>
+                                    <Label className={formErrors.role ? "text-destructive" : ""}>System Role <span className="text-destructive">*</span></Label>
                                     <Select
                                         value={newUser.role}
-                                        onValueChange={(v) => setNewUser({ ...newUser, role: v })}
+                                        onValueChange={(v) => {
+                                            setNewUser({ ...newUser, role: v })
+                                            if (v) setFormErrors(prev => {
+                                                const next = { ...prev }
+                                                delete next.role
+                                                return next
+                                            })
+                                        }}
                                     >
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className={formErrors.role ? "border-destructive" : ""}><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="admin">Admin (Full Access)</SelectItem>
                                             <SelectItem value="storeManager">Store Manager</SelectItem>
@@ -279,6 +333,7 @@ export default function EmployeeAccountPage() {
                                             <SelectItem value="custom">Custom (Select Permissions)</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    {formErrors.role && <p className="text-xs text-destructive">{formErrors.role}</p>}
                                 </div>
 
                                 {newUser.role === "custom" && (
@@ -302,7 +357,9 @@ export default function EmployeeAccountPage() {
                                 )}
                             </div>
                             <DialogFooter>
-                                <Button onClick={handleAddUser} className="w-full">Create Account</Button>
+                                <Button onClick={handleAddUser} className="w-full" disabled={isCreating}>
+                                    {isCreating ? "creating......." : "Create Account"}
+                                </Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>

@@ -18,11 +18,10 @@ export interface UserManagement {
   updatedAt: string
 }
 
-export async function getAllUsers(email?: string) {
+export async function getAllUsers() {
   const override = consumeStale(CACHE.USER_MANAGEMENT)
-  const { data } = await api.get('/user-management', {
+  const { data } = await api.get('/auth/users', {
     id: CACHE.USER_MANAGEMENT,
-    params: { email },
     cache: { ttl: TTL, override },
   })
   return data
