@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice } from "@/api/billing/billing"
+import { useBusinessName } from "@/context/business-context"
 import { getClients } from "@/api/clients/clients"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -101,6 +102,7 @@ function getStatusLabel(status: Invoice["status"]) {
 }
 
 export default function BillingPage() {
+  const { businessName } = useBusinessName()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clientOptions, setClientOptions] = useState<Array<{ id: string; name: string; phone: string }>>([])
   const [loading, setLoading] = useState(true)
@@ -230,6 +232,76 @@ export default function BillingPage() {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const handlePrintInvoice = (invoice: Invoice) => {
+    const due = invoice.status === "Partial"
+      ? Math.max(0, invoice.amount - (invoice.paidAmount ?? 0))
+      : 0
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice ${invoice.invoiceNo}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #111; background: #fff; padding: 32px; }
+    .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #111; padding-bottom: 16px; }
+    .header h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+    .header p { font-size: 12px; color: #555; margin-top: 4px; }
+    .meta { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .meta .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .meta .value { font-size: 13px; font-weight: 600; margin-top: 2px; }
+    .meta .field { margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th { background: #f4f4f4; text-align: left; padding: 7px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #ccc; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+    .totals-table { width: 220px; margin-left: auto; border-collapse: collapse; }
+    .totals-table td { padding: 4px 10px; border: none; font-size: 13px; }
+    .totals-table td:last-child { text-align: right; font-weight: 600; }
+    .grand-total td { border-top: 2px solid #111 !important; padding-top: 8px !important; font-size: 14px; }
+    .status-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid #333; }
+    .footer { margin-top: 28px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 12px; }
+    @media print { body { padding: 16px; } button { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${businessName}</h1>
+    <p>Invoice Receipt</p>
+  </div>
+  <div class="meta">
+    <div>
+      <div class="field"><div class="label">Invoice No</div><div class="value">${invoice.invoiceNo}</div></div>
+      <div class="field"><div class="label">Date</div><div class="value">${invoice.date}</div></div>
+    </div>
+    <div style="text-align:right">
+      <div class="field"><div class="label">Client</div><div class="value">${invoice.client}</div></div>
+      <div class="field"><div class="label">Status</div><div class="value"><span class="status-badge">${getStatusLabel(invoice.status)}</span></div></div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Service</th></tr></thead>
+    <tbody>
+      ${invoice.services.map((s, i) => `<tr><td>${i + 1}</td><td>${s}</td></tr>`).join("")}
+    </tbody>
+  </table>
+  <table class="totals-table">
+    <tbody>
+      <tr><td>Total</td><td>৳${invoice.amount.toLocaleString()}</td></tr>
+      ${invoice.status === "Partial" ? `<tr><td>Paid</td><td style="color:#16a34a">৳${(invoice.paidAmount ?? 0).toLocaleString()}</td></tr><tr><td>Due</td><td style="color:#dc2626">৳${due.toLocaleString()}</td></tr>` : ""}
+      <tr class="grand-total"><td>Payment</td><td>${invoice.paymentMethod}</td></tr>
+    </tbody>
+  </table>
+  <div class="footer">Thank you for visiting ${businessName}!</div>
+</body>
+</html>`
+    const win = window.open("", "_blank", "width=620,height=750")
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    win.print()
   }
 
   const handleExportCSV = () => {
@@ -501,23 +573,31 @@ export default function BillingPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Invoice Details</DialogTitle></DialogHeader>
           {viewInvoice && (
-            <div className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><Label className="text-muted-foreground">Invoice No</Label><p className="font-medium">{viewInvoice.invoiceNo}</p></div>
-                <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
-                <div><Label className="text-muted-foreground">Services</Label><p className="font-medium">{viewInvoice.services.join(", ")}</p></div>
-                <div><Label className="text-muted-foreground">Amount</Label><p className="font-medium">৳{viewInvoice.amount.toLocaleString()}</p></div>
-                {viewInvoice.status === "Partial" && (
-                  <>
-                    <div><Label className="text-muted-foreground">Amount Paid</Label><p className="font-medium text-green-600">৳{(viewInvoice.paidAmount ?? 0).toLocaleString()}</p></div>
-                    <div><Label className="text-muted-foreground">Amount Due</Label><p className="font-medium text-red-500">৳{Math.max(0, viewInvoice.amount - (viewInvoice.paidAmount ?? 0)).toLocaleString()}</p></div>
-                  </>
-                )}
-                <div><Label className="text-muted-foreground">Payment Method</Label><p className="font-medium">{viewInvoice.paymentMethod}</p></div>
-                <div><Label className="text-muted-foreground">Date</Label><p className="font-medium">{viewInvoice.date}</p></div>
-                <div><Label className="text-muted-foreground">Status</Label><p className="font-medium">{getStatusLabel(viewInvoice.status)}</p></div>
+            <>
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div><Label className="text-muted-foreground">Invoice No</Label><p className="font-medium">{viewInvoice.invoiceNo}</p></div>
+                  <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
+                  <div><Label className="text-muted-foreground">Services</Label><p className="font-medium">{viewInvoice.services.join(", ")}</p></div>
+                  <div><Label className="text-muted-foreground">Amount</Label><p className="font-medium">৳{viewInvoice.amount.toLocaleString()}</p></div>
+                  {viewInvoice.status === "Partial" && (
+                    <>
+                      <div><Label className="text-muted-foreground">Amount Paid</Label><p className="font-medium text-green-600">৳{(viewInvoice.paidAmount ?? 0).toLocaleString()}</p></div>
+                      <div><Label className="text-muted-foreground">Amount Due</Label><p className="font-medium text-red-500">৳{Math.max(0, viewInvoice.amount - (viewInvoice.paidAmount ?? 0)).toLocaleString()}</p></div>
+                    </>
+                  )}
+                  <div><Label className="text-muted-foreground">Payment Method</Label><p className="font-medium">{viewInvoice.paymentMethod}</p></div>
+                  <div><Label className="text-muted-foreground">Date</Label><p className="font-medium">{viewInvoice.date}</p></div>
+                  <div><Label className="text-muted-foreground">Status</Label><p className="font-medium">{getStatusLabel(viewInvoice.status)}</p></div>
+                </div>
               </div>
-            </div>
+              <DialogFooter className="mt-2">
+                <Button variant="outline" className="w-full" onClick={() => handlePrintInvoice(viewInvoice)}>
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Invoice
+                </Button>
+              </DialogFooter>
+            </>
           )}
         </DialogContent>
       </Dialog>
