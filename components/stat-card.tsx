@@ -1,4 +1,5 @@
 import { memo } from "react"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 
@@ -9,6 +10,7 @@ interface StatCardProps {
   icon: LucideIcon
   className?: string
   iconClassName?: string
+  href?: string
 }
 
 export const StatCard = memo(function StatCard({
@@ -18,6 +20,7 @@ export const StatCard = memo(function StatCard({
   icon: Icon,
   className,
   iconClassName,
+  href,
 }: StatCardProps) {
   return (
     <div className={cn(
@@ -40,7 +43,17 @@ export const StatCard = memo(function StatCard({
       <p className="text-3xl font-semibold text-foreground mt-4 relative tracking-tight">
         {value}
       </p>
-      <p className="text-sm text-muted-foreground mt-1 relative font-medium">{title}</p>
+      <div className="flex items-center justify-between mt-1 relative">
+        <p className="text-sm text-muted-foreground font-medium">{title}</p>
+        {href && (
+          <Link
+            href={href}
+            className="text-xs font-semibold text-primary/80 hover:text-primary px-2.5 py-1 rounded-lg bg-primary/8 hover:bg-primary/15 border border-primary/15 transition-all duration-150"
+          >
+            View
+          </Link>
+        )}
+      </div>
     </div>
   )
 })
