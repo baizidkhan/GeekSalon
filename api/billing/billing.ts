@@ -19,6 +19,7 @@ export async function createInvoice(payload: {
   staff?: string
   assistant?: string
   printBy?: string
+  paidAmount?: number
   total?: number
   paymentMethod?: 'Cash' | 'bKash' | 'Card'
   status?: 'Paid' | 'Unpaid' | 'Partial'

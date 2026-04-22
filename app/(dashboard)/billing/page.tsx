@@ -529,7 +529,7 @@ export default function BillingPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setViewInvoice(invoice)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setEditInvoiceState({ ...invoice })}><Pencil className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                          <DropdownMenuItem><Printer className="w-4 h-4 mr-2" />Print</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handlePrintInvoice(invoice)}><Printer className="w-4 h-4 mr-2" />Print</DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onClick={() => setDeleteInvoiceState(invoice)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
