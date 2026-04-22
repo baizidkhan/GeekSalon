@@ -71,6 +71,7 @@ export default function DashboardPage() {
             value={loading ? "—" : (stats?.todaysAppointmentsCount ?? 0)}
             subtitle="TODAY"
             icon={Calendar}
+            href="/appointments?timeFilter=Today"
           />
           <StatCard
             title="Total Revenue"
@@ -108,8 +109,8 @@ export default function DashboardPage() {
           />
           <StatCard
             title="Employees"
-            value={loading ? "—" : (stats?.activeEmployeesCount ?? 0)}
-            subtitle="ACTIVE"
+            value={loading ? "—" : `${stats?.todaysAttendanceCount ?? 0}/${stats?.activeEmployeesCount ?? 0}`}
+            subtitle="ATTENDANCE"
             icon={UserCheck}
           />
           <StatCard
