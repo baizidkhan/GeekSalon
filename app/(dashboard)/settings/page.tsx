@@ -17,8 +17,10 @@ import {
 import { Building2, Clock, Shield, CreditCard, Loader2 } from "lucide-react"
 import { getBusinessInfo, updateBusinessInfo, getAppointmentSettings, updateAppointmentSettings, getInvoiceSettings, updateInvoiceSettings, type BusinessInfo, type AppointmentSetting, type InvoiceSetting } from "@/api/settings/settings"
 import { toast } from "sonner"
+import { useBusinessName } from "@/context/business-context"
 
 export default function SettingsPage() {
+  const { refresh: refreshBusinessName } = useBusinessName()
   const [loading, setLoading] = useState(true)
   const [savingBusiness, setSavingBusiness] = useState(false)
   const [savingBooking, setSavingBooking] = useState(false)
@@ -63,6 +65,7 @@ export default function SettingsPage() {
       if (response) {
         setBusinessSettings(response)
       }
+      await refreshBusinessName()
       toast.success("Business settings updated successfully")
     } catch (error) {
       console.log(error)
@@ -183,6 +186,10 @@ export default function SettingsPage() {
                   }
                 />
               </div>
+              <Button onClick={handleSaveBusinessInfo} disabled={savingBusiness}>
+                {savingBusiness && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Settings
+              </Button>
             </div>
           </div>
         </TabsContent>
