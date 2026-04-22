@@ -47,6 +47,7 @@ import { getAppointments, createAppointment, updateAppointment, deleteAppointmen
 import { getClients } from "@/api/clients/clients"
 import { getActiveServices } from "@/api/services/services"
 import { getStylists } from "@/api/employees/employees"
+import { getAppointmentSettings } from "@/api/settings/settings"
 import { toast } from "sonner"
 
 interface AppointmentRecord {
@@ -176,6 +177,21 @@ export default function AppointmentsPage() {
   const [newAppointment, setNewAppointment] = useState(emptyForm)
   const [nameLocked, setNameLocked] = useState(false)
   const [newAppointmentErrors, setNewAppointmentErrors] = useState<Partial<Record<NewAppointmentField, string>>>({})
+  const [minDate] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })
+  const [maxDate] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 60)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })
+  const [openTime, setOpenTime] = useState("")
+  const [closeTime, setCloseTime] = useState("")
+
+  useEffect(() => {
+  }, [])
+
 
   const normalizePhone = (value: string) => {
     const digitsOnly = value.replace(/\D/g, "")
@@ -236,6 +252,12 @@ export default function AppointmentsPage() {
       .then((list: { name: string }[]) => setEmployeeOptions(list.map((e) => e.name)))
       .catch(console.error)
     fetchClients()
+      .catch(console.error)
+    getAppointmentSettings()
+      .then((settings) => {
+        if (settings?.openingTime) setOpenTime(settings.openingTime.substring(0, 5))
+        if (settings?.closingTime) setCloseTime(settings.closingTime.substring(0, 5))
+      })
       .catch(console.error)
   }, [fetchAppointments, fetchClients])
 
@@ -305,8 +327,19 @@ export default function AppointmentsPage() {
     if (!newAppointment.client.trim()) errors.client = "Please fill this field."
     if (newAppointment.services.length === 0) errors.services = "Please select at least one service."
     if (!newAppointment.employee.trim()) errors.employee = "Please fill this field."
-    if (!newAppointment.date.trim()) errors.date = "Please fill this field."
-    if (!newAppointment.time.trim()) errors.time = "Please fill this field."
+    if (!newAppointment.date.trim()) {
+      errors.date = "Please fill this field."
+    } else {
+      if (newAppointment.date < minDate) errors.date = "Please select a valid upcoming date."
+      if (newAppointment.date > maxDate) errors.date = "Date cannot exceed 60 days."
+    }
+
+    if (!newAppointment.time.trim()) {
+      errors.time = "Please fill this field."
+    } else {
+      if (openTime && newAppointment.time < openTime) errors.time = `Time cannot be before ${openTime} and after ${closeTime}.`
+      if (closeTime && newAppointment.time > closeTime) errors.time = `Time cannot be before ${openTime} and after ${closeTime}.`
+    }
     return errors
   }
 
@@ -574,7 +607,7 @@ export default function AppointmentsPage() {
                             if (next.length > 0) clearNewAppointmentError("services")
                           }}
                         >
-                          <Checkbox checked={newAppointment.services.includes(s)} readOnly />
+                          <Checkbox checked={newAppointment.services.includes(s)} />
                           <span className="text-sm">{s}</span>
                         </div>
                       ))}
@@ -631,6 +664,8 @@ export default function AppointmentsPage() {
                     <Label className="text-[13px] font-semibold tracking-wide">Date <span className="text-destructive">*</span></Label>
                     <Input
                       type="date"
+                      min={minDate}
+                      max={maxDate}
                       value={newAppointment.date}
                       onChange={(e) => {
                         const nextDate = e.target.value
@@ -646,6 +681,8 @@ export default function AppointmentsPage() {
                     <Label className="text-[13px] font-semibold tracking-wide">Time <span className="text-destructive">*</span></Label>
                     <Input
                       type="time"
+                      min={openTime}
+                      max={closeTime}
                       value={newAppointment.time}
                       onChange={(e) => {
                         const nextTime = e.target.value
@@ -988,6 +1025,8 @@ export default function AppointmentsPage() {
                   <Label className="text-[13px] font-semibold tracking-wide">Date</Label>
                   <Input
                     type="date"
+                    min={minDate}
+                    max={maxDate}
                     value={selectedAppointment.date}
                     onChange={(e) =>
                       setSelectedAppointment({ ...selectedAppointment, date: e.target.value })
@@ -998,6 +1037,8 @@ export default function AppointmentsPage() {
                   <Label className="text-[13px] font-semibold tracking-wide">Time</Label>
                   <Input
                     type="time"
+                    min={openTime}
+                    max={closeTime}
                     value={selectedAppointment.time}
                     onChange={(e) =>
                       setSelectedAppointment({ ...selectedAppointment, time: e.target.value })
