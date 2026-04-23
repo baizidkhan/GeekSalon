@@ -356,12 +356,12 @@ export default function HRPayrollPage() {
         <div className="p-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-medium">Payroll Records</h3>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
+            {/* <DialogTrigger asChild>
               <Button size="sm" className="shrink-0" onClick={() => setForm({ ...EMPTY_FORM, month: selectedMonth, year: selectedYear })}>
                 <Plus className="w-4 h-4 mr-2" />
                 Process Payroll
               </Button>
-            </DialogTrigger>
+            </DialogTrigger> */}
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Process Payroll</DialogTitle>
