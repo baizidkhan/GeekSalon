@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -37,6 +37,7 @@ import {
   Pie,
   Cell,
 } from "recharts"
+import { getBasicEmployees } from "@/api/employees/employees"
 
 // ---------- Types ----------
 type DayStatus = "present" | "absent" | "leave" | "off"
@@ -48,6 +49,11 @@ interface Employee {
   initials: string
   days: DayStatus[]
   leaveCount: number
+}
+
+interface BasicEmployee {
+  id: string
+  name: string
 }
 
 // ---------- Mock Data ----------
@@ -81,19 +87,6 @@ function generateDays(empIndex: number): DayStatus[] {
     return "leave"
   })
 }
-
-const AVATARS = [
-  { name: "Md. Rafiqul Islam", initials: "RI", bg: "#dbeafe" },
-  { name: "Fatema Begum", initials: "FB", bg: "#fce7f3" },
-  { name: "Karim Hossain", initials: "KH", bg: "#d1fae5" },
-  { name: "Nasrin Akhter", initials: "NA", bg: "#fef3c7" },
-]
-
-const ALL_EMPLOYEES: Employee[] = AVATARS.map((a, i) => {
-  const days = generateDays(i)
-  const leaveCount = days.filter((d) => d === "absent" || d === "leave").length
-  return { id: i + 1, name: a.name, avatar: a.initials, initials: a.initials, days, leaveCount }
-})
 
 const YEARS = ["2022", "2023", "2024", "2025", "2026"]
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -134,16 +127,48 @@ export default function AttendancePage() {
   const [year, setYear] = useState(String(new Date().getFullYear()))
   const [month, setMonth] = useState(String(new Date().getMonth()))
   const [page, setPage] = useState(1)
+  const [employeeRoster, setEmployeeRoster] = useState<BasicEmployee[]>([])
+
+  useEffect(() => {
+    getBasicEmployees()
+      .then((list) => {
+        const rows = Array.isArray(list) ? list : list?.data ?? []
+        setEmployeeRoster(rows)
+      })
+      .catch(() => setEmployeeRoster([]))
+  }, [])
+
+  const allEmployees: Employee[] = useMemo(() => {
+    return employeeRoster.map((emp, i) => {
+      const days = generateDays(i)
+      const leaveCount = days.filter((d) => d === "absent" || d === "leave").length
+      const initials = emp.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+
+      return {
+        id: i + 1,
+        name: emp.name,
+        avatar: initials,
+        initials,
+        days,
+        leaveCount,
+      }
+    })
+  }, [employeeRoster])
 
   const daysInMonth = useMemo(() => {
     return new Date(Number(year), Number(month) + 1, 0).getDate()
   }, [year, month])
 
   const filtered = useMemo(() => {
-    return ALL_EMPLOYEES.filter((e) =>
+    return allEmployees.filter((e) =>
       e.name.toLowerCase().includes(search.toLowerCase())
     )
-  }, [search])
+  }, [search, allEmployees])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -164,314 +189,310 @@ export default function AttendancePage() {
   }
 
   return (
-      <div className="premium-page p-6 space-y-6">
+    <div className="premium-page p-6 space-y-6">
 
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Today, {new Date().toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              <span className="hover:underline cursor-pointer">Dashboard</span>
-              <span className="mx-1">/</span>
-              <span className="text-foreground">Attendance</span>
-            </p>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Today, {new Date().toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            <span className="hover:underline cursor-pointer">Dashboard</span>
+            <span className="mx-1">/</span>
+            <span className="text-foreground">Attendance</span>
+          </p>
+        </div>
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {/* Attendance Rate Chart */}
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-foreground">Attendance Rate</h2>
+            <Button variant="outline" size="sm" className="gap-2 text-xs h-8">
+              <Download className="w-3.5 h-3.5" />
+              Download Report
+            </Button>
           </div>
-          <Button className="gap-2">
-            <UserPlus className="w-4 h-4" />
-            Add Employeessss
-          </Button>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={attendanceRateData} barSize={18} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: "#94a3b8" }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) => `${v}%`}
+                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                domain={[0, 100]}
+                ticks={[0, 20, 40, 60, 80, 100]}
+              />
+              <Tooltip
+                cursor={{ fill: "#f8fafc" }}
+                contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
+                formatter={(value: number, name: string) => [`${value}%`, name]}
+              />
+              <Legend
+                iconType="circle"
+                iconSize={8}
+                wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+                formatter={(value) =>
+                  value === "onTime" ? "One Time" : value === "late" ? "Late" : "Absent"
+                }
+              />
+              <Bar dataKey="onTime" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="late" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="absent" stackId="a" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-          {/* Attendance Rate Chart */}
-          <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground">Attendance Rate</h2>
-              <Button variant="outline" size="sm" className="gap-2 text-xs h-8">
-                <Download className="w-3.5 h-3.5" />
-                Download Report
-              </Button>
-            </div>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={attendanceRateData} barSize={18} barGap={2}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: "#94a3b8" }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => `${v}%`}
-                  tick={{ fontSize: 11, fill: "#94a3b8" }}
-                  domain={[0, 100]}
-                  ticks={[0, 20, 40, 60, 80, 100]}
-                />
-                <Tooltip
-                  cursor={{ fill: "#f8fafc" }}
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
-                  formatter={(value: number, name: string) => [`${value}%`, name]}
-                />
-                <Legend
-                  iconType="circle"
-                  iconSize={8}
-                  wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
-                  formatter={(value) =>
-                    value === "onTime" ? "One Time" : value === "late" ? "Late" : "Absent"
-                  }
-                />
-                <Bar dataKey="onTime" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="late" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="absent" stackId="a" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
-              </BarChart>
+        {/* Employee Type Donut */}
+        <div className="bg-card rounded-xl border border-border p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-foreground">Employee Type</h2>
+          </div>
+          <div className="flex flex-col items-center">
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={employeeTypeData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={65}
+                  outerRadius={95}
+                  paddingAngle={3}
+                  dataKey="value"
+                  startAngle={90}
+                  endAngle={-270}
+                >
+                  {employeeTypeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                  ))}
+                </Pie>
+                <DonutCenterLabel />
+              </PieChart>
             </ResponsiveContainer>
-          </div>
-
-          {/* Employee Type Donut */}
-          <div className="bg-card rounded-xl border border-border p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground">Employee Type</h2>
-            </div>
-            <div className="flex flex-col items-center">
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={employeeTypeData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={65}
-                    outerRadius={95}
-                    paddingAngle={3}
-                    dataKey="value"
-                    startAngle={90}
-                    endAngle={-270}
-                  >
-                    {employeeTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
-                    ))}
-                  </Pie>
-                  <DonutCenterLabel />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-1">
-                {employeeTypeData.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground">{item.value}</span>{" "}
-                      {item.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-1">
+              {employeeTypeData.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground">{item.value}</span>{" "}
+                    {item.name}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Attendance Table */}
-        <div className="bg-card rounded-xl border border-border">
+      {/* Attendance Table */}
+      <div className="bg-card rounded-xl border border-border">
 
-          {/* Table Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border gap-3 flex-wrap">
-            <h2 className="font-semibold text-foreground">Employee Attendance</h2>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search"
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                  className="pl-8 h-8 w-44 text-sm"
-                />
-              </div>
-              <Button variant="outline" size="sm" className="gap-2 text-xs h-8" onClick={handleDownload}>
-                <Download className="w-3.5 h-3.5" />
-                Download Report
-              </Button>
-              <Select value={month} onValueChange={(v) => { setMonth(v); setPage(1) }}>
-                <SelectTrigger className="h-8 w-32 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MONTH_NAMES.map((m, i) => (
-                    <SelectItem key={i} value={String(i)}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={year} onValueChange={(v) => { setYear(v); setPage(1) }}>
-                <SelectTrigger className="h-8 w-24 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {YEARS.map((y) => (
-                    <SelectItem key={y} value={y}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {/* Table Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border gap-3 flex-wrap">
+          <h2 className="font-semibold text-foreground">Employee Attendance</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                className="pl-8 h-8 w-44 text-sm"
+              />
             </div>
+            <Button variant="outline" size="sm" className="gap-2 text-xs h-8" onClick={handleDownload}>
+              <Download className="w-3.5 h-3.5" />
+              Download Report
+            </Button>
+            <Select value={month} onValueChange={(v) => { setMonth(v); setPage(1) }}>
+              <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTH_NAMES.map((m, i) => (
+                  <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={year} onValueChange={(v) => { setYear(v); setPage(1) }}>
+              <SelectTrigger className="h-8 w-24 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEARS.map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+        </div>
 
-          {/* Scrollable Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/40 border-b border-border">
-                  <th className="text-left px-5 py-3 font-medium text-muted-foreground whitespace-nowrap min-w-[180px]">
-                    <span className="inline-flex items-center gap-1.5">
-                      <UserPlus className="w-3.5 h-3.5 text-primary/60" />
-                      Employee Name
-                    </span>
-                    <span className="ml-1 text-xs">↑</span>
-                  </th>
-                  {Array.from({ length: daysInMonth }, (_, i) => (
-                    <th
-                      key={i + 1}
-                      className="px-1 py-3 font-medium text-muted-foreground text-center min-w-[28px]"
-                    >
-                      {i + 1}
-                    </th>
-                  ))}
-                  <th className="px-4 py-3 font-medium text-muted-foreground text-right whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 justify-end">
-                      <Calendar className="w-3.5 h-3.5 text-primary/60" />
-                      Leave
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.map((emp, idx) => (
-                  <tr
-                    key={emp.id}
-                    className={`border-b border-border last:border-0 ${idx % 2 === 0 ? "bg-card" : "bg-muted/20"
-                      } hover:bg-blue-50/40 transition-colors`}
+        {/* Scrollable Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/40 border-b border-border">
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground whitespace-nowrap min-w-[180px]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <UserPlus className="w-3.5 h-3.5 text-primary/60" />
+                    Employee Name
+                  </span>
+                  <span className="ml-1 text-xs">↑</span>
+                </th>
+                {Array.from({ length: daysInMonth }, (_, i) => (
+                  <th
+                    key={i + 1}
+                    className="px-1 py-3 font-medium text-muted-foreground text-center min-w-[28px]"
                   >
-                    {/* Name */}
-                    <td className="px-5 py-2.5 whitespace-nowrap">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-blue-700"
-                          style={{ backgroundColor: "#dbeafe" }}
-                        >
-                          {emp.initials}
-                        </div>
-                        <span className="font-medium text-foreground">{emp.name}</span>
+                    {i + 1}
+                  </th>
+                ))}
+                <th className="px-4 py-3 font-medium text-muted-foreground text-right whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1.5 justify-end">
+                    <Calendar className="w-3.5 h-3.5 text-primary/60" />
+                    Leave
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.map((emp, idx) => (
+                <tr
+                  key={emp.id}
+                  className={`border-b border-border last:border-0 ${idx % 2 === 0 ? "bg-card" : "bg-muted/20"
+                    } hover:bg-blue-50/40 transition-colors`}
+                >
+                  {/* Name */}
+                  <td className="px-5 py-2.5 whitespace-nowrap">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-blue-700"
+                        style={{ backgroundColor: "#dbeafe" }}
+                      >
+                        {emp.initials}
+                      </div>
+                      <span className="font-medium text-foreground">{emp.name}</span>
+                    </div>
+                  </td>
+                  {/* Days */}
+                  {emp.days.slice(0, daysInMonth).map((status, di) => (
+                    <td key={di} className="px-1 py-2.5 text-center">
+                      <div className="flex justify-center">
+                        <DayIcon status={status} />
                       </div>
                     </td>
-                    {/* Days */}
-                    {emp.days.slice(0, daysInMonth).map((status, di) => (
-                      <td key={di} className="px-1 py-2.5 text-center">
-                        <div className="flex justify-center">
-                          <DayIcon status={status} />
-                        </div>
-                      </td>
-                    ))}
-                    {/* Leave count */}
-                    <td className="px-4 py-2.5 text-right">
-                      <Badge
-                        variant="secondary"
-                        className={`text-xs font-semibold ${emp.leaveCount >= 10
-                          ? "bg-red-100 text-red-600"
-                          : emp.leaveCount >= 5
-                            ? "bg-orange-100 text-orange-600"
-                            : "bg-blue-100 text-blue-600"
-                          }`}
-                      >
-                        {emp.leaveCount} Day
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-5 py-3 border-t border-border text-sm text-muted-foreground">
-            <span>
-              Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to{" "}
-              {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} entries
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7"
-                disabled={page === 1}
-                onClick={() => setPage(1)}
-              >
-                <ChevronFirst className="w-3.5 h-3.5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7"
-                disabled={page === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </Button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const p = i + 1
-                return (
-                  <Button
-                    key={p}
-                    variant={page === p ? "default" : "outline"}
-                    size="icon"
-                    className="h-7 w-7 text-xs"
-                    onClick={() => setPage(p)}
-                  >
-                    {p}
-                  </Button>
-                )
-              })}
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7"
-                disabled={page === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7"
-                disabled={page === totalPages}
-                onClick={() => setPage(totalPages)}
-              >
-                <ChevronLast className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-          </div>
+                  ))}
+                  {/* Leave count */}
+                  <td className="px-4 py-2.5 text-right">
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs font-semibold ${emp.leaveCount >= 10
+                        ? "bg-red-100 text-red-600"
+                        : emp.leaveCount >= 5
+                          ? "bg-orange-100 text-orange-600"
+                          : "bg-blue-100 text-blue-600"
+                        }`}
+                    >
+                      {emp.leaveCount} Day
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-5 text-xs text-muted-foreground pb-2">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-green-500" />
-            Present
-          </div>
-          <div className="flex items-center gap-1.5">
-            <XCircle className="w-4 h-4 text-red-400" />
-            Absent
-          </div>
-          <div className="flex items-center gap-1.5">
-            <MinusCircle className="w-4 h-4 text-orange-400" />
-            Leave
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-border text-sm text-muted-foreground">
+          <span>
+            Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to{" "}
+            {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} entries
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              disabled={page === 1}
+              onClick={() => setPage(1)}
+            >
+              <ChevronFirst className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const p = i + 1
+              return (
+                <Button
+                  key={p}
+                  variant={page === p ? "default" : "outline"}
+                  size="icon"
+                  className="h-7 w-7 text-xs"
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              )
+            })}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              disabled={page === totalPages}
+              onClick={() => setPage(totalPages)}
+            >
+              <ChevronLast className="w-3.5 h-3.5" />
+            </Button>
           </div>
         </div>
-
       </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-5 text-xs text-muted-foreground pb-2">
+        <div className="flex items-center gap-1.5">
+          <CheckCircle2 className="w-4 h-4 text-green-500" />
+          Present
+        </div>
+        <div className="flex items-center gap-1.5">
+          <XCircle className="w-4 h-4 text-red-400" />
+          Absent
+        </div>
+        <div className="flex items-center gap-1.5">
+          <MinusCircle className="w-4 h-4 text-orange-400" />
+          Leave
+        </div>
+      </div>
+
+    </div>
   )
 }
