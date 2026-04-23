@@ -31,6 +31,20 @@ export function markStale(...keys: string[]) {
 }
 
 /**
+ * Immediately remove the axios-cache-interceptor localStorage entry for one or
+ * more keys.  Call this when you need the cache gone NOW rather than waiting
+ * for the next fetch to consume a stale flag.
+ */
+export function removeFromCache(...keys: string[]) {
+  if (typeof window === 'undefined') return
+  keys.forEach((k) => {
+    try {
+      localStorage.removeItem(`aci:${k}`)
+    } catch {}
+  })
+}
+
+/**
  * Consume the stale flag for a key.
  * Returns true exactly once after markStale — subsequent calls return false.
  */
