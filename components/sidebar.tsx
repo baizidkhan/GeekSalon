@@ -67,7 +67,7 @@ const navigation = [
     title: "System",
     items: [
       { name: "Settings", href: "/settings", icon: Settings, permission: "settings" },
-      { name: "Change Password", href: "/update-password", icon: UserLock, permission: "dashboard" },
+      { name: "Change Password", href: "/update-password", icon: UserLock, permission: "update-password" },
     ],
   },
 ]
@@ -142,7 +142,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-5">
         {navigation.map((section) => {
           const visibleItems = section.items.filter(item =>
-            item.name === "Dashboard" || hasPermission(user, item.permission)
+            hasPermission(user, item.permission)
           )
 
           if (visibleItems.length === 0) return null
