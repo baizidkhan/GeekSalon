@@ -15,6 +15,11 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
+  const persistAccessTokenCookie = (token: string) => {
+    const maxAge = 10 * 24 * 60 * 60
+    document.cookie = `accessToken=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; samesite=strict`
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -27,6 +32,7 @@ export default function LoginPage() {
       if (token) {
         console.log('Storing token in localStorage:', token.substring(0, 10) + '...')
         localStorage.setItem('accessToken', token)
+        persistAccessTokenCookie(token)
       } else {
         console.warn('No token found in login response!')
       }
