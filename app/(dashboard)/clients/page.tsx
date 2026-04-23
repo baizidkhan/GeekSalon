@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt, History, LayoutList, LayoutGrid } from "lucide-react"
+import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt, History, LayoutList, LayoutGrid, Scissors } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +53,10 @@ interface Client {
   totalSpent: number
   firstVisit: string | null
   lastVisit: string
+  appointments?: Array<{
+    services?: string[] | null
+    source?: string | null
+  }>
 }
 
 
@@ -69,6 +73,62 @@ const TIME_OPTIONS = [
 const PAGE_SIZE = 12
 
 const normalizePhone = (value: string) => value.replace(/\D/g, "")
+
+const getMainService = (client: Client) => {
+  const serviceCounts = new Map<string, number>()
+
+  for (const appointment of client.appointments ?? []) {
+    for (const service of appointment.services ?? []) {
+      const normalizedService = service.trim()
+      if (!normalizedService) continue
+      serviceCounts.set(normalizedService, (serviceCounts.get(normalizedService) ?? 0) + 1)
+    }
+  }
+
+  let topService = "-"
+  let topCount = 0
+
+  for (const [service, count] of serviceCounts.entries()) {
+    if (count > topCount) {
+      topService = service
+      topCount = count
+    }
+  }
+
+  return topCount > 0 ? `${topService} (${topCount} ${topCount === 1 ? "time" : "times"})` : "-"
+}
+
+const normalizeAppointmentSource = (raw: string | null | undefined) => {
+  const source = (raw ?? "").toLowerCase().replace(/[-_]/g, " ").trim()
+  if (source === "walk in" || source === "walkin") return "Walk In"
+  if (source === "call") return "Call"
+  return "Online"
+}
+
+const getMainMethod = (client: Client) => {
+  const allowedSources: Array<"Online" | "Walk In" | "Call"> = ["Online", "Walk In", "Call"]
+  const sourceCounts = new Map<string, number>()
+
+  for (const appointment of client.appointments ?? []) {
+    const normalizedSource = normalizeAppointmentSource(appointment.source)
+    sourceCounts.set(normalizedSource, (sourceCounts.get(normalizedSource) ?? 0) + 1)
+  }
+
+  let topSource = ""
+  let topCount = 0
+
+  for (const source of allowedSources) {
+    const count = sourceCounts.get(source) ?? 0
+    if (count > topCount) {
+      topSource = source
+      topCount = count
+    }
+  }
+
+  if (topCount <= 0) return ""
+  if (topCount === client.visits) return `all via ${topSource}`
+  return `${topCount} via ${topSource}`
+}
 
 // Bangladeshi phone validation: 01[3-9]XXXXXXXX or +8801[3-9]XXXXXXXX
 const isValidPhone = (phone: string) => {
@@ -467,6 +527,7 @@ export default function ClientsPage() {
                     <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
                     <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Contact</span></TableHead>
                     <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Total Appointments</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Main Service</span></TableHead>
                     <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Total Spent</span></TableHead>
                     <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Last Visit</span></TableHead>
                     <TableHead className="w-12"></TableHead>
@@ -511,7 +572,10 @@ export default function ClientsPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{client.visits} {client.visits === 1 ? 'time' : 'times'}</TableCell>
+                      <TableCell>
+                        {client.visits} {client.visits === 1 ? 'time' : 'times'}{getMainMethod(client) ? ` (${getMainMethod(client)})` : ""}
+                      </TableCell>
+                      <TableCell>{getMainService(client)}</TableCell>
                       <TableCell>৳{(client.totalSpent ?? 0).toLocaleString()}</TableCell>
                       <TableCell>{client.lastVisit ?? '-'}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
