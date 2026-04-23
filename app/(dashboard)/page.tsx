@@ -105,17 +105,17 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard
           title="Today's Appointments"
-          value={loading ? "—" : (stats?.todaysAppointmentsCount ?? 0)}
+          value={loading || !stats ? "—" : (stats.todaysAppointmentsCount ?? 0)}
           subtitle="TODAY"
           icon={Calendar}
           href="/appointments?timeFilter=Today"
         />
         <StatCard
           title="Total Revenue"
-          value={loading ? "—" : `৳${(
-            revenueFilter === "weekly" ? stats?.weeklyRevenue :
-              revenueFilter === "monthly" ? stats?.monthlyRevenue :
-                stats?.sixMonthRevenue ?? 0
+          value={loading || !stats ? "—" : `৳${(
+            revenueFilter === "weekly" ? (stats.weeklyRevenue ?? 0) :
+              revenueFilter === "monthly" ? (stats.monthlyRevenue ?? 0) :
+                (stats.sixMonthRevenue ?? 0)
           ).toLocaleString()}`}
           subtitle="WEEK"
           icon={TrendingUp}
@@ -125,10 +125,10 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Total Clients"
-          value={loading ? "—" : (
-            clientsFilter === "monthly" ? stats?.totalClientsThisMonth :
-              clientsFilter === "6months" ? stats?.totalClientsSixMonths :
-                stats?.totalClientsThisYear ?? 0
+          value={loading || !stats ? "—" : (
+            clientsFilter === "monthly" ? (stats.totalClientsThisMonth ?? 0) :
+              clientsFilter === "6months" ? (stats.totalClientsSixMonths ?? 0) :
+                (stats.totalClientsThisYear ?? 0)
           )}
           subtitle="MONTH"
           icon={Users}
@@ -138,7 +138,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Services"
-          value={loading ? "—" : (stats?.activeServicesCount ?? 0)}
+          value={loading || !stats ? "—" : (stats.activeServicesCount ?? 0)}
           subtitle="ACTIVE"
           icon={Layers}
         />
@@ -148,10 +148,10 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           title="Online Bookings"
-          value={loading ? "—" : (
-            onlineFilter === "monthly" ? stats?.onlineBookingsThisMonth :
-              onlineFilter === "6months" ? stats?.onlineBookingsSixMonths :
-                stats?.onlineBookingsThisYear ?? 0
+          value={loading || !stats ? "—" : (
+            onlineFilter === "monthly" ? (stats.onlineBookingsThisMonth ?? 0) :
+              onlineFilter === "6months" ? (stats.onlineBookingsSixMonths ?? 0) :
+                (stats.onlineBookingsThisYear ?? 0)
           )}
           subtitle="MONTH"
           icon={Clock}
@@ -161,10 +161,10 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Walk-ins"
-          value={loading ? "—" : (
-            walkInFilter === "monthly" ? stats?.walkInsThisMonth :
-              walkInFilter === "6months" ? stats?.walkInsSixMonths :
-                stats?.walkInsThisYear ?? 0
+          value={loading || !stats ? "—" : (
+            walkInFilter === "monthly" ? (stats.walkInsThisMonth ?? 0) :
+              walkInFilter === "6months" ? (stats.walkInsSixMonths ?? 0) :
+                (stats.walkInsThisYear ?? 0)
           )}
           subtitle="MONTH"
           icon={Footprints}
@@ -174,13 +174,13 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Employees"
-          value={loading ? "—" : `${stats?.todaysAttendanceCount ?? 0}/${stats?.activeEmployeesCount ?? 0}`}
+          value={loading || !stats ? "—" : `${stats.todaysAttendanceCount ?? 0}/${stats.activeEmployeesCount ?? 0}`}
           subtitle="ATTENDANCE"
           icon={UserCheck}
         />
         <StatCard
           title="Low Stock Items"
-          value={loading ? "—" : (stats?.lowStockItemsCount ?? 0)}
+          value={loading || !stats ? "—" : (stats.lowStockItemsCount ?? 0)}
           subtitle="ALERT"
           icon={AlertTriangle}
           iconClassName="text-amber-500"
