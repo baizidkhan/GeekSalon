@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import {
@@ -27,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Plus, Download, User, UserCheck, Receipt, MinusCircle, Zap, Loader2, MoreHorizontal } from "lucide-react"
+import { Plus, Download, User, UserCheck, Receipt, MinusCircle, Zap, Loader2, MoreHorizontal, Pencil, ChevronLeft, ChevronRight } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,10 +39,12 @@ import { toast } from "sonner"
 import {
   getPayrollRecords,
   createPayrollRecord,
+  updatePayrollRecord,
   type PayrollRecord,
   type CreatePayrollDto,
   type PayrollStatus,
 } from "@/api/hr-payroll/hr-payroll"
+import { getBasicEmployees } from "@/api/employees/employees"
 
 const MONTHS = [
   { value: 1, label: "January" },
@@ -74,6 +77,8 @@ const EMPTY_FORM: CreatePayrollDto = {
   year: new Date().getFullYear(),
 }
 
+type MergedRecord = PayrollRecord & { _virtual?: boolean }
+
 export default function HRPayrollPage() {
   const now = new Date()
   const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth() + 1)
@@ -83,9 +88,15 @@ export default function HRPayrollPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<CreatePayrollDto>(EMPTY_FORM)
+  const [employees, setEmployees] = useState<Array<{ id: string; name: string; role?: string; salary?: number }>>([])
+
+  const [viewRecord, setViewRecord] = useState<MergedRecord | null>(null)
+  const [editRecord, setEditRecord] = useState<MergedRecord | null>(null)
+  const [editForm, setEditForm] = useState<CreatePayrollDto>(EMPTY_FORM)
+  const [editSaving, setEditSaving] = useState(false)
 
   const fetchPayroll = useCallback(async () => {
     setLoading(true)
@@ -109,7 +120,56 @@ export default function HRPayrollPage() {
     fetchPayroll()
   }, [fetchPayroll])
 
-  const handleSave = async () => {
+  useEffect(() => {
+    getBasicEmployees()
+      .then((list) => {
+        const rows = Array.isArray(list) ? list : list?.data ?? []
+        setEmployees(rows)
+      })
+      .catch(() => setEmployees([]))
+  }, [])
+
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+
+  // clamp month if year is changed to current year while a future month was selected
+  useEffect(() => {
+    if (selectedYear === currentYear && selectedMonth > currentMonth) {
+      setSelectedMonth(currentMonth)
+    }
+  }, [selectedYear])
+
+  const mergedRecords = useMemo<MergedRecord[]>(() => {
+    const byName = new Map(records.map((r) => [r.employeeName.toLowerCase(), r]))
+
+    // virtual rows only apply to the current month — new employees have no past records
+    const isCurrentPeriod = selectedMonth === currentMonth && selectedYear === currentYear
+    const missingRows = isCurrentPeriod
+      ? employees
+          .filter((e) => !byName.has(e.name.toLowerCase()))
+          .map((e) => ({
+            id: `virtual-${e.id}`,
+            employeeId: e.id,
+            employeeName: e.name,
+            role: e.role || "",
+            baseSalary: Number(e.salary) || 0,
+            bonus: 0,
+            deductions: 0,
+            netSalary: Number(e.salary) || 0,
+            status: "Pending" as PayrollStatus,
+            payDate: "",
+            month: selectedMonth,
+            year: selectedYear,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            _virtual: true,
+          }))
+      : []
+
+    return [...records, ...missingRows]
+  }, [records, employees, selectedMonth, selectedYear])
+
+  const handleCreate = async () => {
     if (!form.employeeId || !form.employeeName || !form.role) {
       toast.error("Employee ID, name, and role are required")
       return
@@ -118,13 +178,51 @@ export default function HRPayrollPage() {
     try {
       await createPayrollRecord({ ...form, month: selectedMonth, year: selectedYear })
       toast.success("Payroll record created")
-      setIsDialogOpen(false)
+      setIsCreateOpen(false)
       setForm(EMPTY_FORM)
       fetchPayroll()
     } catch {
       toast.error("Failed to create payroll record")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const openEdit = (record: MergedRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditRecord(record)
+    setEditForm({
+      employeeId: record.employeeId,
+      employeeName: record.employeeName,
+      role: record.role,
+      baseSalary: Number(record.baseSalary),
+      bonus: Number(record.bonus),
+      deductions: Number(record.deductions),
+      netSalary: Number(record.netSalary),
+      status: record.status,
+      payDate: record.payDate ?? "",
+      month: record.month,
+      year: record.year,
+    })
+  }
+
+  const handleEditSave = async () => {
+    if (!editRecord) return
+    setEditSaving(true)
+    try {
+      if (editRecord._virtual) {
+        await createPayrollRecord({ ...editForm, month: selectedMonth, year: selectedYear })
+        toast.success("Payroll record saved")
+      } else {
+        await updatePayrollRecord(editRecord.id, editForm)
+        toast.success("Payroll record updated")
+      }
+      setEditRecord(null)
+      fetchPayroll()
+    } catch {
+      toast.error("Failed to save payroll record")
+    } finally {
+      setEditSaving(false)
     }
   }
 
@@ -143,8 +241,25 @@ export default function HRPayrollPage() {
   const totalPayroll = records.reduce((sum, r) => sum + Number(r.netSalary), 0)
   const pendingPayroll = records.filter(r => r.status === "Pending").reduce((sum, r) => sum + Number(r.netSalary), 0)
 
-  const currentYear = now.getFullYear()
-  const yearOptions = Array.from({ length: 4 }, (_, i) => currentYear - 1 + i)
+  const prevMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedYear((y) => y - 1)
+      setSelectedMonth(12)
+    } else {
+      setSelectedMonth((m) => m - 1)
+    }
+  }
+
+  const nextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedYear((y) => y + 1)
+      setSelectedMonth(1)
+    } else {
+      setSelectedMonth((m) => m + 1)
+    }
+  }
+
+  const atCurrentPeriod = selectedMonth === currentMonth && selectedYear === currentYear
 
   return (
     <div className="premium-page p-4 sm:p-6 md:p-8">
@@ -163,30 +278,47 @@ export default function HRPayrollPage() {
       </div>
 
       {/* Month / Year Filter */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Month" />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTHS.map((m) => (
-              <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-          <SelectTrigger className="w-28">
-            <SelectValue placeholder="Year" />
-          </SelectTrigger>
-          <SelectContent>
-            {yearOptions.map((y) => (
-              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground">
-          {MONTHS.find(m => m.value === selectedMonth)?.label} {selectedYear}
-        </span>
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        {/* Month navigator */}
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={prevMonth}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="w-24 text-center text-sm font-medium">
+            {MONTHS.find((m) => m.value === selectedMonth)?.label}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={nextMonth}
+            disabled={atCurrentPeriod}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Year navigator */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setSelectedYear((y) => y - 1)}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="w-24 text-center text-sm font-medium">{selectedYear}</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setSelectedYear((y) => y + 1)}
+            disabled={selectedYear >= currentYear}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -215,7 +347,7 @@ export default function HRPayrollPage() {
         </div>
         <div className="bg-card rounded-xl p-4 sm:p-5 border border-border">
           <p className="text-xs sm:text-sm text-muted-foreground">Employees</p>
-          <p className="text-lg sm:text-2xl font-semibold text-foreground mt-1">{total}</p>
+          <p className="text-lg sm:text-2xl font-semibold text-foreground mt-1">{employees.length || total}</p>
         </div>
       </div>
 
@@ -223,7 +355,7 @@ export default function HRPayrollPage() {
       <div className="bg-card rounded-xl border border-border">
         <div className="p-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-medium">Payroll Records</h3>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="shrink-0" onClick={() => setForm({ ...EMPTY_FORM, month: selectedMonth, year: selectedYear })}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -286,7 +418,7 @@ export default function HRPayrollPage() {
                     <Input type="date" value={form.payDate} onChange={(e) => setForm({ ...form, payDate: e.target.value })} />
                   </div>
                 </div>
-                <Button className="w-full" onClick={handleSave} disabled={saving}>
+                <Button className="w-full" onClick={handleCreate} disabled={saving}>
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Save Record
                 </Button>
@@ -300,7 +432,7 @@ export default function HRPayrollPage() {
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          ) : records.length === 0 ? (
+          ) : mergedRecords.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground text-sm">
               No payroll records for {MONTHS.find(m => m.value === selectedMonth)?.label} {selectedYear}
             </div>
@@ -319,8 +451,12 @@ export default function HRPayrollPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {records.map((record) => (
-                  <TableRow key={record.id}>
+                {mergedRecords.map((record) => (
+                  <TableRow
+                    key={record.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => setViewRecord(record)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-2 sm:gap-3">
                         <Avatar className="shrink-0 h-8 w-8 sm:h-10 sm:w-10">
@@ -344,7 +480,7 @@ export default function HRPayrollPage() {
                         {record.status}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -352,9 +488,12 @@ export default function HRPayrollPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setViewRecord(record)}>View Details</DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => openEdit(record, e)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
                           <DropdownMenuItem>Download Slip</DropdownMenuItem>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -382,6 +521,152 @@ export default function HRPayrollPage() {
           </div>
         )}
       </div>
+
+      {/* View Details Dialog */}
+      <Dialog open={!!viewRecord} onOpenChange={(open) => !open && setViewRecord(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Payroll Details</DialogTitle>
+          </DialogHeader>
+          {viewRecord && (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-3 border-b pb-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-primary/10 text-primary text-base">
+                    {getInitials(viewRecord.employeeName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-base">{viewRecord.employeeName}</p>
+                  <p className="text-sm text-muted-foreground">{viewRecord.role}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">Employee ID</p>
+                  <p className="font-medium">{viewRecord.employeeId}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">Period</p>
+                  <p className="font-medium">{MONTHS.find(m => m.value === viewRecord.month)?.label} {viewRecord.year}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">Base Salary</p>
+                  <p className="font-medium">৳{Number(viewRecord.baseSalary).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">Bonus</p>
+                  <p className="font-medium text-green-600">+৳{Number(viewRecord.bonus).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">Deductions</p>
+                  <p className="font-medium text-red-600">-৳{Number(viewRecord.deductions).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">Net Salary</p>
+                  <p className="font-semibold text-base">৳{Number(viewRecord.netSalary).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">Status</p>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viewRecord.status)}`}>
+                    {viewRecord.status}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-0.5">Pay Date</p>
+                  <p className="font-medium">{viewRecord.payDate || "—"}</p>
+                </div>
+              </div>
+              <DialogFooter className="pt-2">
+                <Button variant="outline" onClick={() => { setViewRecord(null); openEdit(viewRecord, { stopPropagation: () => {} } as any) }}>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+                <Button onClick={() => setViewRecord(null)}>Close</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editRecord} onOpenChange={(open) => !open && setEditRecord(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Payroll — {editRecord?.employeeName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Base Salary</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editForm.baseSalary}
+                  onChange={(e) => setEditForm({ ...editForm, baseSalary: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label>Bonus</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editForm.bonus}
+                  onChange={(e) => setEditForm({ ...editForm, bonus: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Deductions</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editForm.deductions}
+                  onChange={(e) => setEditForm({ ...editForm, deductions: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label>Net Salary</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editForm.netSalary}
+                  onChange={(e) => setEditForm({ ...editForm, netSalary: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Status</Label>
+                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v as PayrollStatus })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Processing">Processing</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Pay Date</Label>
+                <Input
+                  type="date"
+                  value={editForm.payDate}
+                  onChange={(e) => setEditForm({ ...editForm, payDate: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setEditRecord(null)}>Cancel</Button>
+            <Button onClick={handleEditSave} disabled={editSaving}>
+              {editSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
