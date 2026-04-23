@@ -1,5 +1,5 @@
 import api from '../base'
-import { CACHE, consumeStale, markStale } from '@/lib/cache'
+import { CACHE, consumeStale, markStale, removeFromCache } from '@/lib/cache'
 
 const TTL = 60 * 1000 // 1 min — appointments change very frequently
 
@@ -13,6 +13,7 @@ export async function getAppointments(filters?: {
 }) {
   const override = consumeStale(CACHE.APPOINTMENTS)
   const { data } = await api.get('/appointments', {
+    id: CACHE.APPOINTMENTS,
     params: filters,
     cache: { ttl: TTL, override },
   })
