@@ -53,7 +53,6 @@ export function getUserFromToken(token: string): User | null {
 export function hasPermission(user: User | null, permission: string): boolean {
   if (!user) return false;
   if (user.role === 'admin') return true;
-  if (permission === 'dashboard') return true;
   
   // Specific role-based defaults if needed
   if (user.role === 'storeManager') {
@@ -64,7 +63,7 @@ export function hasPermission(user: User | null, permission: string): boolean {
   
   if (user.role === 'staff') {
     // Staff usually have limited access
-    const allowed = ['appointments', 'clients', 'attendance', 'service', 'inventory', 'leave-request'];
+    const allowed = ['appointments', 'clients', 'attendance', 'service', 'inventory', 'leave-request', 'update-password'];
     return allowed.includes(permission);
   }
 

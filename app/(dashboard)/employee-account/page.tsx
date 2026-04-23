@@ -46,8 +46,12 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
+import { hasPermission } from "@/lib/auth-utils"
 
 const AVAILABLE_PERMISSIONS = [
+    { id: "dashboard", label: "Dashboard" },
     { id: "clients", label: "Clients" },
     { id: "appointments", label: "Appointments" },
     { id: "service", label: "Services" },
@@ -65,6 +69,8 @@ const AVAILABLE_PERMISSIONS = [
 
 
 export default function EmployeeAccountPage() {
+    const { user, loading: authLoading } = useAuth()
+    const router = useRouter()
     const [users, setUsers] = useState<UserManagement[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
@@ -113,8 +119,14 @@ export default function EmployeeAccountPage() {
     }
 
     useEffect(() => {
-        fetchUsers()
-    }, [])
+        if (!authLoading) {
+            if (!hasPermission(user, 'user-management')) {
+                router.replace('/appointments')
+                return
+            }
+            fetchUsers()
+        }
+    }, [user, authLoading, router])
 
     const filteredUsers = useMemo(() => {
         return users.filter((user) =>
@@ -125,6 +137,14 @@ export default function EmployeeAccountPage() {
     const unlinkedEmployees = useMemo(() => {
         return employees.filter(emp => !users.some(user => user.employeeId === emp.id || user.employee?.id === emp.id))
     }, [employees, users])
+
+    if (authLoading || (!hasPermission(user, 'user-management') && !authLoading)) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
 
     const handleAddUser = async () => {
         const errors: Record<string, string> = {}
