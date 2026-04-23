@@ -522,6 +522,7 @@ export default function AppointmentsPage() {
   const [nameLocked, setNameLocked] = useState(false)
   const [newAppointmentErrors, setNewAppointmentErrors] = useState<Partial<Record<NewAppointmentField, string>>>({})
   const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const [editDatePickerOpen, setEditDatePickerOpen] = useState(false)
   const [minDate] = useState(() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
@@ -765,19 +766,27 @@ export default function AppointmentsPage() {
     if (!selectedAppointment) return
     try {
       setIsSubmitting(true)
+      const selectedServices = selectedAppointment.service
+        ? selectedAppointment.service.split(",").map((svc) => svc.trim()).filter(Boolean)
+        : []
+
       await updateAppointment(selectedAppointment.id, {
         clientName: selectedAppointment.client,
         date: selectedAppointment.date,
         time: selectedAppointment.time,
         staff: selectedAppointment.employee || undefined,
-        services: selectedAppointment.service ? [selectedAppointment.service] : undefined,
+        services: selectedServices.length > 0 ? selectedServices : undefined,
         status: selectedAppointment.status,
         source: selectedAppointment.source,
       })
+      toast.success("Appointment updated successfully")
       setEditDialogOpen(false)
       setSelectedAppointment(null)
       fetchAppointments()
-    } catch (err) {
+    } catch (err: any) {
+      const message = err?.response?.data?.message
+      const parsed = Array.isArray(message) ? message.join(", ") : message || "Failed to update appointment"
+      toast.error(parsed)
       console.error("Failed to update appointment", err)
     } finally {
       setIsSubmitting(false)
@@ -1388,7 +1397,13 @@ export default function AppointmentsPage() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open)
+          if (!open) setEditDatePickerOpen(false)
+        }}
+      >
         <DialogContent className="sm:max-w-[620px]">
           <DialogHeader>
             <DialogTitle>Edit Appointment</DialogTitle>
@@ -1417,26 +1432,50 @@ export default function AppointmentsPage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[13px] font-semibold tracking-wide">Service</Label>
-                <Select
-                  value={selectedAppointment.service}
-                  onValueChange={(value) =>
-                    setSelectedAppointment({ ...selectedAppointment, service: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {serviceOptions.map((s) => (
-                      <SelectItem key={s.name} value={s.name}>
-                        <div className="flex items-center justify-between w-full gap-4">
-                          <span>{s.name}</span>
-                          <span className="text-muted-foreground">${parseFloat(s.price.toString()).toFixed(2)}</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <span className={selectedAppointment.service ? "text-foreground" : "text-muted-foreground"}>
+                        {selectedAppointment.service || "Select services"}
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+                    {serviceOptions.map((s) => {
+                      const selectedServices = selectedAppointment.service
+                        ? selectedAppointment.service.split(",").map((svc) => svc.trim()).filter(Boolean)
+                        : []
+                      const isSelected = selectedServices.includes(s.name)
+
+                      return (
+                        <div
+                          key={s.name}
+                          className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                          onClick={() => {
+                            const next = isSelected
+                              ? selectedServices.filter((x) => x !== s.name)
+                              : [...selectedServices, s.name]
+
+                            setSelectedAppointment({
+                              ...selectedAppointment,
+                              service: next.join(", "),
+                            })
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Checkbox checked={isSelected} />
+                            <span className="text-sm">{s.name}</span>
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground">${parseFloat(s.price.toString()).toFixed(2)}</span>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      )
+                    })}
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label className="text-[13px] font-semibold tracking-wide">Total Price (incl. tax)</Label>
@@ -1473,18 +1512,39 @@ export default function AppointmentsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[13px] font-semibold tracking-wide">Date</Label>
-                  <Input
-                    type="date"
-                    min={minDate}
-                    max={maxDate}
-                    value={selectedAppointment.date}
-                    onChange={(e) =>
-                      setSelectedAppointment({ ...selectedAppointment, date: e.target.value })
-                    }
-                  />
+                  <Popover open={editDatePickerOpen} onOpenChange={setEditDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-start px-3 font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className={selectedAppointment.date ? "text-foreground" : "text-muted-foreground"}>
+                          {formatDateDisplay(selectedAppointment.date)}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                      <DateCalendar
+                        mode="single"
+                        selected={selectedAppointment.date ? new Date(`${selectedAppointment.date}T00:00:00`) : undefined}
+                        onSelect={(selected) => {
+                          if (!selected) return
+                          const nextDate = format(selected, "yyyy-MM-dd")
+                          setSelectedAppointment({ ...selectedAppointment, date: nextDate })
+                          setEditDatePickerOpen(false)
+                        }}
+                        disabled={(date) => date < minDateObject || date > maxDateObject}
+                        initialFocus
+                        fromDate={minDateObject}
+                        toDate={maxDateObject}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[13px] font-semibold tracking-wide">Time</Label>
