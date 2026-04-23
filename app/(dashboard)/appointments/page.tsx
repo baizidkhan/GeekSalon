@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
+import { hasPermission } from "@/lib/auth-utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -191,6 +193,7 @@ const emptyForm = {
 type NewAppointmentField = "phone" | "client" | "services" | "employee" | "date" | "time"
 
 export default function AppointmentsPage() {
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -230,6 +233,12 @@ export default function AppointmentsPage() {
   })
   const [openTime, setOpenTime] = useState("")
   const [closeTime, setCloseTime] = useState("")
+
+  useEffect(() => {
+    if (!authLoading && !hasPermission(user, 'appointments')) {
+      router.replace('/update-password')
+    }
+  }, [user, authLoading, router])
 
   useEffect(() => {
   }, [])
@@ -551,6 +560,14 @@ export default function AppointmentsPage() {
       default:
         return "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
     }
+  }
+
+  if (authLoading || (!hasPermission(user, 'appointments') && !authLoading)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
