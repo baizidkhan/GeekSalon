@@ -37,18 +37,32 @@ export async function getEmployeeById(id: string) {
 
 export async function createEmployee(employeeData: any) {
   const { data } = await api.post('/employee', employeeData)
-  markStale(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS, CACHE.DASHBOARD)
+  markStale(
+    CACHE.EMPLOYEES,
+    CACHE.EMPLOYEES_BASIC,
+    CACHE.EMPLOYEES_STYLISTS,
+    CACHE.DASHBOARD,
+    CACHE.STAFF_REPORTS,
+    CACHE.PAYROLL,
+  )
   return data
 }
 
 export async function updateEmployee(id: string, employeeData: any) {
   const { data } = await api.patch(`/employee/${id}`, employeeData)
-  markStale(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS)
+  markStale(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS, CACHE.STAFF_REPORTS, CACHE.PAYROLL)
   return data
 }
 
 export async function deleteEmployee(id: string) {
   const { data } = await api.delete(`/employee/${id}`)
-  markStale(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS, CACHE.DASHBOARD)
+  markStale(
+    CACHE.EMPLOYEES,
+    CACHE.EMPLOYEES_BASIC,
+    CACHE.EMPLOYEES_STYLISTS,
+    CACHE.DASHBOARD,
+    CACHE.STAFF_REPORTS,
+    CACHE.PAYROLL,
+  )
   return data
 }
