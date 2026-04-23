@@ -1,5 +1,5 @@
 import api from '../base'
-import { CACHE, consumeStale, markStale } from '@/lib/cache'
+import { CACHE, consumeStale, markStale, removeFromCache } from '@/lib/cache'
 
 const TTL = 2 * 60 * 1000 // 2 min — invoices/transactions are high-frequency
 
@@ -38,5 +38,6 @@ export async function updateInvoice(id: string, payload: object) {
 export async function deleteInvoice(id: string) {
   const { data } = await api.delete(`/invoice/${id}`)
   markStale(CACHE.BILLING, CACHE.DASHBOARD)
+  removeFromCache(CACHE.APPOINTMENTS)
   return data
 }
