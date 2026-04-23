@@ -4,11 +4,9 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { KeyRound, Lock, ShieldCheck, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { updatePassword } from "@/api/update-password/update-password"
-import { useRouter } from "next/navigation"
 
 export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false)
@@ -17,7 +15,6 @@ export default function UpdatePasswordPage() {
     newPassword: "",
     confirmPassword: "",
   })
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,75 +47,77 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div className="premium-page p-4 sm:p-6 md:p-8 flex justify-center items-start min-h-[calc(100-3.5rem)]">
-      <Card className="w-full max-w-md bg-card/50 backdrop-blur-sm border-border/50 shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="h-2 bg-gradient-to-r from-sidebar-primary/40 via-sidebar-primary to-sidebar-primary/40" />
-        <CardHeader className="space-y-1 pb-6 text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-sidebar-primary/10 flex items-center justify-center mb-2">
-            <KeyRound className="w-6 h-6 text-sidebar-primary" />
+    <div className="premium-page p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)]">
+      <div className="mb-6 w-full max-w-md text-center">
+        <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Security</p>
+        <h1 className="text-2xl font-semibold text-foreground">Change Password</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">Keep your account secure with a strong password</p>
+      </div>
+
+      <div className="bg-card rounded-xl border border-border p-6 w-full max-w-md">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <KeyRound className="w-4 h-4 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Update Password</CardTitle>
-          <CardDescription className="text-muted-foreground/70">
-            Secure your account by choosing a strong password
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="oldPassword">Current Password</Label>
-              <div className="relative group">
+          <div>
+            <h3 className="font-medium text-foreground text-sm">Update Password</h3>
+            <p className="text-xs text-muted-foreground">Enter your current password then choose a new one</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="oldPassword">Current Password</Label>
+            <div className="relative mt-1">
+              <Input
+                id="oldPassword"
+                type="password"
+                placeholder="••••••••"
+                className="pl-9"
+                value={formData.oldPassword}
+                onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
+                required
+              />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+            </div>
+          </div>
+
+          <div className="pt-1 space-y-4">
+            <div>
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative mt-1">
                 <Input
-                  id="oldPassword"
+                  id="newPassword"
                   type="password"
                   placeholder="••••••••"
-                  className="pl-10 h-11 border-border/60 bg-background/50 focus:border-sidebar-primary transition-all group-hover:border-border"
-                  value={formData.oldPassword}
-                  onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
+                  className="pl-9"
+                  value={formData.newPassword}
+                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                   required
                 />
-                <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-muted-foreground/50 group-focus-within:text-sidebar-primary transition-colors" />
+                <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
               </div>
             </div>
 
-            <div className="space-y-4 pt-2">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <div className="relative group">
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10 h-11 border-border/60 bg-background/50 focus:border-sidebar-primary transition-all group-hover:border-border"
-                    value={formData.newPassword}
-                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                    required
-                  />
-                  <ShieldCheck className="absolute left-3.5 top-3.5 w-4 h-4 text-muted-foreground/50 group-focus-within:text-sidebar-primary transition-colors" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <div className="relative group">
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10 h-11 border-border/60 bg-background/50 focus:border-sidebar-primary transition-all group-hover:border-border"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    required
-                  />
-                  <ShieldCheck className="absolute left-3.5 top-3.5 w-4 h-4 text-muted-foreground/50 group-focus-within:text-sidebar-primary transition-colors" />
-                </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <div className="relative mt-1">
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-9"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  required
+                />
+                <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
               </div>
             </div>
+          </div>
 
-            <Button
-              type="submit"
-              className="w-full h-11 text-sm font-semibold tracking-wide bg-sidebar-primary hover:bg-sidebar-primary/90 shadow-lg shadow-sidebar-primary/20 transition-all mt-4"
-              disabled={loading}
-            >
+          <div className="pt-2">
+            <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -128,9 +127,9 @@ export default function UpdatePasswordPage() {
                 "Update Password"
               )}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
