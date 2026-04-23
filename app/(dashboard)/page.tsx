@@ -20,6 +20,10 @@ import {
 } from "lucide-react"
 import { getDashboardStats } from "@/api/dashboard/dashboard"
 
+import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
+import { hasPermission } from "@/lib/auth-utils"
+
 const revenueFilterOptions = [
   { label: "Weekly", value: "weekly" },
   { label: "Monthly", value: "monthly" },
@@ -33,6 +37,8 @@ const clientsFilterOptions = [
 ]
 
 export default function DashboardPage() {
+  const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [stats, setStats] = useState<Record<string, any> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,15 +55,30 @@ export default function DashboardPage() {
   })
 
   useEffect(() => {
-    getDashboardStats()
-      .then(setStats)
-      .catch((err: any) => {
-        if (err?.response?.status !== 401) {
-          setError(err.message)
-        }
-      })
-      .finally(() => setLoading(false))
-  }, [])
+    if (!authLoading) {
+      if (!hasPermission(user, 'dashboard')) {
+        router.replace('/appointments')
+        return
+      }
+
+      getDashboardStats()
+        .then(setStats)
+        .catch((err: any) => {
+          if (err?.response?.status !== 401) {
+            setError(err.message)
+          }
+        })
+        .finally(() => setLoading(false))
+    }
+  }, [user, authLoading, router])
+
+  if (authLoading || (!hasPermission(user, 'dashboard') && !authLoading)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="premium-page p-4 sm:p-6 md:p-8">
