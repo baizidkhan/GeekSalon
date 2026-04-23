@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -29,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Calendar, Clock, MoreHorizontal, Upload, Download, ChevronDown, Eye, Pencil, Trash2, User, Phone, Scissors, UserCheck, Globe, Zap, Check } from "lucide-react"
+import { Plus, Search, Calendar as CalendarIcon, Clock, MoreHorizontal, Upload, Download, ChevronDown, Eye, Pencil, Trash2, User, Phone, Scissors, UserCheck, Globe, Zap, Check } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Calendar as DateCalendar } from "@/components/ui/calendar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "@/api/appointments/appointments"
 import { getClients } from "@/api/clients/clients"
@@ -86,7 +88,7 @@ interface Appointment {
 
 const statusOptions: AppointmentStatus[] = ["Pending", "Confirmed", "Checked In", "In Service", "Completed", "Cancelled"]
 const sourceOptions: AppointmentSource[] = ["Online", "Walk In", "Call"]
-const timeFilterOptions = ["All Time", "Today", "This Week", "This Month", "Last 6 Months", "This Year", "Custom Date"]
+const timeFilterOptions = ["All Time", "Today", "This Week", "This Month", "Last 6 Months", "This Year"]
 const PAGE_SIZE = 10
 
 /** Convert any server time value to 24h "HH:MM" for <input type="time"> */
@@ -115,6 +117,303 @@ function formatTimeDisplay(t: string): string {
   const ampm = h >= 12 ? "PM" : "AM"
   const h12 = h % 12 || 12
   return `${h12}:${m} ${ampm}`
+}
+
+function formatDateDisplay(dateValue: string): string {
+  if (!dateValue) return "Select date"
+  const parsed = new Date(`${dateValue}T00:00:00`)
+  return Number.isNaN(parsed.getTime()) ? dateValue : format(parsed, "PPP")
+}
+
+const HOUR_DIAL_LABELS = ["12", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"]
+const ANALOG_TICKS = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"]
+
+function toTimeSeconds(value: string) {
+  const [hour = "0", minute = "0", second = "0"] = value.split(":")
+  const hh = Number.parseInt(hour, 10) || 0
+  const mm = Number.parseInt(minute, 10) || 0
+  const ss = Number.parseInt(second, 10) || 0
+  return hh * 3600 + mm * 60 + ss
+}
+
+function parseTimeValue(value: string) {
+  const [hour = "", minute = "", second = ""] = value.split(":")
+  return {
+    hour: hour.padStart(2, "0"),
+    minute: minute.padStart(2, "0"),
+    second: second.padStart(2, "0"),
+  }
+}
+
+function formatTimePickerLabel(value: string): string {
+  if (!value) return "Select time"
+  const { hour, minute } = parseTimeValue(value)
+  const hh = Number.parseInt(hour, 10) || 0
+  const twelveHour = hh % 12 || 12
+  const ampm = hh >= 12 ? "PM" : "AM"
+  return `${String(twelveHour).padStart(2, "0")}:${minute} ${ampm}`
+}
+
+function normalizeTimeWithSeconds(value: string) {
+  if (!value) return ""
+  const parts = value.split(":")
+  if (parts.length === 2) return `${value}:00`
+  return value
+}
+
+function isTimeWithinBounds(time: string, minTime?: string, maxTime?: string) {
+  const currentSeconds = toTimeSeconds(time)
+  if (minTime && currentSeconds < toTimeSeconds(normalizeTimeWithSeconds(minTime))) return false
+  if (maxTime && currentSeconds > toTimeSeconds(normalizeTimeWithSeconds(maxTime))) return false
+  return true
+}
+
+function isHourSelectable(hour: string, minTime?: string, maxTime?: string) {
+  if (!minTime && !maxTime) return true
+  const earliestMinute = `${hour}:00:00`
+  const latestMinute = `${hour}:59:59`
+  if (minTime && toTimeSeconds(latestMinute) < toTimeSeconds(normalizeTimeWithSeconds(minTime))) return false
+  if (maxTime && toTimeSeconds(earliestMinute) > toTimeSeconds(normalizeTimeWithSeconds(maxTime))) return false
+  return true
+}
+
+function getDialLabelFromHour(hour: string) {
+  const parsedHour = Number.parseInt(hour, 10)
+  if (Number.isNaN(parsedHour)) return null
+  const twelveHour = parsedHour % 12 || 12
+  return String(twelveHour).padStart(2, "0")
+}
+
+function buildDialHourMap(minTime?: string, maxTime?: string) {
+  const result: Record<string, string | undefined> = {
+    "12": undefined,
+    "01": undefined,
+    "02": undefined,
+    "03": undefined,
+    "04": undefined,
+    "05": undefined,
+    "06": undefined,
+    "07": undefined,
+    "08": undefined,
+    "09": undefined,
+    "10": undefined,
+    "11": undefined,
+  }
+
+  for (let h = 0; h < 24; h++) {
+    const hour = String(h).padStart(2, "0")
+    if (!isHourSelectable(hour, minTime, maxTime)) continue
+    const dialLabel = getDialLabelFromHour(hour)
+    if (!dialLabel) continue
+    if (!result[dialLabel]) {
+      result[dialLabel] = hour
+    }
+  }
+
+  return result
+}
+
+function AnalogClockDial({
+  values,
+  selected,
+  onSelect,
+  isDisabled,
+  title,
+}: {
+  values: string[]
+  selected: string
+  onSelect: (value: string) => void
+  isDisabled?: (value: string) => boolean
+  title: string
+}) {
+  const center = 128
+  const radius = 100
+  const selectedIndex = values.indexOf(selected)
+  const handRotation = selectedIndex >= 0 ? selectedIndex * 30 : 0
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/10 p-4">
+      <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        {title}
+      </p>
+      <div className="relative mx-auto h-64 w-64 rounded-full border border-border/70 bg-gradient-to-b from-background to-muted/30 shadow-inner">
+        <svg className="pointer-events-none absolute inset-0" viewBox="0 0 256 256" aria-hidden="true">
+          <line
+            x1="128"
+            y1="128"
+            x2="128"
+            y2="42"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-primary/80"
+            transform={`rotate(${handRotation} 128 128)`}
+          />
+        </svg>
+        <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary" />
+        {values.map((value, index) => {
+          const angle = ((index * 30) - 90) * (Math.PI / 180)
+          const x = center + radius * Math.cos(angle)
+          const y = center + radius * Math.sin(angle)
+          const disabled = isDisabled?.(value) ?? false
+          const active = value === selected
+
+          return (
+            <button
+              key={value}
+              type="button"
+              disabled={disabled}
+              onClick={() => onSelect(value)}
+              className={`absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border text-xs font-semibold transition-all ${active
+                ? "border-primary bg-primary text-primary-foreground shadow-md"
+                : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5"
+                } ${disabled ? "cursor-not-allowed opacity-35" : "cursor-pointer"}`}
+              style={{ left: `${x}px`, top: `${y}px` }}
+            >
+              {value}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function ClockPickerField({
+  value,
+  onChange,
+  minTime,
+  maxTime,
+  placeholder = "Select time",
+}: {
+  value: string
+  onChange: (value: string) => void
+  minTime?: string
+  maxTime?: string
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [step, setStep] = useState<"hour" | "minute">("hour")
+  const [draftHour, setDraftHour] = useState("09")
+  const [draftMinute, setDraftMinute] = useState("00")
+  const dialHourMap = useMemo(() => buildDialHourMap(minTime, maxTime), [minTime, maxTime])
+
+  useEffect(() => {
+    if (!open) return
+    const parts = parseTimeValue(value)
+    const firstAvailableHour = Object.values(dialHourMap).find((hour) => Boolean(hour)) ?? "09"
+    const normalizedHour = Object.values(dialHourMap).includes(parts.hour) ? parts.hour : firstAvailableHour
+    setDraftHour(normalizedHour)
+    setDraftMinute(parts.minute || "00")
+    setStep("hour")
+  }, [open, value, dialHourMap])
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (!nextOpen) {
+      setStep("hour")
+    }
+  }
+
+  const handleHourSelect = (hourLabel: string) => {
+    const mappedHour = dialHourMap[hourLabel]
+    if (!mappedHour) return
+    setDraftHour(mappedHour)
+    const parts = parseTimeValue(value)
+    setDraftMinute(parts.minute || "00")
+    setStep("minute")
+  }
+
+  const handleMinuteSelect = (minute: string) => {
+    setDraftMinute(minute)
+    const nextTime = `${draftHour}:${minute}:00`
+    onChange(nextTime)
+    setOpen(false)
+    setStep("hour")
+  }
+
+  const displayLabel = value ? formatTimePickerLabel(value) : placeholder
+  const previewLabel = formatTimePickerLabel(`${draftHour}:${draftMinute}:00`)
+  const selectedDialLabel = getDialLabelFromHour(draftHour) ?? "09"
+  const serviceWindowLabel =
+    minTime && maxTime
+      ? `${formatTimePickerLabel(normalizeTimeWithSeconds(minTime))} - ${formatTimePickerLabel(normalizeTimeWithSeconds(maxTime))}`
+      : "Use settings to define opening and closing hours."
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-start px-3 font-normal"
+        >
+          <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+          <span className={value ? "text-foreground" : "text-muted-foreground"}>
+            {displayLabel}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[350px] p-0 shadow-xl overflow-hidden" align="start">
+        <div className="border-b border-border bg-gradient-to-r from-primary/5 via-background to-transparent px-4 py-3">
+          <p className="text-xs font-semibold tracking-[0.22em] text-primary/70 uppercase">
+            Clock Picker
+          </p>
+          <div className="mt-1 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {step === "hour" ? "Choose an hour" : "Choose minutes"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Service hours are limited to {serviceWindowLabel}.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {step === "hour" ? (
+          <div className="p-4">
+            <AnalogClockDial
+              title="Hours"
+              values={HOUR_DIAL_LABELS}
+              selected={selectedDialLabel}
+              onSelect={handleHourSelect}
+              isDisabled={(hourLabel) => {
+                const mappedHour = dialHourMap[hourLabel]
+                if (!mappedHour) return true
+                return !isHourSelectable(mappedHour, minTime, maxTime)
+              }}
+            />
+          </div>
+        ) : (
+          <div className="p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-muted-foreground"
+                onClick={() => setStep("hour")}
+              >
+                Back to hours
+              </Button>
+              <div className="flex items-center gap-2">
+                <div className="rounded-full border border-border bg-background px-3 py-1 text-sm font-medium text-foreground shadow-sm">
+                  {previewLabel}
+                </div>
+              </div>
+            </div>
+            <AnalogClockDial
+              title="Minutes"
+              values={ANALOG_TICKS}
+              selected={draftMinute}
+              onSelect={handleMinuteSelect}
+              isDisabled={(minute) => !isTimeWithinBounds(`${draftHour}:${minute}:00`, minTime, maxTime)}
+            />
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 function normalizeSource(raw: string): AppointmentSource {
@@ -217,6 +516,7 @@ export default function AppointmentsPage() {
   const [newAppointment, setNewAppointment] = useState(emptyForm)
   const [nameLocked, setNameLocked] = useState(false)
   const [newAppointmentErrors, setNewAppointmentErrors] = useState<Partial<Record<NewAppointmentField, string>>>({})
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [minDate] = useState(() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
@@ -228,6 +528,8 @@ export default function AppointmentsPage() {
   })
   const [openTime, setOpenTime] = useState("")
   const [closeTime, setCloseTime] = useState("")
+  const minDateObject = new Date(`${minDate}T00:00:00`)
+  const maxDateObject = new Date(`${maxDate}T23:59:59`)
 
   useEffect(() => {
   }, [])
@@ -377,8 +679,9 @@ export default function AppointmentsPage() {
     if (!newAppointment.time.trim()) {
       errors.time = "Please fill this field."
     } else {
-      if (openTime && newAppointment.time < openTime) errors.time = `Time cannot be before ${openTime} and after ${closeTime}.`
-      if (closeTime && newAppointment.time > closeTime) errors.time = `Time cannot be before ${openTime} and after ${closeTime}.`
+      if (!isTimeWithinBounds(newAppointment.time, openTime || undefined, closeTime || undefined)) {
+        errors.time = `Time cannot be before ${openTime} and after ${closeTime}.`
+      }
     }
     return errors
   }
@@ -706,30 +1009,48 @@ export default function AppointmentsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[13px] font-semibold tracking-wide">Date <span className="text-destructive">*</span></Label>
-                    <Input
-                      type="date"
-                      min={minDate}
-                      max={maxDate}
-                      value={newAppointment.date}
-                      onChange={(e) => {
-                        const nextDate = e.target.value
-                        setNewAppointment({ ...newAppointment, date: nextDate })
-                        if (nextDate.trim()) clearNewAppointmentError("date")
-                      }}
-                    />
+                    <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full justify-start px-3 font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span className={newAppointment.date ? "text-foreground" : "text-muted-foreground"}>
+                            {formatDateDisplay(newAppointment.date)}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                        <DateCalendar
+                          mode="single"
+                          selected={newAppointment.date ? new Date(`${newAppointment.date}T00:00:00`) : undefined}
+                          onSelect={(selected) => {
+                            if (!selected) return
+                            const nextDate = format(selected, "yyyy-MM-dd")
+                            setNewAppointment({ ...newAppointment, date: nextDate })
+                            if (nextDate.trim()) clearNewAppointmentError("date")
+                            setDatePickerOpen(false)
+                          }}
+                          disabled={(date) => date < minDateObject || date > maxDateObject}
+                          initialFocus
+                          fromDate={minDateObject}
+                          toDate={maxDateObject}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     {newAppointmentErrors.date && (
                       <p className="text-xs text-destructive">{newAppointmentErrors.date}</p>
                     )}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[13px] font-semibold tracking-wide">Time <span className="text-destructive">*</span></Label>
-                    <Input
-                      type="time"
-                      min={openTime}
-                      max={closeTime}
+                    <ClockPickerField
                       value={newAppointment.time}
-                      onChange={(e) => {
-                        const nextTime = e.target.value
+                      minTime={openTime || undefined}
+                      maxTime={closeTime || undefined}
+                      onChange={(nextTime) => {
                         setNewAppointment({ ...newAppointment, time: nextTime })
                         if (nextTime.trim()) clearNewAppointmentError("time")
                       }}
@@ -814,7 +1135,7 @@ export default function AppointmentsPage() {
                 <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Phone</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Service</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
-                <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Date & Time</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><CalendarIcon className="w-3.5 h-3.5 text-primary/60" />Date & Time</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Source</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
                 <TableHead className="w-12"></TableHead>
@@ -842,7 +1163,7 @@ export default function AppointmentsPage() {
                     <TableCell>{appointment.employee}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <CalendarIcon className="w-4 h-4 text-muted-foreground" />
                         <span>{appointment.date}</span>
                         <Clock className="w-4 h-4 text-muted-foreground ml-2" />
                         <span>{formatTimeDisplay(appointment.time)}</span>
@@ -1079,13 +1400,12 @@ export default function AppointmentsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[13px] font-semibold tracking-wide">Time</Label>
-                  <Input
-                    type="time"
-                    min={openTime}
-                    max={closeTime}
+                  <ClockPickerField
                     value={selectedAppointment.time}
-                    onChange={(e) =>
-                      setSelectedAppointment({ ...selectedAppointment, time: e.target.value })
+                    minTime={openTime || undefined}
+                    maxTime={closeTime || undefined}
+                    onChange={(nextTime) =>
+                      setSelectedAppointment({ ...selectedAppointment, time: nextTime })
                     }
                   />
                 </div>
