@@ -84,6 +84,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, loading } = useAuth()
   const { businessName } = useBusinessName()
 
+  const clearAccessTokenCookie = () => {
+    document.cookie = "accessToken=; path=/; max-age=0; samesite=strict"
+  }
+
   const handleLogout = async () => {
     try {
       await logout()
@@ -91,6 +95,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       // ignore errors — redirect regardless
     }
     localStorage.removeItem('accessToken')
+    clearAccessTokenCookie()
     router.push("/login")
   }
 
