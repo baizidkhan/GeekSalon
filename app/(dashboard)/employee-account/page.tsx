@@ -85,7 +85,7 @@ export default function EmployeeAccountPage() {
     const fetchUsers = async () => {
         try {
             setLoading(true)
-            
+
             // Fetch users (with individual error handling)
             try {
                 const data = await getAllUsers();
@@ -102,7 +102,7 @@ export default function EmployeeAccountPage() {
             } catch (err) {
                 console.error("Failed to fetch employees:", err);
             }
-            
+
         } catch (error) {
             console.error("Unexpected error in fetchUsers:", error)
         } finally {
@@ -113,6 +113,13 @@ export default function EmployeeAccountPage() {
     useEffect(() => {
         fetchUsers()
     }, [])
+
+    useEffect(() => {
+        if (!isAddDialogOpen) return
+        getBasicEmployees()
+            .then((empData) => setEmployees(Array.isArray(empData) ? empData : (empData?.data || [])))
+            .catch(() => setEmployees([]))
+    }, [isAddDialogOpen])
 
     const filteredUsers = useMemo(() => {
         return users.filter((user) =>
@@ -207,7 +214,7 @@ export default function EmployeeAccountPage() {
 
     return (
         <>
-        <div className="p-8">
+            <div className="p-8">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-semibold text-foreground">Employee Accounts</h1>
