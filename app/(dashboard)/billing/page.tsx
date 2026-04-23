@@ -35,7 +35,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Plus, Search, Receipt, Printer, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Scissors, Calendar, Globe, Zap } from "lucide-react"
+import { Plus, Search, Receipt, Printer, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Scissors, Calendar, Globe, Zap, Phone } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,12 +47,7 @@ interface Invoice {
   id: string
   invoiceNo: string
   client: string
-  appointment?: {
-    id: string
-    date?: string
-    time?: string
-    status?: string
-  } | null
+  clientPhone: string
   services: string[]
   amount: number
   paidAmount?: number
@@ -79,14 +74,7 @@ function mapInvoice(inv: any): Invoice {
     id: inv.id,
     invoiceNo: inv.invoiceNumber,
     client: inv.client?.name ?? "Walk-in",
-    appointment: inv.appointment
-      ? {
-        id: inv.appointment.id,
-        date: inv.appointment.date,
-        time: inv.appointment.time,
-        status: inv.appointment.status,
-      }
-      : null,
+    clientPhone: inv.client?.phone ?? "—",
     services: inv.services ?? [],
     amount: Number(inv.total),
     paidAmount: inv.paidAmount != null ? Number(inv.paidAmount) : undefined,
@@ -322,7 +310,13 @@ export default function BillingPage() {
     }
   }
 
-  const totalRevenue = invoices.filter(inv => inv.status === "Paid").reduce((sum, inv) => sum + inv.amount, 0)
+  const dateFilteredInvoices = useMemo(() => {
+    return invoices.filter(inv => filterByDate(inv.date))
+  }, [invoices, timeFilter, customDateFrom, customDateTo])
+
+  const totalRevenue = dateFilteredInvoices.filter(inv => inv.status === "Paid").reduce((sum, inv) => sum + inv.amount, 0)
+  const totalInvoicesCount = dateFilteredInvoices.length
+  const pendingCount = dateFilteredInvoices.filter(inv => inv.status === "Unpaid").length
 
   return (
     <>
@@ -420,11 +414,11 @@ export default function BillingPage() {
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Total Invoices</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">{invoices.length}</p>
+            <p className="text-2xl font-semibold text-foreground mt-1">{totalInvoicesCount}</p>
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Pending Payment</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">{invoices.filter(inv => inv.status === "Unpaid").length}</p>
+            <p className="text-2xl font-semibold text-foreground mt-1">{pendingCount}</p>
           </div>
         </div>
 
@@ -480,7 +474,7 @@ export default function BillingPage() {
                 <TableRow>
                   <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Invoice</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Appointment</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Phone</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Services</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Amount</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Payment</span></TableHead>
@@ -510,7 +504,7 @@ export default function BillingPage() {
                   >
                     <TableCell><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{invoice.invoiceNo}</span></div></TableCell>
                     <TableCell>{invoice.client}</TableCell>
-                    <TableCell>{invoice.appointment ? `${invoice.appointment.date ?? ''}${invoice.appointment.date && invoice.appointment.time ? ' ' : ''}${invoice.appointment.time ?? ''}`.trim() : 'Linked appointment'}</TableCell>
+                    <TableCell>{invoice.clientPhone}</TableCell>
                     <TableCell><div className="text-sm">{invoice.services.join(", ")}</div></TableCell>
                     <TableCell className="font-medium">
                       <div>৳{invoice.amount.toLocaleString()}</div>
