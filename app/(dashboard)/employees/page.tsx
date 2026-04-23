@@ -27,7 +27,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Phone, MoreHorizontal, Pencil, Trash2, Eye, User, UserCheck, Scissors, Zap } from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Plus, Search, Phone, MoreHorizontal, Pencil, Trash2, Eye, User, UserCheck, Scissors, Zap, ChevronDown } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +47,7 @@ import {
   updateEmployee,
   deleteEmployee
 } from "@/api/employees/employees"
+import { getServices } from "@/api/services/services"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -96,6 +103,7 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [serviceOptions, setServiceOptions] = useState<string[]>([])
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     role: EmployeeRole.OTHER,
@@ -107,7 +115,7 @@ export default function EmployeesPage() {
     experience: "0",
     joinDate: new Date().toISOString().split('T')[0],
     fingerprintCode: "",
-    specializations: "",
+    specializations: [] as string[],
   })
 
   const [serviceToView, setServiceToView] = useState<Employee | null>(null)
@@ -134,6 +142,9 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchEmployees()
+    getServices()
+      .then((list: { name: string }[]) => setServiceOptions(list.map((s) => s.name)))
+      .catch(() => setServiceOptions([]))
   }, [])
 
   const filteredEmployees = useMemo(() => {
@@ -152,7 +163,7 @@ export default function EmployeesPage() {
   const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleAddEmployee = async () => {
-    if (newEmployee.name && newEmployee.role && newEmployee.phone) {
+    if (newEmployee.name && newEmployee.role && newEmployee.phone && parseFloat(newEmployee.salary) > 0) {
       try {
         const cleanPhone = newEmployee.phone.replace(/[\s- ]/g, "").replace(/^\+88/, "88")
         if (!cleanPhone.startsWith('88') && cleanPhone.startsWith('01')) {
@@ -175,8 +186,7 @@ export default function EmployeesPage() {
         if (newEmployee.joinDate) payload.joinDate = newEmployee.joinDate
         if (newEmployee.fingerprintCode?.trim()) payload.fingerprintCode = newEmployee.fingerprintCode.trim()
 
-        const specs = newEmployee.specializations.split(',').map(s => s.trim()).filter(Boolean)
-        if (specs.length > 0) payload.specializations = specs
+        if (newEmployee.specializations.length > 0) payload.specializations = newEmployee.specializations
 
         await createEmployee(payload)
 
@@ -193,7 +203,7 @@ export default function EmployeesPage() {
           experience: "0",
           joinDate: new Date().toISOString().split('T')[0],
           fingerprintCode: "",
-          specializations: "",
+          specializations: [],
         })
         setIsAddDialogOpen(false)
         fetchEmployees()
@@ -300,7 +310,7 @@ export default function EmployeesPage() {
               <ScrollArea className="pr-4 py-2 h-[60vh]">
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div className="col-span-2">
-                    <Label>Full Name</Label>
+                    <Label>Full Name <span className="text-destructive">*</span></Label>
                     <Input
                       value={newEmployee.name}
                       onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
@@ -308,7 +318,7 @@ export default function EmployeesPage() {
                     />
                   </div>
                   <div>
-                    <Label>Role</Label>
+                    <Label>Role <span className="text-destructive">*</span></Label>
                     <Select
                       value={newEmployee.role}
                       onValueChange={(value) => setNewEmployee({ ...newEmployee, role: value as EmployeeRole })}
@@ -322,7 +332,7 @@ export default function EmployeesPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Phone Number</Label>
+                    <Label>Phone Number <span className="text-destructive">*</span></Label>
                     <Input
                       value={newEmployee.phone}
                       onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
@@ -347,7 +357,7 @@ export default function EmployeesPage() {
                     />
                   </div>
                   <div>
-                    <Label>Salary (৳)</Label>
+                    <Label>Salary (৳) <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       value={newEmployee.salary}
@@ -387,12 +397,40 @@ export default function EmployeesPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label>Specializations (comma separated)</Label>
-                    <Input
-                      value={newEmployee.specializations}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, specializations: e.target.value })}
-                      placeholder="Hair Styling, Makeup, Nails..."
-                    />
+                    <Label>Specializations</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        >
+                          <span className={newEmployee.specializations.length === 0 ? "text-muted-foreground" : "text-foreground"}>
+                            {newEmployee.specializations.length === 0
+                              ? "Select services"
+                              : newEmployee.specializations.join(", ")}
+                          </span>
+                          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+                        {serviceOptions.map((service) => (
+                          <div
+                            key={service}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                            onClick={() => {
+                              const selected = newEmployee.specializations
+                              const next = selected.includes(service)
+                                ? selected.filter((x) => x !== service)
+                                : [...selected, service]
+                              setNewEmployee({ ...newEmployee, specializations: next })
+                            }}
+                          >
+                            <Checkbox checked={newEmployee.specializations.includes(service)} />
+                            <span className="text-sm">{service}</span>
+                          </div>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               </ScrollArea>
