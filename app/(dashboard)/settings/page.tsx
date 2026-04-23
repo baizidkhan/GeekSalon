@@ -214,7 +214,7 @@ function ClockPickerField({
   }
 
   const handleMinuteSelect = (minute: string) => {
-    const nextTime = `${draftHour}:${minute}:00`
+    const nextTime = `${draftHour}:${minute}`
     onChange(nextTime)
     setOpen(false)
     setStep("hour")
