@@ -51,6 +51,7 @@ const navigation = [
     title: "Business",
     items: [
       { name: "Inventory", href: "/admin/inventory", icon: Package, permission: "inventory" },
+      { name: "Packages", href: "/admin/manage-packages", icon: Sparkles, permission: "makeover-packages" },
       { name: "Reports", href: "/admin/reports", icon: BarChart3, permission: "reports" },
       { name: "Staff Reports", href: "/admin/staff-reports", icon: UserCog, permission: "reports" },
     ],
