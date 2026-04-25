@@ -5,12 +5,24 @@ export default function proxy(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value
   const { pathname } = request.nextUrl
 
-  if (!token && pathname !== '/login') {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Only protect /admin/* routes — main website is open
+  if (!pathname.startsWith('/admin')) return NextResponse.next()
+
+  // Allow static assets and API routes through
+  if (pathname.startsWith('/_next') || pathname.startsWith('/api')) return NextResponse.next()
+
+  // Redirect unauthenticated users to login (unless already on login page)
+  if (!token && pathname !== '/admin/login') {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/admin/login'
+    return NextResponse.redirect(loginUrl)
   }
 
-  if (token && pathname === '/login') {
-    return NextResponse.redirect(new URL('/', request.url))
+  // Redirect authenticated users away from login to dashboard
+  if (token && pathname === '/admin/login') {
+    const dashboardUrl = request.nextUrl.clone()
+    dashboardUrl.pathname = '/admin/dashboard'
+    return NextResponse.redirect(dashboardUrl)
   }
 
   return NextResponse.next()
@@ -18,13 +30,6 @@ export default function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all routes except:
-     * - _next/static  (Next.js static files)
-     * - _next/image   (Next.js image optimization)
-     * - favicon.ico
-     * - public files (png, svg, etc.)
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|jpg|jpeg|webp|ico)).*)',
   ],
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Playfair_Display } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -13,47 +12,22 @@ export const metadata: Metadata = {
   generator: 'v0.app',
   icons: {
     icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
+      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
+      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
     ],
     apple: '/apple-icon.png',
   },
 }
 
-import { Toaster } from 'sonner'
-import { AuthGuard } from '@/components/auth-guard'
-import { cookies } from 'next/headers'
-import { getUserFromToken } from '@/lib/auth-utils'
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('accessToken')?.value || cookieStore.get('token')?.value
-  const initialUser = token ? getUserFromToken(token) : null
-
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={playfair.variable}>
       <body className="font-sans antialiased">
-        <AuthGuard initialUser={initialUser}>
-          {children}
-        </AuthGuard>
-        <Toaster position="top-right" richColors />
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {children}
       </body>
     </html>
   )
 }
-
