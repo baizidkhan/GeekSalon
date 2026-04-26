@@ -8,7 +8,7 @@ export function HeroSection() {
                     Welcome to the new experience
                 </p>
                 <h1 className="mx-auto max-w-4xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-7xl" style={{ fontFamily: 'Playfair Display, serif' }}>
-                    Timeless elegance for modern salon experiences.
+                    Timeless elegance for modern salon experiencescd .
                 </h1>
                 <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg lg:text-xl text-white/85" style={{ fontFamily: 'Inter, sans-serif' }}>
                     Streamline appointments, service packages, and your team in one polished platform designed to feel balanced, refined, and easy to use.
