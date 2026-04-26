@@ -48,6 +48,7 @@ interface Service {
   description: string
   price: number
   active: boolean
+  imageUrl?: string
 }
 
 const CATEGORIES = ["All", "Hair", "Makeup", "Skin", "Bridal", "Nails", "Other"]
@@ -68,7 +69,7 @@ export default function ServicesPage() {
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [priceSort, setPriceSort] = useState("none")
   const [currentPage, setCurrentPage] = useState(1)
-  const [newService, setNewService] = useState({ name: "", category: "", duration: "", price: "", description: "" })
+  const [newService, setNewService] = useState({ name: "", category: "", duration: "", price: "", description: "", imageUrl: "" })
 
   const [serviceToView, setServiceToView] = useState<Service | null>(null)
   const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null)
@@ -134,11 +135,12 @@ export default function ServicesPage() {
           duration: parseInt(newService.duration) || 30,
           price: parseFloat(newService.price),
           status: 'active',
-          description: newService.description
+          description: newService.description,
+          imageUrl: newService.imageUrl || undefined,
         }
         await createService(payload)
         toast.success("Service added successfully")
-        setNewService({ name: "", category: "", duration: "", price: "", description: "" })
+        setNewService({ name: "", category: "", duration: "", price: "", description: "", imageUrl: "" })
         setIsDialogOpen(false)
         fetchServices()
       } catch (error) {
@@ -157,7 +159,8 @@ export default function ServicesPage() {
           duration: Number(serviceToEdit.duration),
           price: Number(serviceToEdit.price),
           status: serviceToEdit.active ? 'active' : 'hidden',
-          description: serviceToEdit.description || ""
+          description: serviceToEdit.description || "",
+          imageUrl: serviceToEdit.imageUrl || undefined,
         }
 
 
@@ -244,13 +247,43 @@ export default function ServicesPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Describtion</Label>
+                  <Label>Description</Label>
                   <Input
                     type="text"
                     value={newService.description}
                     onChange={(e) => setNewService({ ...newService, description: e.target.value })}
                     placeholder="Give a short description"
                   />
+                </div>
+                <div>
+                  <Label>Service Image</Label>
+                  <Input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const form = new FormData()
+                      form.append('file', file)
+                      try {
+                        const res = await api.post('/service/upload-image', form, {
+                          headers: { 'Content-Type': 'multipart/form-data' },
+                          cache: false,
+                        })
+                        setNewService((prev) => ({ ...prev, imageUrl: res.data.imageUrl }))
+                        toast.success("Image uploaded")
+                      } catch {
+                        toast.error("Image upload failed")
+                      }
+                    }}
+                  />
+                  {newService.imageUrl && (
+                    <img
+                      src={newService.imageUrl}
+                      alt="preview"
+                      className="mt-2 h-24 w-full object-cover rounded"
+                    />
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -460,6 +493,36 @@ export default function ServicesPage() {
                 </Select>
               </div>
               <div><Label>Description</Label><Input type="text" value={serviceToEdit.description} onChange={(e) => setServiceToEdit({ ...serviceToEdit, description: e.target.value })} /></div>
+              <div>
+                <Label>Service Image</Label>
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const form = new FormData()
+                    form.append('file', file)
+                    try {
+                      const res = await api.post('/service/upload-image', form, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        cache: false,
+                      })
+                      setServiceToEdit((prev) => prev ? { ...prev, imageUrl: res.data.imageUrl } : prev)
+                      toast.success("Image uploaded")
+                    } catch {
+                      toast.error("Image upload failed")
+                    }
+                  }}
+                />
+                {serviceToEdit.imageUrl && (
+                  <img
+                    src={serviceToEdit.imageUrl}
+                    alt="preview"
+                    className="mt-2 h-24 w-full object-cover rounded"
+                  />
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Duration (min)</Label><Input type="number" value={serviceToEdit.duration} onChange={(e) => setServiceToEdit({ ...serviceToEdit, duration: parseInt(e.target.value) || 0 })} /></div>
                 <div><Label>Price (৳)</Label><Input type="number" value={serviceToEdit.price} onChange={(e) => setServiceToEdit({ ...serviceToEdit, price: parseFloat(e.target.value) || 0 })} /></div>
