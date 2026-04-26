@@ -1,6 +1,14 @@
 import Link from "next/link"
-import { Instagram, Linkedin, ChevronLeft, Sparkles, Loader2 } from "lucide-react"
-import { getBasicEmployees } from "@admin/api/employees/employees"
+import { Instagram, Linkedin, ChevronLeft } from "lucide-react"
+import api from "@admin/api/base"
+import { SiteHeader } from "@/app/components/site-header"
+import { Footer } from "@/app/components/footer"
+import { TeamMemberImage } from "@/app/components/team-member-image"
+
+async function fetchTeam() {
+  const { data } = await api.get('/employee/basic', { cache: false as any })
+  return Array.isArray(data) ? data : (data?.data || data?.items || [])
+}
 
 
 // Fallback images (premium grayscale portraits)
@@ -26,10 +34,7 @@ const ROLE_BIOS: Record<string, string> = {
 export default async function OurTeamPage() {
   let employees: any[] = []
   try {
-    const data = await getBasicEmployees()
-    employees = Array.isArray(data) ? data : (data?.data || data?.items || [])
-    console.log(employees)
-    console.log(data)
+    employees = await fetchTeam()
   } catch (error) {
     console.error("Failed to fetch team:", error)
   }
@@ -37,21 +42,7 @@ export default async function OurTeamPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] selection:bg-[#c4a484]/30 selection:text-[#c4a484]">
       {/* Navigation */}
-      <nav className="border-b border-white/5 bg-black/40 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="flex items-center justify-center w-8 h-8 rounded bg-[#c4a484]/10 border border-[#c4a484]/20 group-hover:bg-[#c4a484]/20 transition-colors">
-              <ChevronLeft className="w-4 h-4 text-[#c4a484]" />
-            </div>
-            <span className="text-sm font-medium tracking-widest text-[#c4a484] uppercase">Back</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#c4a484]" />
-            <span className="text-xl font-serif tracking-tight">GeekSalon</span>
-          </div>
-          <div className="w-20" /> {/* Spacer */}
-        </div>
-      </nav>
+      <SiteHeader solid />
 
       <main className="max-w-7xl mx-auto px-6 py-24">
         {/* Header */}
@@ -84,11 +75,12 @@ export default async function OurTeamPage() {
                 style={{ animationDelay: `${i * 100}ms` }}
               >
                 {/* Image Container */}
-                <div className="relative aspect-[4/5] overflow-hidden mb-8 bg-[#1a1a1a]">
-                  <img
-                    src={TEAM_IMAGES[i % TEAM_IMAGES.length]}
-                    alt={member.name}
-                    className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
+                <div className="relative aspect-[4/5] overflow-hidden mb-8">
+                  <TeamMemberImage
+                    name={member.name}
+                    image={member.image}
+                    initialsSize="text-5xl"
+                    imgClassName="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
                   />
 
                   {/* Social Overlay */}
@@ -123,7 +115,7 @@ export default async function OurTeamPage() {
                     <div className="h-px w-8 bg-white/10" />
                   </div>
                   <p className="text-sm text-white/40 leading-relaxed line-clamp-3">
-                    {ROLE_BIOS[member.role] || "Dedicated beauty expert bringing passion and precision to every client interaction."}
+                    {member.about || ROLE_BIOS[member.role] || "Dedicated beauty expert bringing passion and precision to every client interaction."}
                   </p>
                 </div>
               </Link>
@@ -145,17 +137,7 @@ export default async function OurTeamPage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-white/5 bg-black/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-xs text-white/20 tracking-widest uppercase">
-            © 2026 GeekSalon. All Rights Reserved.
-          </p>
-          <div className="flex gap-8">
-            <a href="#" className="text-xs text-white/30 hover:text-[#c4a484] transition-colors uppercase tracking-widest">Privacy Policy</a>
-            <a href="#" className="text-xs text-white/30 hover:text-[#c4a484] transition-colors uppercase tracking-widest">Terms of Service</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Styles for animations */}
       <style>{`
