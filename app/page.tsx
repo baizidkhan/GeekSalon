@@ -6,8 +6,9 @@ import { TheExperienceSection } from "./components/the-experience"
 import { TestimonialsSection } from "./components/testimonials"
 import { CtaSection } from "./components/cta-section"
 import { Footer } from "./components/footer"
-
-export default function Home() {
+import { getActiveServices } from "./api/services/services"
+export default async function Home() {
+    const services = await getActiveServices();
     return (
         <div className="min-h-screen bg-[#f7f1eb] text-slate-900">
             <div
@@ -27,7 +28,7 @@ export default function Home() {
                 <HeroSection />
             </div>
 
-            <SignatureExperiencesSection />
+            <SignatureExperiencesSection services={services} />
             <WhyChooseUsSection />
             <TheExperienceSection />
             <TestimonialsSection />
