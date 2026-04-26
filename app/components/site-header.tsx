@@ -3,8 +3,8 @@ import Link from "next/link"
 const navItems = [
     { label: "Home", href: "/" },
     { label: "Services", href: "/services" },
-    { label: "Packages", href: "#packages" },
-    { label: "Our Team", href: "#our-team" },
+    { label: "Packages", href: "/packages" },
+    { label: "Our Team", href: "/our-team" },
 ]
 
 export function SiteHeader({ solid = false }: { solid?: boolean }) {
