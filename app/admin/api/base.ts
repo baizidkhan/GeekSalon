@@ -4,7 +4,7 @@ import { setupCache, buildMemoryStorage, buildStorage } from 'axios-cache-interc
 const isServerSide = typeof window === 'undefined'
 
 const apiBaseURL = isServerSide
-  ? process.env.INTERNAL_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://server:4000'
+  ? process.env.INTERNAL_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
   : process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
 
 const axiosInstance = axios.create({

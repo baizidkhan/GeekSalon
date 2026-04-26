@@ -17,6 +17,7 @@ export const CACHE = {
   INVOICE_SETTING: 'invoice-setting',
   APPOINTMENT_SETTING: 'appointment-setting',
   PAYROLL: 'payroll',
+  PACKAGES: 'packages',
 } as const
 
 /** Mark one or more resources as stale so the next GET bypasses cache */

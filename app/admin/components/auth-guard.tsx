@@ -20,6 +20,7 @@ const pathPermissionMap: Record<string, string> = {
   "/admin/attendance": "attendance",
   "/admin/leave-request": "leave-request",
   "/admin/manage-payrolls": "hr-payroll",
+  "/admin/manage-packages": "makeover-packages",
   "/admin/settings": "settings",
 }
 
