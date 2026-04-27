@@ -36,7 +36,7 @@ export function BiometricProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
-  useBiometricSocket(handleNewUser)
+  useBiometricSocket({ onNewDeviceUser: handleNewUser })
 
   return (
     <>
