@@ -36,7 +36,7 @@ export async function getEmployeeById(id: string) {
 }
 
 export async function createEmployee(employeeData: any) {
-  const { data } = await api.post('/employee', employeeData)
+  const { data } = await api.post('/employee/quick-create', employeeData)
   markStale(
     CACHE.EMPLOYEES,
     CACHE.EMPLOYEES_BASIC,
