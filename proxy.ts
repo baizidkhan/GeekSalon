@@ -11,6 +11,12 @@ export default function proxy(request: NextRequest) {
   // Allow static assets and API routes through
   if (pathname.startsWith('/_next') || pathname.startsWith('/api')) return NextResponse.next()
 
+  if (pathname === '/admin/dashboard') {
+    const adminUrl = request.nextUrl.clone()
+    adminUrl.pathname = '/admin'
+    return NextResponse.redirect(adminUrl)
+  }
+
   // Redirect unauthenticated users to login (unless already on login page)
   if (!token && pathname !== '/admin/login') {
     const loginUrl = request.nextUrl.clone()
@@ -21,7 +27,7 @@ export default function proxy(request: NextRequest) {
   // Redirect authenticated users away from login to dashboard
   if (token && pathname === '/admin/login') {
     const dashboardUrl = request.nextUrl.clone()
-    dashboardUrl.pathname = '/admin/dashboard'
+    dashboardUrl.pathname = '/admin'
     return NextResponse.redirect(dashboardUrl)
   }
 
