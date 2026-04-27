@@ -1,5 +1,1 @@
-import { redirect } from 'next/navigation'
-
-export default function Page() {
-  redirect('/admin/dashboard')
-}
+export { DashboardPage as default } from "@admin/components/dashboard-page"
