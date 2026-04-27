@@ -39,6 +39,19 @@ export async function getDeviceStatus(): Promise<DeviceStatus> {
   return data
 }
 
+export async function deleteDeviceUser(deviceUid: string): Promise<void> {
+  await api.delete(`/device-users/${deviceUid}`)
+}
+
+export async function deleteAllDeviceUsers(): Promise<{ deleted: number; failed: number }> {
+  const { data } = await api.delete('/device-users')
+  return data
+}
+
+export async function syncDeviceUsers(): Promise<void> {
+  await api.post('/device-users/sync', {})
+}
+
 export async function simulateDeviceUser(device_uid: string, name?: string): Promise<DeviceUser> {
   const { data } = await api.post('/device-users/simulate', { device_uid, name })
   return data
