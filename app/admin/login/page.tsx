@@ -38,7 +38,7 @@ export default function LoginPage() {
       }
 
       // Hard redirect to ensure server-side auth gets correct cookies on initial page load
-      window.location.href = "/admin/dashboard"
+      window.location.href = "/admin"
     } catch (err: any) {
       console.error('Login failed:', err)
       setError("Invalid email or password. Please try again.")
