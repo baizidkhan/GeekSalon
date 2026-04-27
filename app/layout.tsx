@@ -20,13 +20,21 @@ export const metadata: Metadata = {
   },
 }
 
+import { BookingProvider } from '@/context/BookingContext'
+import { BookingModal } from '@/components/booking-modal'
+import { Toaster } from 'sonner'
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={playfair.variable}>
       <body className="font-sans antialiased">
-        {children}
+        <BookingProvider>
+          {children}
+          <BookingModal />
+          <Toaster position="top-center" theme="dark" richColors />
+        </BookingProvider>
       </body>
     </html>
   )
