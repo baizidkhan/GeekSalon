@@ -1,33 +1,41 @@
 "use client"
 
-import { useState } from "react"
-
-const testimonials = [
-    {
-        quote: "PrivéforYou transformed my entire outlook on self-care. The attention to detail and personalized approach made me feel truly special.",
-        name: "Alexandra Chen",
-        title: "Fashion Designer",
-        avatar: null,
-    },
-    {
-        quote: "An unparalleled experience from start to finish. The team's artistry and dedication to excellence left me feeling like a completely new person.",
-        name: "Sophia Laurent",
-        title: "Creative Director",
-        avatar: null,
-    },
-    {
-        quote: "I've visited luxury salons around the world, but nothing compares to the bespoke care and refined atmosphere of PrivéforYou.",
-        name: "Isabella Monroe",
-        title: "Lifestyle Blogger",
-        avatar: null,
-    },
-]
+import { useState, useEffect } from "react"
 
 export function TestimonialsSection() {
+    const [testimonials, setTestimonials] = useState<any[]>([])
     const [current, setCurrent] = useState(0)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        fetch("http://localhost:4000/testimonial", { cache: 'no-store' })
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setTestimonials(data)
+                }
+                setLoading(false)
+            })
+            .catch(err => {
+                console.error("Error fetching testimonials:", err)
+                setLoading(false)
+            })
+    }, [])
 
     const prev = () => setCurrent((c) => (c - 1 + testimonials.length) % testimonials.length)
     const next = () => setCurrent((c) => (c + 1) % testimonials.length)
+
+    if (loading) {
+        return (
+            <section className="bg-[#0b0b0b] px-4 py-24 text-center">
+                <div className="animate-pulse text-white/20 uppercase tracking-widest text-sm font-medium">
+                    Curating client experiences...
+                </div>
+            </section>
+        )
+    }
+
+    if (testimonials.length === 0) return null
 
     const t = testimonials[current]
 
@@ -43,22 +51,24 @@ export function TestimonialsSection() {
                 </div>
 
                 {/* Quote text */}
-                <blockquote
-                    className="mb-4 text-2xl font-semibold italic leading-relaxed text-white sm:text-3xl"
-                    style={{ fontFamily: 'Playfair Display, serif' }}
-                >
-                    &ldquo;{t.quote}&rdquo;
-                </blockquote>
+                <div className="min-h-[160px] flex items-center justify-center">
+                    <blockquote
+                        key={t.id}
+                        className="mb-4 text-2xl font-semibold italic leading-relaxed text-white sm:text-3xl animate-in fade-in duration-700"
+                        style={{ fontFamily: 'Playfair Display, serif' }}
+                    >
+                        &ldquo;{t.description}&rdquo;
+                    </blockquote>
+                </div>
 
                 {/* Author */}
-                <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 overflow-hidden rounded-full bg-gradient-to-br from-stone-400 via-stone-500 to-stone-700" />
+                <div className="flex items-center gap-4 mt-8">
                     <div className="text-left">
                         <p className="text-base font-medium text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
                             {t.name}
                         </p>
                         <p className="text-[11px] uppercase tracking-[0.35em] text-white/45" style={{ fontFamily: 'Inter, sans-serif' }}>
-                            {t.title}
+                            {t.position}
                         </p>
                     </div>
                 </div>
@@ -100,3 +110,4 @@ export function TestimonialsSection() {
         </section>
     )
 }
+

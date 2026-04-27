@@ -21,7 +21,6 @@ export default async function AdminLayout({
           {children}
         </BiometricProvider>
       </AuthGuard>
-      <Toaster position="top-right" richColors />
       {process.env.NODE_ENV === 'production' && <Analytics />}
     </>
   )

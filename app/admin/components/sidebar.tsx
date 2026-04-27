@@ -20,9 +20,11 @@ import {
   ClipboardCheck,
   Fingerprint,
   LogOut,
-  X,
+  MessageSquare,
   Sparkles,
   UserLock,
+  Quote,
+  X,
 } from "lucide-react"
 import { useState } from "react"
 import { logout } from "@admin/api/auth/auth"
@@ -55,6 +57,7 @@ const navigation = [
       { name: "Packages", href: "/admin/manage-packages", icon: Sparkles, permission: "makeover-packages" },
       { name: "Reports", href: "/admin/reports", icon: BarChart3, permission: "reports" },
       { name: "Staff Reports", href: "/admin/staff-reports", icon: UserCog, permission: "reports" },
+      { name: "Testimonials", href: "/admin/testimonials", icon: Quote, permission: "testimonial" },
     ],
   },
   {

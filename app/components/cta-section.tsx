@@ -1,4 +1,9 @@
+"use client"
+
+import { useBooking } from "@/context/BookingContext"
+
 export function CtaSection() {
+    const { openBooking } = useBooking()
     return (
         <section className="bg-[#0b0b0b] px-4 py-24 sm:px-6 lg:px-8">
             <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
@@ -20,17 +25,18 @@ export function CtaSection() {
                 <div className="mt-4 flex flex-wrap justify-center gap-4">
                     <button
                         type="button"
+                        onClick={() => openBooking()}
                         className="border border-white bg-white px-10 py-4 text-[11px] font-medium uppercase tracking-[0.3em] text-black transition-all duration-300 hover:bg-transparent hover:text-white"
                         style={{ fontFamily: 'Inter, sans-serif' }}
                     >
-                        Book Now
+                        Book an Appointment
                     </button>
                     <button
                         type="button"
                         className="border border-white/40 bg-transparent px-10 py-4 text-[11px] font-medium uppercase tracking-[0.3em] text-white transition-all duration-300 hover:border-white hover:bg-white hover:text-black"
                         style={{ fontFamily: 'Inter, sans-serif' }}
                     >
-                        Join Membership
+                        Packages
                     </button>
                 </div>
 

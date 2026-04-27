@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function HeroSection() {
     return (
         <section
@@ -22,13 +24,13 @@ export function HeroSection() {
                     >
                         Enter Dashboard
                     </a>
-                    <a
-                        href="#services"
+                    <Link
+                        href="/services"
                         className="inline-flex items-center justify-center rounded-none border border-white bg-transparent px-8 py-3 text-sm font-medium text-white transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-white hover:text-slate-900 hover:shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
                         style={{ fontFamily: 'Inter, sans-serif' }}
                     >
                         Explore Services
-                    </a>
+                    </Link>
                 </div>
             </div>
         </section>
