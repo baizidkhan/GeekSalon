@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { Sparkles } from "lucide-react"
 
 const pathPermissionMap: Record<string, string> = {
+  "/admin": "dashboard",
   "/admin/dashboard": "dashboard",
   "/admin/appointments": "appointments",
   "/admin/clients": "clients",
@@ -100,7 +101,7 @@ export function AuthGuard({
   if (pathname === "/admin/login") return children
 
   const permission = pathPermissionMap[pathname]
-  if (permission && pathname !== "/admin/dashboard" && !hasPermission(user, permission)) {
+  if (permission && pathname !== "/admin" && pathname !== "/admin/dashboard" && !hasPermission(user, permission)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center bg-background text-foreground">
         <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6">
@@ -112,7 +113,7 @@ export function AuthGuard({
           Please contact your administrator if you believe this is an error.
         </p>
         <button
-          onClick={() => router.push("/admin/dashboard")}
+          onClick={() => router.push("/admin")}
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all"
         >
           Return to Dashboard
