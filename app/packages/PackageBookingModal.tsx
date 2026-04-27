@@ -242,19 +242,19 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
               />
             </div>
 
-            {/* Total */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold tracking-widest uppercase text-white/50">
-                Total {taxRate > 0 && <span className="text-white/25 normal-case font-normal">(incl. {taxRate}% tax)</span>}
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-white/40 font-medium">৳</span>
-                <input
-                  type="text"
-                  readOnly
-                  value={calcTotal(pkg.price, taxRate)}
-                  className="w-full bg-white/3 border border-white/8 rounded-lg pl-8 pr-4 py-2.5 text-sm font-semibold text-[#c4a484] cursor-not-allowed"
-                />
+            {/* Price Breakdown */}
+            <div className="mt-4 p-4 bg-white/5 border border-white/5 space-y-3 rounded-lg">
+              <div className="flex justify-between text-sm">
+                <span className="text-white/40 tracking-wider text-[10px] uppercase">Subtotal</span>
+                <span className="text-white/80 font-medium">৳{parseFloat(String(pkg.price)).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-white/40 tracking-wider text-[10px] uppercase">Tax ({taxRate}%)</span>
+                <span className="text-white/80 font-medium">৳{(parseFloat(String(pkg.price)) * taxRate / 100).toFixed(2)}</span>
+              </div>
+              <div className="pt-3 border-t border-white/10 flex justify-between items-baseline">
+                <span className="uppercase tracking-[0.2em] text-[10px] text-white/60 font-bold">Total Price</span>
+                <span className="text-2xl font-serif text-[#c4a484]">৳{calcTotal(pkg.price, taxRate)}</span>
               </div>
             </div>
 
