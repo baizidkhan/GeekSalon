@@ -50,7 +50,10 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       try { await axiosInstance.post(`${apiBaseURL}/auth/logout`) } catch { }
-      if (!isServerSide) window.location.replace('/admin/login')
+      // Only force redirect if the user is actually inside the admin section
+      if (!isServerSide && window.location.pathname.startsWith('/admin')) {
+        window.location.replace('/admin/login')
+      }
     }
     return Promise.reject(error)
   }

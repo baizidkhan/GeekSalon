@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -40,7 +41,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   createEmployee,
   getEmployeesFiltered,
@@ -92,6 +93,8 @@ interface Employee {
   fingerprintCode: string | null
   specializations: string[]
   status: EmployeeStatus
+  image?: string | null
+  about?: string | null
 }
 
 
@@ -116,11 +119,46 @@ export default function EmployeesPage() {
     joinDate: new Date().toISOString().split('T')[0],
     fingerprintCode: "",
     specializations: [] as string[],
+    about: "",
   })
 
   const [serviceToView, setServiceToView] = useState<Employee | null>(null)
   const [serviceToEdit, setServiceToEdit] = useState<Employee | null>(null)
   const [serviceToDelete, setServiceToDelete] = useState<Employee | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
+  const [isAdding, setIsAdding] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const compressToWebP = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const webpFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                type: 'image/webp',
+                lastModified: Date.now(),
+              });
+              resolve(webpFile);
+            }
+          }, 'image/webp', 0.95); // High quality WebP
+        };
+      };
+    });
+  };
 
   const fetchEmployees = async () => {
     try {
@@ -165,6 +203,7 @@ export default function EmployeesPage() {
   const handleAddEmployee = async () => {
     if (newEmployee.name && newEmployee.role && newEmployee.phone && parseFloat(newEmployee.salary) > 0) {
       try {
+        setIsAdding(true)
         const cleanPhone = newEmployee.phone.replace(/[\s- ]/g, "").replace(/^\+88/, "88")
         if (!cleanPhone.startsWith('88') && cleanPhone.startsWith('01')) {
           // Keep as is, regex allows optional 88
@@ -185,10 +224,18 @@ export default function EmployeesPage() {
         if (newEmployee.shift?.trim()) payload.shift = newEmployee.shift.trim()
         if (newEmployee.joinDate) payload.joinDate = newEmployee.joinDate
         if (newEmployee.fingerprintCode?.trim()) payload.fingerprintCode = newEmployee.fingerprintCode.trim()
+        if (newEmployee.about?.trim()) payload.about = newEmployee.about.trim()
 
         if (newEmployee.specializations.length > 0) payload.specializations = newEmployee.specializations
 
-        await createEmployee(payload)
+        const formData = new FormData()
+        if (imageFile) {
+          const webpFile = await compressToWebP(imageFile)
+          formData.append('image', webpFile)
+        }
+        formData.append('data', JSON.stringify(payload))
+
+        await createEmployee(formData)
 
 
         toast.success("Employee added successfully")
@@ -204,13 +251,18 @@ export default function EmployeesPage() {
           joinDate: new Date().toISOString().split('T')[0],
           fingerprintCode: "",
           specializations: [],
+          about: "",
         })
         setIsAddDialogOpen(false)
+        setImageFile(null)
+        setImagePreview(null)
         fetchEmployees()
       } catch (error: any) {
         console.log(error)
         console.error("Failed to add employee:", error)
         toast.error(error?.response?.data?.message || "Failed to add employee")
+      } finally {
+        setIsAdding(false)
       }
     }
   }
@@ -218,6 +270,7 @@ export default function EmployeesPage() {
   const handleEditSave = async () => {
     if (serviceToEdit) {
       try {
+        setIsEditing(true)
         const cleanPhone = serviceToEdit.phone.replace(/[\s-]/g, "")
         const payload = {
           name: serviceToEdit.name,
@@ -232,18 +285,31 @@ export default function EmployeesPage() {
           status: serviceToEdit.status,
           employmentType: serviceToEdit.employmentType,
           fingerprintCode: serviceToEdit.fingerprintCode || undefined,
+          about: serviceToEdit.about || undefined,
           specializations: Array.isArray(serviceToEdit.specializations)
             ? serviceToEdit.specializations
             : (serviceToEdit.specializations as string).split(',').map(s => s.trim()).filter(s => s !== "")
         }
-        await updateEmployee(serviceToEdit.id, payload)
+
+        const formData = new FormData()
+        if (editImageFile) {
+          const webpFile = await compressToWebP(editImageFile)
+          formData.append('image', webpFile)
+        }
+        formData.append('data', JSON.stringify(payload))
+
+        await updateEmployee(serviceToEdit.id, formData)
 
         toast.success("Employee updated successfully")
         setServiceToEdit(null)
+        setEditImageFile(null)
+        setEditImagePreview(null)
         fetchEmployees()
       } catch (error) {
         console.error("Failed to update employee:", error)
         toast.error("Failed to update employee")
+      } finally {
+        setIsEditing(false)
       }
     }
   }
@@ -251,6 +317,7 @@ export default function EmployeesPage() {
   const handleDelete = async () => {
     if (serviceToDelete) {
       try {
+        setIsDeleting(true)
         await deleteEmployee(serviceToDelete.id)
         toast.success("Employee deleted successfully")
         setServiceToDelete(null)
@@ -258,6 +325,8 @@ export default function EmployeesPage() {
       } catch (error) {
         console.error("Failed to delete employee:", error)
         toast.error("Failed to delete employee")
+      } finally {
+        setIsDeleting(false)
       }
     }
   }
@@ -316,6 +385,32 @@ export default function EmployeesPage() {
                       onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
                       placeholder="Enter full name"
                     />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Profile Image</Label>
+                    <div className="flex items-center gap-4 mt-2">
+                      <Avatar className="h-20 w-20">
+                        {imagePreview
+                          ? <AvatarImage src={imagePreview} alt="Preview" className="object-cover" />
+                          : null
+                        }
+                        <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                          {newEmployee.name ? getInitials(newEmployee.name) : <User className="h-8 w-8" />}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            setImageFile(file)
+                            setImagePreview(URL.createObjectURL(file))
+                          }
+                        }}
+                        className="max-w-[250px]"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label>Role <span className="text-destructive">*</span></Label>
@@ -397,6 +492,14 @@ export default function EmployeesPage() {
                     />
                   </div>
                   <div className="col-span-2">
+                    <Label>About Yourself</Label>
+                    <Input
+                      value={newEmployee.about}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, about: e.target.value })}
+                      placeholder="Write a short bio..."
+                    />
+                  </div>
+                  <div className="col-span-2">
                     <Label>Specializations</Label>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -435,8 +538,12 @@ export default function EmployeesPage() {
                 </div>
               </ScrollArea>
               <DialogFooter>
-                <Button onClick={handleAddEmployee} className="w-full">
-                  Add Employee
+                <Button onClick={handleAddEmployee} className="w-full" disabled={isAdding}>
+                  {isAdding ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Adding Employee...</>
+                  ) : (
+                    "Add Employee"
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -478,6 +585,7 @@ export default function EmployeesPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
+                          <AvatarImage src={employee.image ?? undefined} alt={employee.name} className="object-cover" />
                           <AvatarFallback className="bg-primary/10 text-primary">
                             {getInitials(employee.name)}
                           </AvatarFallback>
@@ -600,6 +708,7 @@ export default function EmployeesPage() {
               <div className="space-y-6 py-4">
                 <div className="flex items-center gap-4 border-b pb-4">
                   <Avatar className="h-16 w-16 text-xl">
+                    <AvatarImage src={serviceToView.image ?? undefined} alt={serviceToView.name} className="object-cover" />
                     <AvatarFallback>{getInitials(serviceToView.name)}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -617,6 +726,7 @@ export default function EmployeesPage() {
                   <div><Label className="text-muted-foreground">Commission</Label><p className="font-medium">{serviceToView.commission}%</p></div>
                   <div><Label className="text-muted-foreground">Experience</Label><p className="font-medium">{serviceToView.experience} years</p></div>
                   <div><Label className="text-muted-foreground">Join Date</Label><p className="font-medium">{serviceToView.joinDate}</p></div>
+                  <div className="col-span-2"><Label className="text-muted-foreground">About</Label><p className="font-medium text-sm italic">"{serviceToView.about || "No bio added yet."}"</p></div>
                   <div><Label className="text-muted-foreground">Shift</Label><p className="font-medium">{serviceToView.shift || "Not set"}</p></div>
                   <div>
                     <Label className="text-muted-foreground">Fingerprint</Label>
@@ -657,6 +767,33 @@ export default function EmployeesPage() {
                     value={serviceToEdit.name}
                     onChange={(e) => setServiceToEdit({ ...serviceToEdit, name: e.target.value })}
                   />
+                </div>
+                <div className="col-span-2">
+                  <Label>Profile Image</Label>
+                  <div className="flex items-center gap-4 mt-2">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage
+                        src={editImagePreview ?? serviceToEdit.image ?? undefined}
+                        alt={serviceToEdit.name}
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                        {getInitials(serviceToEdit.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setEditImageFile(file)
+                          setEditImagePreview(URL.createObjectURL(file))
+                        }
+                      }}
+                      className="max-w-[250px]"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label>Role</Label>
@@ -762,6 +899,14 @@ export default function EmployeesPage() {
                   />
                 </div>
                 <div className="col-span-2">
+                  <Label>About Yourself</Label>
+                  <Input
+                    value={serviceToEdit.about || ""}
+                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, about: e.target.value })}
+                    placeholder="Write a short bio..."
+                  />
+                </div>
+                <div className="col-span-2">
                   <Label>Specializations (comma separated)</Label>
                   <Input
                     value={Array.isArray(serviceToEdit.specializations) ? serviceToEdit.specializations.join(', ') : ""}
@@ -772,7 +917,13 @@ export default function EmployeesPage() {
             )}
           </ScrollArea>
           <DialogFooter>
-            <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
+            <Button className="w-full" onClick={handleEditSave} disabled={isEditing}>
+              {isEditing ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving Changes...</>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -783,8 +934,14 @@ export default function EmployeesPage() {
           <DialogHeader><DialogTitle>Delete Employee</DialogTitle></DialogHeader>
           <p className="text-muted-foreground">Are you sure you want to delete <strong>{serviceToDelete?.name}</strong>?</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setServiceToDelete(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            <Button variant="outline" onClick={() => setServiceToDelete(null)} disabled={isDeleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Deleting...</>
+              ) : (
+                "Delete"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

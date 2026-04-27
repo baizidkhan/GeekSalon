@@ -1,6 +1,9 @@
 import Link from "next/link"
-import { ChevronLeft, Award, Loader2, Sparkles } from "lucide-react"
-import { getBasicEmployees } from "@admin/api/employees/employees"
+import { ChevronLeft, Award } from "lucide-react"
+import api from "@admin/api/base"
+import { SiteHeader } from "@/app/components/site-header"
+import { Footer } from "@/app/components/footer"
+import { TeamMemberImage } from "@/app/components/team-member-image"
 
 // Fallback images (premium grayscale portraits)
 const TEAM_IMAGES = [
@@ -36,8 +39,8 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
 
   let employee: any = null
   try {
-    const data = await getBasicEmployees()
-    const teamArray = Array.isArray(data) ? data : (data?.data || data?.items || [])
+    const res = await api.get('/employee/basic', { cache: false as any })
+    const teamArray = Array.isArray(res.data) ? res.data : (res.data?.data || res.data?.items || [])
     employee = teamArray.find((e: any) => e.id === id)
   } catch (error) {
     console.error("Failed to fetch employee:", error)
@@ -70,31 +73,18 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] selection:bg-[#c4a484]/30 selection:text-[#c4a484]">
       {/* Navigation */}
-      <nav className="border-b border-white/5 bg-black/40 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/our-team" className="flex items-center gap-2 group">
-            <div className="flex items-center justify-center w-8 h-8 rounded bg-[#c4a484]/10 border border-[#c4a484]/20 group-hover:bg-[#c4a484]/20 transition-colors">
-              <ChevronLeft className="w-4 h-4 text-[#c4a484]" />
-            </div>
-            <span className="text-sm font-medium tracking-widest text-[#c4a484] uppercase">Back</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#c4a484]" />
-            <span className="text-xl font-serif tracking-tight">GeekSalon</span>
-          </div>
-          <div className="w-20" /> {/* Spacer */}
-        </div>
-      </nav>
+      <SiteHeader solid />
 
       <main className="max-w-7xl mx-auto px-6 py-12 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
           
           {/* Left Column: Image */}
           <div className="relative aspect-[4/5] overflow-hidden bg-[#1a1a1a] animate-fade-up">
-            <img
-              src={imageUrl}
-              alt={employee.name}
-              className="w-full h-full object-cover grayscale"
+            <TeamMemberImage
+              name={employee.name}
+              image={employee.image}
+              initialsSize="text-8xl"
+              imgClassName="w-full h-full object-cover grayscale"
             />
           </div>
 
@@ -123,9 +113,13 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
 
             {/* Bio */}
             <div className="prose prose-invert max-w-none">
-              <p className="text-lg text-white/60 leading-relaxed font-light">
-                {ROLE_BIOS[employee.role] || "Dedicated beauty expert bringing passion and precision to every client interaction. Known for exceptional attention to detail and creating personalized looks that highlight individual beauty."}
-                {" "}With years of expertise, {employee.name.split(' ')[0]} has transformed countless clients into the best version of themselves. Their signature style combines timeless elegance with modern techniques.
+              <p className="text-lg text-white/60 leading-relaxed font-light whitespace-pre-wrap">
+                {employee.about || (
+                  <>
+                    {ROLE_BIOS[employee.role] || "Dedicated beauty expert bringing passion and precision to every client interaction. Known for exceptional attention to detail and creating personalized looks that highlight individual beauty."}
+                    {" "}With years of expertise, {employee.name.split(' ')[0]} has transformed countless clients into the best version of themselves. Their signature style combines timeless elegance with modern techniques.
+                  </>
+                )}
               </p>
             </div>
 
@@ -166,13 +160,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
       </main>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-white/5 bg-black/50 backdrop-blur-sm mt-24">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-xs text-white/20 tracking-widest uppercase">
-            © 2026 GeekSalon. All Rights Reserved.
-          </p>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Styles for animations */}
       <style>{`

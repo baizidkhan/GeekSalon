@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 const links = {
     Experience: ["Our Services", "Packages", "Membership", "Gift Cards"],
     Company: ["Our Story", "Our Team", "Careers", "Press", "Blog"],
@@ -52,9 +54,8 @@ export function Footer() {
                     {/* Brand column */}
                     <div>
                         <p className="mb-5 text-xl font-semibold" style={{ fontFamily: 'Playfair Display, serif' }}>
-                            <span className="text-white">Privé</span>
-                            <span className="text-teal-400">for</span>
-                            <span className="text-white">You</span>
+                            <span className="text-white">Geek</span>
+                            <span className="text-teal-400">Salon</span>
                         </p>
                         <p className="mb-8 text-sm leading-7 text-white/50" style={{ fontFamily: 'Inter, sans-serif' }}>
                             Where luxury meets artistry. Experience the finest in beauty and wellness services, crafted for the modern connoisseur.
@@ -85,7 +86,7 @@ export function Footer() {
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                                         </svg>
                                     ),
-                                    text: "hello@priveforyou.com",
+                                    text: "hello@geeksalon.com",
                                 },
                             ].map((item) => (
                                 <li key={item.text} className="flex items-start gap-3 text-sm text-white/50" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -139,7 +140,7 @@ export function Footer() {
             <div className="border-t border-white/10">
                 <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6 lg:px-8">
                     <p className="flex items-center gap-3 text-xs text-white/35" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        © 2026 PrivéforYou. All rights reserved.
+                        © 2026 GeekSalon. All rights reserved.
                         <span className="text-white/20">•</span>
                         Developed by <a href="https://geekssort.com/" target="_blank" rel="noopener noreferrer" className="font-semibold text-white/55 underline transition-colors duration-300 hover:text-white">GeekSSort</a>
                     </p>

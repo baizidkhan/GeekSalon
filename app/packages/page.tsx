@@ -2,6 +2,8 @@ import Link from "next/link"
 import { ChevronLeft, Sparkles } from "lucide-react"
 import { getPackages } from "@admin/api/packages/packages"
 import PackagesGrid from "./PackagesGrid"
+import { SiteHeader } from "@/app/components/site-header"
+import { Footer } from "@/app/components/footer"
 
 export default async function PackagesPage() {
   let packages: any[] = []
@@ -15,21 +17,7 @@ export default async function PackagesPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] selection:bg-[#c4a484]/30 selection:text-[#c4a484]">
       {/* Navigation */}
-      <nav className="border-b border-white/5 bg-black/40 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="flex items-center justify-center w-8 h-8 rounded bg-[#c4a484]/10 border border-[#c4a484]/20 group-hover:bg-[#c4a484]/20 transition-colors">
-              <ChevronLeft className="w-4 h-4 text-[#c4a484]" />
-            </div>
-            <span className="text-sm font-medium tracking-widest text-[#c4a484] uppercase">Back</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#c4a484]" />
-            <span className="text-xl font-serif tracking-tight">GeekSalon</span>
-          </div>
-          <div className="w-20" /> {/* Spacer */}
-        </div>
-      </nav>
+      <SiteHeader solid />
 
       <main className="max-w-7xl mx-auto px-6 py-24">
         {/* Header */}
@@ -72,17 +60,7 @@ export default async function PackagesPage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-white/5 bg-black/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-xs text-white/20 tracking-widest uppercase">
-            © 2026 GeekSalon. All Rights Reserved.
-          </p>
-          <div className="flex gap-8">
-            <a href="#" className="text-xs text-white/30 hover:text-[#c4a484] transition-colors uppercase tracking-widest">Privacy Policy</a>
-            <a href="#" className="text-xs text-white/30 hover:text-[#c4a484] transition-colors uppercase tracking-widest">Terms of Service</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
