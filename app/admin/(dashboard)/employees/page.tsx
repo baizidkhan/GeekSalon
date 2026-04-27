@@ -33,7 +33,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Search, Phone, MoreHorizontal, Pencil, Trash2, Eye, User, UserCheck, Scissors, Zap, ChevronDown } from "lucide-react"
+import { Plus, Search, Phone, MoreHorizontal, Pencil, Trash2, Eye, User, UserCheck, Scissors, Zap, ChevronDown, Fingerprint } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -483,7 +483,18 @@ export default function EmployeesPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium text-sm">{employee.name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-medium text-sm">{employee.name}</p>
+                            {employee.fingerprintCode && (
+                              <span
+                                title={`Fingerprint linked · UID: ${employee.fingerprintCode}`}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-medium"
+                              >
+                                <Fingerprint className="w-2.5 h-2.5" />
+                                Linked
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-muted-foreground">
                             Since {employee.joinDate}
                           </p>
@@ -607,7 +618,17 @@ export default function EmployeesPage() {
                   <div><Label className="text-muted-foreground">Experience</Label><p className="font-medium">{serviceToView.experience} years</p></div>
                   <div><Label className="text-muted-foreground">Join Date</Label><p className="font-medium">{serviceToView.joinDate}</p></div>
                   <div><Label className="text-muted-foreground">Shift</Label><p className="font-medium">{serviceToView.shift || "Not set"}</p></div>
-                  <div><Label className="text-muted-foreground">Fingerprint</Label><p className="font-medium">{serviceToView.fingerprintCode || "None"}</p></div>
+                  <div>
+                    <Label className="text-muted-foreground">Fingerprint</Label>
+                    {serviceToView.fingerprintCode ? (
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Fingerprint className="w-3.5 h-3.5 text-green-600" />
+                        <p className="font-medium text-green-700">Linked · UID {serviceToView.fingerprintCode}</p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Not linked</p>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Specializations</Label>
