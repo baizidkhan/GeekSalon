@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function TheExperienceSection() {
     return (
         <section className="bg-[#0b0b0b] px-4 py-20 sm:px-6 lg:px-8">
@@ -17,13 +19,15 @@ export function TheExperienceSection() {
                             Every visit to PrivéforYou is a journey through refined luxury. From our curated environments to our bespoke treatments, we create moments that transcend the ordinary.
                         </p>
 
-                        <button
-                            type="button"
-                            className="border border-white bg-white px-8 py-4 text-[11px] font-medium uppercase tracking-[0.3em] text-black transition-all duration-300 hover:bg-transparent hover:text-white"
-                            style={{ fontFamily: 'Inter, sans-serif' }}
-                        >
-                            Book Your Experience
-                        </button>
+                        <Link href={"/services"}>
+                            <button
+                                type="button"
+                                className="border border-white bg-white px-8 py-4 text-[11px] font-medium uppercase tracking-[0.3em] text-black transition-all duration-300 hover:bg-transparent hover:text-white"
+                                style={{ fontFamily: 'Inter, sans-serif' }}
+                            >
+                                Book Your Experience
+                            </button>
+                        </Link>
                     </div>
 
                     {/* Right: Video placeholder */}
