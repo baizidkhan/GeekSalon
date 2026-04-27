@@ -43,9 +43,25 @@ export async function getTodayAttendance(): Promise<AttendanceRecord[]> {
   return data
 }
 
+export async function syncAttendanceNow(): Promise<void> {
+  await api.post('/attendance/sync', {})
+}
+
 export async function getAttendanceSummary(year: number, month: number): Promise<MonthSummary> {
   const { data } = await api.get('/attendance/summary', { params: { year, month }, cache: false })
   return data
+}
+
+export async function updateAttendanceRecord(
+  id: string,
+  data: { checkInTime?: string | null; checkOutTime?: string | null; status?: AttendanceStatus | null },
+): Promise<AttendanceRecord> {
+  const { data: record } = await api.patch(`/attendance/${id}`, data)
+  return record
+}
+
+export async function deleteAttendanceRecord(id: string): Promise<void> {
+  await api.delete(`/attendance/${id}`)
 }
 
 export function formatWorkingTime(minutes: number | null): string {
