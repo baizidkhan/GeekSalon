@@ -9,18 +9,26 @@ export interface NewDeviceUserPayload {
   name: string | null
 }
 
-type Handler = (payload: NewDeviceUserPayload) => void
+export interface AttendanceUpdatedPayload {
+  refreshedAt: string
+  attendanceDates: string[]
+  deviceUserIds: string[]
+}
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+interface SocketHandlers {
+  onNewDeviceUser?: (payload: NewDeviceUserPayload) => void
+  onAttendanceUpdated?: (payload: AttendanceUpdatedPayload) => void
+}
 
-export function useBiometricSocket(onNewDeviceUser: Handler) {
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000'
+
+export function useBiometricSocket(handlers: SocketHandlers) {
   const socketRef = useRef<Socket | null>(null)
-  const handlerRef = useRef<Handler>(onNewDeviceUser)
+  const handlerRef = useRef<SocketHandlers>(handlers)
 
-  // Keep handler ref up to date without reconnecting
   useEffect(() => {
-    handlerRef.current = onNewDeviceUser
-  }, [onNewDeviceUser])
+    handlerRef.current = handlers
+  }, [handlers])
 
   useEffect(() => {
     const socket = io(BACKEND_URL, {
@@ -40,7 +48,11 @@ export function useBiometricSocket(onNewDeviceUser: Handler) {
     })
 
     socket.on('new-device-user', (payload: NewDeviceUserPayload) => {
-      handlerRef.current(payload)
+      handlerRef.current.onNewDeviceUser?.(payload)
+    })
+
+    socket.on('attendance-updated', (payload: AttendanceUpdatedPayload) => {
+      handlerRef.current.onAttendanceUpdated?.(payload)
     })
 
     return () => {
