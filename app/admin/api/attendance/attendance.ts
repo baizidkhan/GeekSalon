@@ -1,3 +1,65 @@
-import api from '../base';
+import api from '../base'
 
-// Attendance API calls will go here
+export type AttendanceStatus = 'present' | 'late' | 'half_day' | 'absent'
+
+export interface AttendanceRecord {
+  id: string
+  employeeId: string
+  employeeName: string
+  machineId: string
+  attendanceDate: string
+  checkInTime: string | null
+  checkOutTime: string | null
+  workingMinutes: number | null
+  status: AttendanceStatus | null
+  createdAt: string
+}
+
+export interface MonthSummary {
+  from: string
+  to: string
+  total: number
+  present: number
+  late: number
+  half_day: number
+  absent: number
+  no_exit: number
+}
+
+export interface FilterParams {
+  date?: string
+  month?: string | number
+  year?: string | number
+  employeeId?: string
+}
+
+export async function getAttendance(params: FilterParams = {}): Promise<AttendanceRecord[]> {
+  const { data } = await api.get('/attendance', { params, cache: false })
+  return data
+}
+
+export async function getTodayAttendance(): Promise<AttendanceRecord[]> {
+  const { data } = await api.get('/attendance/today', { cache: false })
+  return data
+}
+
+export async function getAttendanceSummary(year: number, month: number): Promise<MonthSummary> {
+  const { data } = await api.get('/attendance/summary', { params: { year, month }, cache: false })
+  return data
+}
+
+export function formatWorkingTime(minutes: number | null): string {
+  if (minutes === null) return '—'
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
+export function formatTime(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
