@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  Fingerprint,
   LogOut,
   X,
   Sparkles,
@@ -33,7 +34,7 @@ const navigation = [
   {
     title: "Core Operations",
     items: [
-      { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" },
+      { name: "Dashboard", href: "/admin", icon: LayoutDashboard, permission: "dashboard" },
       { name: "Appointments", href: "/admin/appointments", icon: Calendar, permission: "appointments" },
       { name: "Clients", href: "/admin/clients", icon: Users, permission: "clients" },
       { name: "Billing / POS", href: "/admin/billing", icon: CreditCard, permission: "invoice" },
@@ -60,6 +61,7 @@ const navigation = [
     title: "HR & Internal",
     items: [
       { name: "Attendance", href: "/admin/attendance", icon: ClipboardCheck, permission: "attendance" },
+      { name: "Unlinked Users", href: "/admin/unlinked-users", icon: Fingerprint, permission: "attendance" },
       { name: "Leave Requests", href: "/admin/leave-request", icon: Calendar, permission: "leave-request" },
       { name: "Manage Payrolls", href: "/admin/manage-payrolls", icon: Building2, permission: "hr-payroll" },
     ],
@@ -186,7 +188,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 )}
                 <ul className="space-y-0.5">
                   {visibleItems.map((item) => {
-                    const isActive = pathname === item.href
+                    const isActive = item.href === "/admin"
+                      ? pathname === "/admin" || pathname === "/admin/dashboard"
+                      : pathname === item.href
                     return (
                       <li key={item.name}>
                         <Link
