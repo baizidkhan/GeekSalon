@@ -3,6 +3,7 @@ import { AuthGuard } from '@admin/components/auth-guard'
 import { cookies } from 'next/headers'
 import { getUserFromToken } from '@admin/lib/auth-utils'
 import { Analytics } from '@vercel/analytics/next'
+import { BiometricProvider } from '@/components/biometric/biometric-provider'
 
 export default async function AdminLayout({
   children,
@@ -16,7 +17,9 @@ export default async function AdminLayout({
   return (
     <>
       <AuthGuard initialUser={initialUser}>
-        {children}
+        <BiometricProvider>
+          {children}
+        </BiometricProvider>
       </AuthGuard>
       <Toaster position="top-right" richColors />
       {process.env.NODE_ENV === 'production' && <Analytics />}
