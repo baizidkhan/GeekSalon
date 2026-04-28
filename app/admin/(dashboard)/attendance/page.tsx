@@ -65,8 +65,10 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts"
 import {
   getAttendance,
@@ -132,17 +134,7 @@ function DayCell({ status }: { status: AttendanceStatus | null | "off" | "future
 
 // ─── Summary bar chart ────────────────────────────────────────────────────────
 
-function seededRandom(seed: number) {
-  const x = Math.sin(seed + 1) * 10000
-  return x - Math.floor(x)
-}
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-const CHART_DATA = MONTHS_SHORT.map((month, mi) => ({
-  month,
-  Present: Math.floor(seededRandom(mi * 3) * 30 + 50),
-  Late: Math.floor(seededRandom(mi * 3 + 1) * 15 + 10),
-  Absent: Math.floor(seededRandom(mi * 3 + 2) * 10 + 5),
-}))
 
 // ─── CSV Export ───────────────────────────────────────────────────────────────
 
@@ -184,6 +176,8 @@ export default function AttendancePage() {
   const [employees, setEmployees] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [trendData, setTrendData] = useState<{ month: string; Present: number; Late: number; Absent: number }[]>([])
+  const [trendLoading, setTrendLoading] = useState(true)
   const [recordToDelete, setRecordToDelete] = useState<AttendanceRecord | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -198,12 +192,8 @@ export default function AttendancePage() {
   const loadToday = useCallback(async (showError = true) => {
     setLoading(true)
     try {
-      const [recs, summ] = await Promise.all([
-        getTodayAttendance(),
-        getAttendanceSummary(currentYear, currentMonth),
-      ])
+      const recs = await getTodayAttendance()
       setTodayRecords(recs)
-      setSummary(summ)
     } catch {
       if (showError) {
         toast.error("Failed to load today's attendance")
@@ -211,7 +201,7 @@ export default function AttendancePage() {
     } finally {
       setLoading(false)
     }
-  }, [currentMonth, currentYear])
+  }, [])
 
   // ── Fetch month ────────────────────────────────────────────────────────────
   const loadMonth = useCallback(async (showError = true) => {
@@ -262,6 +252,25 @@ export default function AttendancePage() {
       .catch(() => { })
   }, [])
 
+  useEffect(() => {
+    setTrendLoading(true)
+    Promise.all(
+      Array.from({ length: 12 }, (_, i) =>
+        getAttendanceSummary(currentYear, i + 1).catch(() => null)
+      )
+    ).then(results => {
+      setTrendData(
+        results.map((s, i) => ({
+          month: MONTHS_SHORT[i],
+          Present: s?.present ?? 0,
+          Late: s?.late ?? 0,
+          Absent: s?.absent ?? 0,
+        }))
+      )
+      setTrendLoading(false)
+    })
+  }, [currentYear])
+
   const handleAttendanceUpdated = useCallback((payload: AttendanceUpdatedPayload) => {
     if (viewMode === "today") {
       if (payload.attendanceDates.includes(todayDate)) {
@@ -310,6 +319,34 @@ export default function AttendancePage() {
 
   const todayTotal = Math.max(1, Math.ceil(todayFiltered.length / PAGE_SIZE))
   const todayPaged = todayFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // In today view, compute summary from todayRecords so cards always match the table.
+  // In calendar view, use the API summary for the selected month.
+  const displaySummary = useMemo<MonthSummary | null>(() => {
+    if (viewMode === "today") {
+      return {
+        from: todayDate,
+        to: todayDate,
+        total: todayRecords.length,
+        present: todayRecords.filter(r => r.status === "present").length,
+        late: todayRecords.filter(r => r.status === "late").length,
+        half_day: todayRecords.filter(r => r.status === "half_day").length,
+        absent: todayRecords.filter(r => r.status === "absent").length,
+        no_exit: todayRecords.filter(r => !r.status && !!r.checkInTime && !r.checkOutTime).length,
+      }
+    }
+    return summary
+  }, [viewMode, todayRecords, summary, todayDate])
+
+  const pieChartData = useMemo(() => {
+    if (!displaySummary) return []
+    return [
+      { name: "Present", value: displaySummary.present, color: "#22c55e" },
+      { name: "Late", value: displaySummary.late, color: "#f59e0b" },
+      { name: "Half Day", value: displaySummary.half_day, color: "#fb923c" },
+      { name: "Absent", value: displaySummary.absent, color: "#f87171" },
+    ].filter(d => d.value > 0)
+  }, [displaySummary])
 
   function toTimeInput(iso: string | null): string {
     if (!iso) return ""
@@ -416,13 +453,13 @@ export default function AttendancePage() {
       </div>
 
       {/* ── Summary cards ────────────────────────────────────────────── */}
-      {summary && (
+      {displaySummary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Present", value: summary.present, cls: "text-green-600", bg: "bg-green-50" },
-            { label: "Late", value: summary.late, cls: "text-amber-600", bg: "bg-amber-50" },
-            { label: "Half Day", value: summary.half_day, cls: "text-orange-600", bg: "bg-orange-50" },
-            { label: "Absent", value: summary.absent, cls: "text-red-600", bg: "bg-red-50" },
+            { label: "Present", value: displaySummary.present, cls: "text-green-600", bg: "bg-green-50" },
+            { label: "Late", value: displaySummary.late, cls: "text-amber-600", bg: "bg-amber-50" },
+            { label: "Half Day", value: displaySummary.half_day, cls: "text-orange-600", bg: "bg-orange-50" },
+            { label: "Absent", value: displaySummary.absent, cls: "text-red-600", bg: "bg-red-50" },
           ].map(c => (
             <div key={c.label} className={`${c.bg} rounded-xl p-4 border border-border`}>
               <p className="text-xs text-muted-foreground">{c.label}</p>
@@ -433,20 +470,155 @@ export default function AttendancePage() {
       )}
 
       {/* ── Charts Row ────────────────────────────────────────────────── */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h2 className="font-semibold text-foreground mb-4">Monthly Trend</h2>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={CHART_DATA} barSize={16} barGap={2}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }} />
-            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-            <Bar dataKey="Present" stackId="a" fill="#22c55e" />
-            <Bar dataKey="Late" stackId="a" fill="#f59e0b" />
-            <Bar dataKey="Absent" stackId="a" fill="#f87171" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="flex flex-col lg:flex-row gap-4">
+
+        {/* Monthly Trend – 65% */}
+        <div className="lg:w-[65%] bg-card rounded-xl border border-border p-5">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h2 className="font-semibold text-foreground">Monthly Trend</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Year-round attendance breakdown</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {[
+                { color: "#22c55e", label: "Present" },
+                { color: "#f59e0b", label: "Late" },
+                { color: "#f87171", label: "Absent" },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          </div>
+          {trendLoading ? (
+            <div className="h-[240px] flex items-center justify-center">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Loading trend data…
+              </div>
+            </div>
+          ) : null}
+          <ResponsiveContainer width="100%" height={trendLoading ? 0 : 240}>
+            <BarChart data={trendData} barSize={14} barCategoryGap="30%">
+              <defs>
+                <linearGradient id="gradPresent" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4ade80" />
+                  <stop offset="100%" stopColor="#16a34a" />
+                </linearGradient>
+                <linearGradient id="gradLate" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#fbbf24" />
+                  <stop offset="100%" stopColor="#d97706" />
+                </linearGradient>
+                <linearGradient id="gradAbsent" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#fca5a5" />
+                  <stop offset="100%" stopColor="#dc2626" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.8} />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                dy={6}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                width={36}
+              />
+              <Tooltip
+                cursor={{ fill: "#f8fafc", radius: 4 } as any}
+                contentStyle={{
+                  borderRadius: 10,
+                  border: "1px solid #e2e8f0",
+                  fontSize: 12,
+                  padding: "8px 14px",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                }}
+                labelStyle={{ fontWeight: 600, marginBottom: 2, color: "#1e293b" }}
+                itemStyle={{ color: "#475569" }}
+              />
+              <Bar dataKey="Present" stackId="a" fill="url(#gradPresent)" animationDuration={600} />
+              <Bar dataKey="Late" stackId="a" fill="url(#gradLate)" animationDuration={700} />
+              <Bar dataKey="Absent" stackId="a" fill="url(#gradAbsent)" radius={[4, 4, 0, 0]} animationDuration={800} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Attendance Distribution – 35% */}
+        <div className="lg:w-[35%] bg-card rounded-xl border border-border p-5 flex flex-col">
+          <div className="mb-4">
+            <h2 className="font-semibold text-foreground">Attendance Distribution</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {viewMode === "today"
+                ? "Today's breakdown"
+                : `${MONTH_NAMES[Number(month)]} ${year} breakdown`}
+            </p>
+          </div>
+          {displaySummary && pieChartData.length > 0 ? (
+            <div className="flex-1 flex flex-col">
+              <ResponsiveContainer width="100%" height={190}>
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={82}
+                    paddingAngle={3}
+                    dataKey="value"
+                    animationDuration={700}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 10,
+                      border: "1px solid #e2e8f0",
+                      fontSize: 12,
+                      padding: "8px 14px",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                    }}
+                    formatter={(value: number, name: string) => [`${value}`, name]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {[
+                  { label: "Present", value: displaySummary!.present, color: "#22c55e", bg: "bg-green-50", text: "text-green-700" },
+                  { label: "Late", value: displaySummary!.late, color: "#f59e0b", bg: "bg-amber-50", text: "text-amber-700" },
+                  { label: "Half Day", value: displaySummary!.half_day, color: "#fb923c", bg: "bg-orange-50", text: "text-orange-700" },
+                  { label: "Absent", value: displaySummary!.absent, color: "#f87171", bg: "bg-red-50", text: "text-red-700" },
+                ].map(item => (
+                  <div key={item.label} className={`${item.bg} rounded-lg px-3 py-2 flex items-center gap-2`}>
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground leading-none mb-0.5">{item.label}</p>
+                      <p className={`text-sm font-bold ${item.text}`}>{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <div className="w-14 h-14 rounded-full bg-muted/40 flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-6 h-6 opacity-30" />
+                </div>
+                <p className="text-sm">No summary data</p>
+                <p className="text-xs mt-0.5 opacity-60">Load attendance to see distribution</p>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* ── Main Table Card ───────────────────────────────────────────── */}
