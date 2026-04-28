@@ -3,11 +3,11 @@
 import { useState } from "react"
 import { Sidebar } from "./sidebar"
 import { Menu, Sparkles } from "lucide-react"
-import { BusinessProvider, useBusinessName } from "@admin/context/business-context"
+import { useBusiness } from "@/context/BusinessContext"
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { businessName } = useBusinessName()
+  const { businessName } = useBusiness()
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -47,9 +47,5 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 }
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <BusinessProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
-    </BusinessProvider>
-  )
+  return <DashboardLayoutInner>{children}</DashboardLayoutInner>
 }
