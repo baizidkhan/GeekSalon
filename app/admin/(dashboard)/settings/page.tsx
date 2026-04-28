@@ -17,10 +17,10 @@ import { Building2, Clock, CreditCard, Loader2 } from "lucide-react"
 import { ClockPickerField } from "@/components/ui/clock-picker"
 import { getBusinessInfo, updateBusinessInfo, getAppointmentSettings, updateAppointmentSettings, getInvoiceSettings, updateInvoiceSettings, type BusinessInfo, type AppointmentSetting, type InvoiceSetting } from "@admin/api/settings/settings"
 import { toast } from "sonner"
-import { useBusinessName } from "@admin/context/business-context"
+import { useBusiness } from "@/context/BusinessContext"
 
 export default function SettingsPage() {
-  const { refresh: refreshBusinessName } = useBusinessName()
+  const { refresh: refreshBusinessName } = useBusiness()
   const [loading, setLoading] = useState(true)
   const [savingBusiness, setSavingBusiness] = useState(false)
   const [savingBooking, setSavingBooking] = useState(false)
