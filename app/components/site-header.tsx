@@ -1,4 +1,7 @@
+"use client"
+
 import Link from "next/link"
+import { useBusiness } from "@/context/BusinessContext"
 
 const navItems = [
     { label: "Home", href: "/" },
@@ -8,6 +11,7 @@ const navItems = [
 ]
 
 export function SiteHeader({ solid = false }: { solid?: boolean }) {
+    const { businessName } = useBusiness()
     return (
         <header className={`sticky top-0 z-50 border-b border-white/15 ${solid ? "bg-[#0b0b0b]" : ""}`}>
             <div className="relative mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -23,7 +27,7 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                             color: 'rgba(255, 255, 255, 0.99)',
                         }}
                     >
-                        Elgence
+                        {businessName}
                     </Link>
                 </div>
 

@@ -8,8 +8,10 @@ import { TestimonialsSection } from "../../components/testimonials"
 import { Service } from "@/lib/types"
 import { Star, MapPin, Clock, CheckCircle2 } from "lucide-react"
 import { useBooking } from "@/context/BookingContext"
+import { useBusiness } from "@/context/BusinessContext"
 
 export default function ServiceDetailPage() {
+    const { businessInfo } = useBusiness()
     const { openBooking } = useBooking()
     const { id } = useParams()
     const [service, setService] = useState<Service | null>(null)
@@ -102,7 +104,7 @@ export default function ServiceDetailPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <MapPin className="h-3 w-3" />
-                                        <span>Beverly Hills, CA</span>
+                                        <span>{businessInfo?.address?.split(',')[1]?.trim() || "Beverly Hills"}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Clock className="h-3 w-3" />

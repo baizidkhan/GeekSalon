@@ -108,7 +108,6 @@ export function BookingModal() {
 
         if (currentStep === 1) {
             if (!formData.serviceId) newErrors.serviceId = "Please select a service"
-            if (!formData.staff) newErrors.staff = "Please select a stylist"
         } else if (currentStep === 2) {
             if (!formData.date) newErrors.date = "Please select a date"
             if (!formData.time) {
@@ -197,7 +196,7 @@ export function BookingModal() {
                 time: formData.time,
                 services: [formData.serviceName],
                 status: "Confirmed",
-                staff: formData.staff,
+                staff: formData.staff === "Any Expert" ? "" : formData.staff,
                 source: "Online"
             }
 
@@ -292,6 +291,9 @@ export function BookingModal() {
                                             <SelectValue placeholder="Select an expert" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-[#101010] border-white/10 text-white">
+                                            <SelectItem value="Any Expert" className="focus:bg-white focus:text-black">
+                                                Any Expert (Default)
+                                            </SelectItem>
                                             {Array.isArray(staffList) && staffList?.map((staff) => (
                                                 <SelectItem key={staff.id} value={staff.name} className="focus:bg-white focus:text-black">
                                                     {staff.name}
@@ -306,15 +308,15 @@ export function BookingModal() {
                                     <div className="mt-8 p-6 bg-white/5 border border-white/5 space-y-3">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-white/40">Subtotal</span>
-                                            <span>${subtotal.toFixed(2)}</span>
+                                            <span>Tk {subtotal.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="text-white/40">Tax ({taxRate}%)</span>
-                                            <span>${tax.toFixed(2)}</span>
+                                            <span>Tk {tax.toFixed(2)}</span>
                                         </div>
                                         <div className="pt-3 border-t border-white/10 flex justify-between font-semibold">
                                             <span className="uppercase tracking-widest text-[11px]">Total Price</span>
-                                            <span className="text-xl">${total.toFixed(2)}</span>
+                                            <span className="text-xl">Tk {total.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 )}
@@ -400,7 +402,7 @@ export function BookingModal() {
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-white/40">Expert</span>
-                                        <span className="font-medium">{formData.staff}</span>
+                                        <span className="font-medium">{formData.staff || "Any Expert"}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-white/40">Date & Time</span>
@@ -408,7 +410,7 @@ export function BookingModal() {
                                     </div>
                                     <div className="pt-4 border-t border-white/10 flex justify-between font-semibold">
                                         <span className="text-white/40">Total Amount</span>
-                                        <span className="text-xl">${total.toFixed(2)}</span>
+                                        <span className="text-xl">Tk {total.toFixed(2)}</span>
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-center text-white/30 tracking-wider">
@@ -432,7 +434,7 @@ export function BookingModal() {
                         {step < 4 ? (
                             <Button
                                 onClick={handleNext}
-                                disabled={step === 1 && (!formData.serviceId || !formData.staff)}
+                                disabled={step === 1 && !formData.serviceId}
                                 className="flex-1 h-14 rounded-none bg-white text-black hover:bg-stone-200 transition-all duration-300 uppercase tracking-widest text-[11px]"
                             >
                                 Continue
