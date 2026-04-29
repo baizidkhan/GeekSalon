@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -74,6 +75,7 @@ export default function EmployeeAccountPage() {
     const [users, setUsers] = useState<UserManagement[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
+    const debouncedSearch = useDebounce(search, 500)
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
     const [employees, setEmployees] = useState<any[]>([])
@@ -137,9 +139,9 @@ export default function EmployeeAccountPage() {
 
     const filteredUsers = useMemo(() => {
         return users.filter((user) =>
-            user.useremail.toLowerCase().includes(search.toLowerCase())
+            user.useremail.toLowerCase().includes(debouncedSearch.toLowerCase())
         )
-    }, [users, search])
+    }, [users, debouncedSearch])
 
     const unlinkedEmployees = useMemo(() => {
         return employees.filter(emp => !users.some(user => user.employeeId === emp.id || user.employee?.id === emp.id))
