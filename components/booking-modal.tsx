@@ -24,7 +24,7 @@ import { toast } from "sonner"
 import { Check, ChevronLeft, ChevronRight, X, Clock, Calendar, User, Phone, CreditCard } from "lucide-react"
 
 export function BookingModal() {
-    const { isOpen, closeBooking, selectedService } = useBooking()
+    const { isOpen, closeBooking, selectedService, preSelectedStylist } = useBooking()
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [staffList, setStaffList] = useState<any[]>([])
@@ -58,8 +58,14 @@ export function BookingModal() {
                     serviceName: selectedService.name
                 }))
             }
+            if (preSelectedStylist) {
+                setFormData(prev => ({
+                    ...prev,
+                    staff: preSelectedStylist
+                }))
+            }
         }
-    }, [isOpen, selectedService])
+    }, [isOpen, selectedService, preSelectedStylist])
 
     const fetchTaxRate = async () => {
         try {
@@ -286,8 +292,12 @@ export function BookingModal() {
 
                                 <div className="space-y-2">
                                     <Label className="text-[10px] uppercase tracking-[0.2em] text-white/40">Preferred Stylist</Label>
-                                    <Select value={formData.staff} onValueChange={(val) => handleSelectChange("staff", val)}>
-                                        <SelectTrigger className={`bg-transparent border-white/10 h-14 rounded-none focus:ring-white/20 ${errors.staff ? 'border-red-500' : ''}`}>
+                                    <Select 
+                                        disabled={!!preSelectedStylist}
+                                        value={formData.staff} 
+                                        onValueChange={(val) => handleSelectChange("staff", val)}
+                                    >
+                                        <SelectTrigger className={`bg-transparent border-white/10 h-14 rounded-none focus:ring-white/20 ${errors.staff ? 'border-red-500' : ''} ${preSelectedStylist ? 'opacity-70 cursor-not-allowed' : ''}`}>
                                             <SelectValue placeholder="Select an expert" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-[#101010] border-white/10 text-white">
@@ -335,6 +345,8 @@ export function BookingModal() {
                                             name="date"
                                             value={formData.date}
                                             onChange={handleInputChange}
+                                            min={new Date().toISOString().split("T")[0]}
+                                            max={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
                                             className={`bg-transparent border-white/10 h-14 pl-12 rounded-none focus-visible:ring-white/20 [color-scheme:dark] ${errors.date ? 'border-red-500' : ''}`}
                                         />
                                     </div>
