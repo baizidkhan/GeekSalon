@@ -552,7 +552,7 @@ export default function AttendancePage() {
         {/* Attendance Distribution – 35% */}
         <div className="lg:w-[35%] bg-card rounded-xl border border-border p-5 flex flex-col">
           <div className="mb-4">
-            <h2 className="font-semibold text-foreground">Attendance Distribution</h2>
+            <h2 className="font-semibold text-foreground">Today's Attendance</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               {viewMode === "today"
                 ? "Today's breakdown"
