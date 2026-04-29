@@ -165,7 +165,7 @@ export default function TestimonialsPage() {
             <DialogHeader>
               <DialogTitle>Add New Testimonial</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 pb-2">
               <div className="space-y-2">
                 <Label>Client Name</Label>
                 <Input 
@@ -265,7 +265,7 @@ export default function TestimonialsPage() {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Edit Testimonial</DialogTitle></DialogHeader>
           {testimonialToEdit && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 pb-2">
               <div className="space-y-2">
                 <Label>Client Name</Label>
                 <Input 

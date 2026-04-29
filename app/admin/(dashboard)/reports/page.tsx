@@ -29,8 +29,9 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { Download, TrendingUp, Users, Calendar } from "lucide-react"
+import { Download, TrendingUp, Users, Calendar, Wallet } from "lucide-react"
 import { getReports } from "@admin/api/reports/reports"
+import { StatCard } from "@admin/components/stat-card"
 
 interface ReportData {
   totalRevenue: number
@@ -173,202 +174,186 @@ export default function ReportsPage() {
     : 0
 
   return (
-      <div className="premium-page p-4 sm:p-6 md:p-8">
-        <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Analytics</p>
-            <h1 className="text-2xl font-semibold text-foreground">Reports & Analysis</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Business insights and performance data</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
-              <PopoverTrigger asChild>
-                <div>
-                  <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
-                    <SelectTrigger className="w-40 cursor-pointer">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIME_OPTIONS.map(opt => (
-                        <SelectItem className="cursor-pointer" key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-4">
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-xs">From</Label>
-                    <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">To</Label>
-                    <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
-                  </div>
-                  <Button size="sm" className="w-full cursor-pointer" onClick={handleCustomApply}>Apply</Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-            <Button variant="outline" onClick={handleExport} disabled={!data} className="cursor-pointer">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-          </div>
+    <div className="premium-page p-4 sm:p-6 md:p-8">
+      <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Analytics</p>
+          <h1 className="text-2xl font-semibold text-foreground">Reports & Analysis</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Business insights and performance data</p>
         </div>
-
-        {loading && (
-          <div className="text-center text-muted-foreground py-20">Loading...</div>
-        )}
-
-        {!loading && data && (
-          <>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <span className="w-5 h-5 text-primary font-bold text-base flex items-center justify-center">৳</span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Revenue</p>
-                    <p className="text-2xl font-semibold text-foreground">৳{data.totalRevenue.toLocaleString()}</p>
-                    <p className="text-xs text-green-600">৳{data.paidRevenue.toLocaleString()} paid</p>
-                  </div>
-                </div>
+        <div className="flex items-center gap-3">
+          <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
+            <PopoverTrigger asChild>
+              <div>
+                <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
+                  <SelectTrigger className="w-40 cursor-pointer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIME_OPTIONS.map(opt => (
+                      <SelectItem className="cursor-pointer" key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Calendar className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Appointments</p>
-                    <p className="text-2xl font-semibold text-foreground">{data.totalAppointments}</p>
-                    <p className="text-xs text-muted-foreground">{data.totalInvoices} invoices</p>
-                  </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-4">
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">From</Label>
+                  <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
                 </div>
-              </div>
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Users className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">New Clients</p>
-                    <p className="text-2xl font-semibold text-foreground">{data.newClients}</p>
-                  </div>
+                <div>
+                  <Label className="text-xs">To</Label>
+                  <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
                 </div>
+                <Button size="sm" className="w-full cursor-pointer" onClick={handleCustomApply}>Apply</Button>
               </div>
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Avg. Ticket Size</p>
-                    <p className="text-2xl font-semibold text-foreground">৳{avgTicket.toLocaleString()}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Charts Row 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <h3 className="font-medium text-foreground mb-4">Revenue by Payment Method</h3>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={paymentChartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
-                      <Bar dataKey="revenue" fill="oklch(0.48 0.16 8)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <h3 className="font-medium text-foreground mb-4">Top Services</h3>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={data.topServices.slice(0, 6)}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="count"
-                        nameKey="name"
-                      >
-                        {data.topServices.slice(0, 6).map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => [value, "Bookings"]} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* Charts Row 2 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <h3 className="font-medium text-foreground mb-4">Appointments by Source</h3>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={sourceChartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                      <Tooltip />
-                      <Bar dataKey="count" name="Appointments" fill="oklch(0.60 0.11 330)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <h3 className="font-medium text-foreground mb-4">Appointments by Status</h3>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={Object.entries(data.appointmentsByStatus).map(([name, count]) => ({ name, count }))}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7280" }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                      <Tooltip />
-                      <Bar dataKey="count" name="Appointments" fill="oklch(0.73 0.10 68)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* Staff Revenue */}
-            {data.topStaff.length > 0 && (
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <h3 className="font-medium text-foreground mb-4">Staff Revenue</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.topStaff} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
-                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
-                      <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} width={80} />
-                      <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
-                      <Bar dataKey="revenue" fill="oklch(0.58 0.10 224)" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+            </PopoverContent>
+          </Popover>
+          <Button variant="outline" onClick={handleExport} disabled={!data} className="cursor-pointer">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+        </div>
       </div>
+
+      {loading && (
+        <div className="text-center text-muted-foreground py-20">Loading...</div>
+      )}
+
+      {!loading && data && (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <StatCard
+              title="Total Revenue"
+              value={`৳${data.totalRevenue.toLocaleString()}`}
+              subtitle={<span className="text-green-600">৳{data.paidRevenue.toLocaleString()} paid</span>}
+              icon={Wallet}
+              iconWrapperClassName="bg-blue-50 text-blue-500"
+              className="border-t-4 border-t-transparent hover:border-t-blue-500 transition-all"
+            />
+            <StatCard
+              title="Appointments"
+              value={data.totalAppointments}
+              subtitle={`${data.totalInvoices} invoices`}
+              icon={Calendar}
+              iconWrapperClassName="bg-emerald-50 text-emerald-500"
+              className="border-t-4 border-t-transparent hover:border-t-emerald-500 transition-all"
+            />
+            <StatCard
+              title="New Clients"
+              value={data.newClients}
+              icon={Users}
+              iconWrapperClassName="bg-amber-50 text-amber-500"
+              className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
+            />
+            <StatCard
+              title="Avg. Ticket Size"
+              value={`৳${avgTicket.toLocaleString()}`}
+              icon={TrendingUp}
+              iconWrapperClassName="bg-rose-50 text-rose-500"
+              className="border-t-4 border-t-transparent hover:border-t-rose-500 transition-all"
+            />
+          </div>
+
+          {/* Charts Row 1 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div className="bg-card rounded-xl p-5 border border-border">
+              <h3 className="font-medium text-foreground mb-4">Revenue by Payment Method</h3>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={paymentChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
+                    <Bar dataKey="revenue" fill="oklch(0.48 0.16 8)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-xl p-5 border border-border">
+              <h3 className="font-medium text-foreground mb-4">Top Services</h3>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={data.topServices.slice(0, 6)}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="count"
+                      nameKey="name"
+                    >
+                      {data.topServices.slice(0, 6).map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => [value, "Bookings"]} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Charts Row 2 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div className="bg-card rounded-xl p-5 border border-border">
+              <h3 className="font-medium text-foreground mb-4">Appointments by Source</h3>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={sourceChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                    <Tooltip />
+                    <Bar dataKey="count" name="Appointments" fill="oklch(0.60 0.11 330)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-xl p-5 border border-border">
+              <h3 className="font-medium text-foreground mb-4">Appointments by Status</h3>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={Object.entries(data.appointmentsByStatus).map(([name, count]) => ({ name, count }))}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7280" }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                    <Tooltip />
+                    <Bar dataKey="count" name="Appointments" fill="oklch(0.73 0.10 68)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Staff Revenue */}
+          {data.topStaff.length > 0 && (
+            <div className="bg-card rounded-xl p-5 border border-border">
+              <h3 className="font-medium text-foreground mb-4">Staff Revenue</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.topStaff} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
+                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} width={80} />
+                    <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
+                    <Bar dataKey="revenue" fill="oklch(0.58 0.10 224)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   )
 }

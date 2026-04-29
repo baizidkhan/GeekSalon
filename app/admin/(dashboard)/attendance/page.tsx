@@ -84,7 +84,7 @@ import {
   type AttendanceStatus,
   type MonthSummary,
 } from "@admin/api/attendance/attendance"
-import { getBasicEmployees } from "@admin/api/employees/employees"
+import { getEmployees } from "@admin/api/employees/employees"
 import { toast } from "sonner"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ export default function AttendancePage() {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([])
   const [monthRecords, setMonthRecords] = useState<AttendanceRecord[]>([])
   const [summary, setSummary] = useState<MonthSummary | null>(null)
-  const [employees, setEmployees] = useState<{ id: string; name: string }[]>([])
+  const [employees, setEmployees] = useState<{ id: string; name: string; status?: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [trendData, setTrendData] = useState<{ month: string; Present: number; Late: number; Absent: number }[]>([])
@@ -249,7 +249,7 @@ export default function AttendancePage() {
     loadMonth()
   }, [viewMode, loadToday, loadMonth])
   useEffect(() => {
-    getBasicEmployees()
+    getEmployees()
       .then((list: any[]) => setEmployees(Array.isArray(list) ? list : []))
       .catch(() => { })
   }, [])
@@ -349,6 +349,20 @@ export default function AttendancePage() {
       { name: "Absent", value: displaySummary.absent, color: "#f87171" },
     ].filter(d => d.value > 0)
   }, [displaySummary])
+
+  const todayStats = useMemo(() => {
+    const checkedInIds = new Set(todayRecords.filter(r => r.checkInTime).map(r => r.employeeId))
+    const working = todayRecords.filter(r => r.checkInTime && !r.checkOutTime && !r.status).length
+    const onLeave = employees.filter(e => e.status === 'ON_LEAVE').length
+    const notCheckedIn = employees.filter(e => e.status !== 'ON_LEAVE' && !checkedInIds.has(e.id)).length
+    return { working, onLeave, absent: notCheckedIn }
+  }, [todayRecords, employees])
+
+  const workforcePieData = useMemo(() => [
+    { name: "Working", value: todayStats.working, color: "#3b82f6" },
+    { name: "Not In", value: todayStats.absent, color: "#f43f5e" },
+    { name: "On Leave", value: todayStats.onLeave, color: "#94a3b8" },
+  ].filter(d => d.value > 0), [todayStats])
 
   function toTimeInput(iso: string | null): string {
     if (!iso) return ""
@@ -454,22 +468,6 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* ── Summary cards ────────────────────────────────────────────── */}
-      {displaySummary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { label: "Present", value: displaySummary.present, cls: "text-green-600", bg: "bg-green-50" },
-            { label: "Late", value: displaySummary.late, cls: "text-amber-600", bg: "bg-amber-50" },
-            { label: "Half Day", value: displaySummary.half_day, cls: "text-orange-600", bg: "bg-orange-50" },
-            { label: "Absent", value: displaySummary.absent, cls: "text-red-600", bg: "bg-red-50" },
-          ].map(c => (
-            <div key={c.label} className={`${c.bg} rounded-xl p-4 border border-border`}>
-              <p className="text-xs text-muted-foreground">{c.label}</p>
-              <p className={`text-3xl font-bold mt-1 ${c.cls}`}>{c.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* ── Charts Row ────────────────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row gap-4">
@@ -561,64 +559,117 @@ export default function AttendancePage() {
                 : `${MONTH_NAMES[Number(month)]} ${year} breakdown`}
             </p>
           </div>
-          {displaySummary && pieChartData.length > 0 ? (
-            <div className="flex-1 flex flex-col">
-              <ResponsiveContainer width="100%" height={190}>
-                <PieChart>
-                  <Pie
-                    data={pieChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={82}
-                    paddingAngle={3}
-                    dataKey="value"
-                    animationDuration={700}
-                  >
-                    {pieChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: 10,
-                      border: "1px solid #e2e8f0",
-                      fontSize: 12,
-                      padding: "8px 14px",
-                      boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-                    }}
-                    formatter={(value: number, name: string) => [`${value}`, name]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                {[
-                  { label: "Present", value: displaySummary!.present, color: "#22c55e", bg: "bg-green-50", text: "text-green-700" },
-                  { label: "Late", value: displaySummary!.late, color: "#f59e0b", bg: "bg-amber-50", text: "text-amber-700" },
-                  { label: "Half Day", value: displaySummary!.half_day, color: "#fb923c", bg: "bg-orange-50", text: "text-orange-700" },
-                  { label: "Absent", value: displaySummary!.absent, color: "#f87171", bg: "bg-red-50", text: "text-red-700" },
-                ].map(item => (
-                  <div key={item.label} className={`${item.bg} rounded-lg px-3 py-2 flex items-center gap-2`}>
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-muted-foreground leading-none mb-0.5">{item.label}</p>
-                      <p className={`text-sm font-bold ${item.text}`}>{item.value}</p>
+          <div className="flex-1 flex flex-col">
+            {displaySummary && pieChartData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={190}>
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={82}
+                      paddingAngle={3}
+                      dataKey="value"
+                      animationDuration={700}
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 10,
+                        border: "1px solid #e2e8f0",
+                        fontSize: 12,
+                        padding: "8px 14px",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                      }}
+                      formatter={(value: number, name: string) => [`${value}`, name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {[
+                    { label: "Present", value: displaySummary.present, color: "#22c55e", bg: "bg-green-50", text: "text-green-700" },
+                    { label: "Late", value: displaySummary.late, color: "#f59e0b", bg: "bg-amber-50", text: "text-amber-700" },
+                    { label: "Half Day", value: displaySummary.half_day, color: "#fb923c", bg: "bg-orange-50", text: "text-orange-700" },
+                    { label: "Absent", value: displaySummary.absent, color: "#f87171", bg: "bg-red-50", text: "text-red-700" },
+                  ].map(item => (
+                    <div key={item.label} className={`${item.bg} rounded-lg px-3 py-2 flex items-center gap-2`}>
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-muted-foreground leading-none mb-0.5">{item.label}</p>
+                        <p className={`text-sm font-bold ${item.text}`}>{item.value}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <div className="w-14 h-14 rounded-full bg-muted/40 flex items-center justify-center mx-auto mb-3">
-                  <Calendar className="w-6 h-6 opacity-30" />
+                  ))}
                 </div>
-                <p className="text-sm">No summary data</p>
-                <p className="text-xs mt-0.5 opacity-60">Load attendance to see distribution</p>
+              </>
+            ) : viewMode === "calendar" && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <div className="w-14 h-14 rounded-full bg-muted/40 flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="w-6 h-6 opacity-30" />
+                  </div>
+                  <p className="text-sm">No summary data</p>
+                  <p className="text-xs mt-0.5 opacity-60">Load attendance to see distribution</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            {viewMode === "today" && (
+              <div className="mt-3">
+                {workforcePieData.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height={190}>
+                      <PieChart>
+                        <Pie
+                          data={workforcePieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={55}
+                          outerRadius={82}
+                          paddingAngle={3}
+                          dataKey="value"
+                          animationDuration={700}
+                        >
+                          {workforcePieData.map((entry, index) => (
+                            <Cell key={`wf-${index}`} fill={entry.color} stroke="transparent" />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: 10,
+                            border: "1px solid #e2e8f0",
+                            fontSize: 12,
+                            padding: "8px 14px",
+                            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                          }}
+                          formatter={(value: number, name: string) => [`${value}`, name]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="flex items-center justify-center gap-4 mt-4">
+                      {[
+                        { name: "Working", color: "#3b82f6", value: todayStats.working },
+                        { name: "Not In", color: "#f43f5e", value: todayStats.absent },
+                        { name: "On Leave", color: "#94a3b8", value: todayStats.onLeave },
+                      ].map(item => (
+                        <div key={item.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                          <span>{item.name}</span>
+                          <span className="font-semibold text-foreground">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">No data yet</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
       </div>
@@ -877,7 +928,7 @@ export default function AttendancePage() {
             <DialogTitle>Edit Attendance</DialogTitle>
           </DialogHeader>
           {recordToEdit && (
-            <div className="space-y-4 py-1">
+            <div className="space-y-4 py-1 pb-2">
               <p className="text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{recordToEdit.employeeName}</span>
                 {" · "}

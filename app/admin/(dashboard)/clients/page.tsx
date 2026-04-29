@@ -417,7 +417,7 @@ export default function ClientsPage() {
                 <DialogHeader>
                   <DialogTitle>Add New Client</DialogTitle>
                 </DialogHeader>
-                <div className="mt-2 space-y-5">
+                <div className="mt-2 space-y-5 pb-6">
                   <div className="space-y-2">
                     <Label className="text-[13px] font-semibold tracking-wide">Full Name</Label>
                     <Input
@@ -741,7 +741,7 @@ export default function ClientsPage() {
             <DialogTitle>Client Details</DialogTitle>
           </DialogHeader>
           {viewClient && (
-            <div className="mt-2 space-y-5">
+            <div className="mt-2 space-y-5 pb-24">
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
                   <AvatarFallback className="bg-primary/10 text-primary text-xl">{getInitials(viewClient.name)}</AvatarFallback>
@@ -771,7 +771,7 @@ export default function ClientsPage() {
             <DialogTitle>Edit Client</DialogTitle>
           </DialogHeader>
           {editClient && (
-            <div className="mt-2 space-y-5">
+            <div className="mt-2 space-y-5 pb-24">
               <div className="space-y-2">
                 <Label className="text-[13px] font-semibold tracking-wide">Full Name</Label>
                 <Input value={editClient.name ?? ""} onChange={(e) => setEditClient({ ...editClient, name: e.target.value })} placeholder="Enter full name" />
@@ -804,7 +804,7 @@ export default function ClientsPage() {
             <DialogTitle>Delete Client</DialogTitle>
           </DialogHeader>
           <p className="mt-1 text-muted-foreground leading-relaxed">Are you sure you want to delete <strong>{deleteClientState?.name}</strong>? This action cannot be undone.</p>
-          <DialogFooter>
+          <DialogFooter className="pb-2">
             <Button variant="outline" onClick={() => setDeleteClientState(null)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDelete}>Delete</Button>
           </DialogFooter>

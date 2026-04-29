@@ -51,6 +51,7 @@ import {
   type DeviceUser,
 } from "@admin/api/biometric/biometric"
 import { getBasicEmployees, createEmployee } from "@admin/api/employees/employees"
+import { StatCard } from "@admin/components/stat-card"
 
 interface BasicEmployee {
   id: string
@@ -238,14 +239,14 @@ export default function DeviceUsersPage() {
       </div>
 
       {/* ── Stats card ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4 rounded-lg border bg-card p-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-          <Fingerprint className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-2xl font-bold">{loading ? "—" : deviceUsers.length}</p>
-          <p className="text-sm text-muted-foreground">Unlinked device users</p>
-        </div>
+      <div className="max-w-sm">
+        <StatCard
+          title="Unlinked Device Users"
+          value={loading ? "—" : deviceUsers.length}
+          icon={Fingerprint}
+          iconWrapperClassName="bg-amber-50 text-amber-500"
+          className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
+        />
       </div>
 
       {/* ── Table ───────────────────────────────────────────────────────── */}
@@ -346,7 +347,7 @@ export default function DeviceUsersPage() {
             </div>
           </DialogHeader>
 
-          <Tabs value={linkMode} onValueChange={(v) => setLinkMode(v as "existing" | "create")} className="mt-3">
+          <Tabs value={linkMode} onValueChange={(v) => setLinkMode(v as "existing" | "create")} className="mt-3 pb-2">
             <TabsList className="w-full">
               <TabsTrigger value="existing" className="flex-1">
                 <Link2 className="mr-1.5 h-3.5 w-3.5" />

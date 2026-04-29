@@ -19,6 +19,7 @@ const pathPermissionMap: Record<string, string> = {
   "/admin/reports": "reports",
   "/admin/staff-reports": "reports",
   "/admin/attendance": "attendance",
+  "/admin/unlinked-users": "employee",
   "/admin/leave-request": "leave-request",
   "/admin/manage-payrolls": "hr-payroll",
   "/admin/manage-packages": "makeover-packages",
@@ -27,12 +28,12 @@ const pathPermissionMap: Record<string, string> = {
 
 import { useBusiness } from "@/context/BusinessContext"
 
-export function AuthGuard({ 
-  children, 
-  initialUser 
-}: { 
-  children: React.ReactNode, 
-  initialUser?: User | null 
+export function AuthGuard({
+  children,
+  initialUser
+}: {
+  children: React.ReactNode,
+  initialUser?: User | null
 }) {
   const { businessName } = useBusiness()
   const { user: clientUser, loading } = useAuth()
@@ -89,7 +90,7 @@ export function AuthGuard({
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-sm text-muted-foreground mb-4">Secure Session Required</p>
-          <button 
+          <button
             onClick={() => router.push('/admin/login')}
             className="text-xs py-2 px-4 bg-primary text-primary-foreground rounded-lg"
           >

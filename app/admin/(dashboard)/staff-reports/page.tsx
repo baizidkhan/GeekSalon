@@ -27,6 +27,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Download, User, UserCheck, Zap, Calendar, Receipt, Clock } from "lucide-react"
 import { getStaffReports } from "@admin/api/staff-reports/staff-reports"
+import { StatCard } from "@admin/components/stat-card"
 
 interface StaffPerformance {
   id: string
@@ -146,177 +147,186 @@ export default function StaffReportsPage() {
   }, [timeFilter, customFrom, customTo, data?.staff.length])
 
   return (
-      <div className="premium-page p-4 sm:p-6 md:p-8">
-        <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Performance</p>
-            <h1 className="text-2xl font-semibold text-foreground">Staff Reports</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Employee performance analytics</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
-              <PopoverTrigger asChild>
-                <div>
-                  <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
-                    <SelectTrigger className="w-40 cursor-pointer"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {TIME_OPTIONS.map(opt => (
-                        <SelectItem className="cursor-pointer" key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-4">
-                <div className="space-y-3">
-                  <div><Label className="text-xs">From</Label><Input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} /></div>
-                  <div><Label className="text-xs">To</Label><Input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} /></div>
-                  <Button size="sm" className="w-full cursor-pointer" onClick={handleCustomApply}>Apply</Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-            <Button variant="outline" onClick={handleExport} disabled={!data} className="cursor-pointer">
-              <Download className="w-4 h-4 mr-2" />Export
-            </Button>
-          </div>
+    <div className="premium-page p-4 sm:p-6 md:p-8">
+      <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Performance</p>
+          <h1 className="text-2xl font-semibold text-foreground">Staff Reports</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Employee performance analytics</p>
         </div>
-
-        {loading && <div className="text-center text-muted-foreground py-20">Loading...</div>}
-
-        {!loading && data && (
-          <>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <p className="text-sm text-muted-foreground">Total Staff</p>
-                <p className="text-2xl font-semibold text-foreground mt-1">{data.totalStaff}</p>
-              </div>
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <p className="text-sm text-muted-foreground">Total Appointments</p>
-                <p className="text-2xl font-semibold text-foreground mt-1">{data.totalAppointments}</p>
-              </div>
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-semibold text-foreground mt-1">৳{data.totalRevenue.toLocaleString()}</p>
-              </div>
-            </div>
-
-            {/* Performance Table */}
-            <div className="bg-card rounded-xl border border-border mb-6">
-              <div className="p-4 border-b border-border">
-                <h3 className="font-medium text-foreground">Staff Performance</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
-                      <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Role</span></TableHead>
-                      <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
-                      <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Appointments</span></TableHead>
-                      <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Revenue</span></TableHead>
-                      <TableHead><span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary/60" />Efficiency</span></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.staff.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No staff data found</TableCell>
-                      </TableRow>
-                    ) : paginatedStaff.map(s => (
-                      <TableRow key={s.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarFallback className="bg-primary/10 text-primary">{getInitials(s.name)}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{s.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{s.role}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${s.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
-                            {s.status}
-                          </span>
-                        </TableCell>
-                        <TableCell>{s.appointments}</TableCell>
-                        <TableCell className="font-medium">৳{s.revenue.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
-                              <div className="h-full bg-primary rounded-full" style={{ width: `${s.efficiency}%` }} />
-                            </div>
-                            <span className="text-sm">{s.efficiency}%</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+        <div className="flex items-center gap-3">
+          <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
+            <PopoverTrigger asChild>
+              <div>
+                <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
+                  <SelectTrigger className="w-40 cursor-pointer"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIME_OPTIONS.map(opt => (
+                      <SelectItem className="cursor-pointer" key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
-                  </TableBody>
-                </Table>
+                  </SelectContent>
+                </Select>
               </div>
-              {data.staff.length > 0 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
-                  <span>
-                    Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, data.staff.length)} of {data.staff.length} entries
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    >
-                      Previous
-                    </Button>
-                    <span className="text-xs">Page {currentPage} of {totalPages}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    >
-                      Next
-                    </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-4">
+              <div className="space-y-3">
+                <div><Label className="text-xs">From</Label><Input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} /></div>
+                <div><Label className="text-xs">To</Label><Input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} /></div>
+                <Button size="sm" className="w-full cursor-pointer" onClick={handleCustomApply}>Apply</Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button variant="outline" onClick={handleExport} disabled={!data} className="cursor-pointer">
+            <Download className="w-4 h-4 mr-2" />Export
+          </Button>
+        </div>
+      </div>
+
+      {loading && <div className="text-center text-muted-foreground py-20">Loading...</div>}
+
+      {!loading && data && (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+            <StatCard
+              title="Total Staff"
+              value={data.totalStaff}
+              icon={User}
+              iconWrapperClassName="bg-blue-50 text-blue-500"
+              className="border-t-4 border-t-transparent hover:border-t-blue-500 transition-all"
+            />
+            <StatCard
+              title="Total Appointments"
+              value={data.totalAppointments}
+              icon={Calendar}
+              iconWrapperClassName="bg-emerald-50 text-emerald-500"
+              className="border-t-4 border-t-transparent hover:border-t-emerald-500 transition-all"
+            />
+            <StatCard
+              title="Total Revenue"
+              value={`৳${data.totalRevenue.toLocaleString()}`}
+              icon={Receipt}
+              iconWrapperClassName="bg-amber-50 text-amber-500"
+              className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
+            />
+          </div>
+
+          {/* Performance Table */}
+          <div className="bg-card rounded-xl border border-border mb-6">
+            <div className="p-4 border-b border-border">
+              <h3 className="font-medium text-foreground">Staff Performance</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Role</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Appointments</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Revenue</span></TableHead>
+                    <TableHead><span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary/60" />Efficiency</span></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.staff.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No staff data found</TableCell>
+                    </TableRow>
+                  ) : paginatedStaff.map(s => (
+                    <TableRow key={s.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarFallback className="bg-primary/10 text-primary">{getInitials(s.name)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{s.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{s.role}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-md text-xs font-medium ${s.status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}`}>
+                          {s.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>{s.appointments}</TableCell>
+                      <TableCell className="font-medium">৳{s.revenue.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${s.efficiency}%` }} />
+                          </div>
+                          <span className="text-sm">{s.efficiency}%</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            {data.staff.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+                <span>
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, data.staff.length)} of {data.staff.length} entries
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-xs">Page {currentPage} of {totalPages}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Top Performers */}
+          {(topByAppointments || topByRevenue) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {topByAppointments && (
+                <div className="bg-card rounded-xl p-5 border border-border">
+                  <h4 className="text-sm text-muted-foreground mb-3">Most Appointments</h4>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-12 h-12">
+                      <AvatarFallback className="bg-primary/10 text-primary text-lg">{getInitials(topByAppointments.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{topByAppointments.name}</p>
+                      <p className="text-sm text-muted-foreground">{topByAppointments.appointments} appointments</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {topByRevenue && (
+                <div className="bg-card rounded-xl p-5 border border-border">
+                  <h4 className="text-sm text-muted-foreground mb-3">Highest Revenue</h4>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-12 h-12">
+                      <AvatarFallback className="bg-primary/10 text-primary text-lg">{getInitials(topByRevenue.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{topByRevenue.name}</p>
+                      <p className="text-sm text-muted-foreground">৳{topByRevenue.revenue.toLocaleString()} revenue</p>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
-
-            {/* Top Performers */}
-            {(topByAppointments || topByRevenue) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {topByAppointments && (
-                  <div className="bg-card rounded-xl p-5 border border-border">
-                    <h4 className="text-sm text-muted-foreground mb-3">Most Appointments</h4>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-12 h-12">
-                        <AvatarFallback className="bg-primary/10 text-primary text-lg">{getInitials(topByAppointments.name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{topByAppointments.name}</p>
-                        <p className="text-sm text-muted-foreground">{topByAppointments.appointments} appointments</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {topByRevenue && (
-                  <div className="bg-card rounded-xl p-5 border border-border">
-                    <h4 className="text-sm text-muted-foreground mb-3">Highest Revenue</h4>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-12 h-12">
-                        <AvatarFallback className="bg-primary/10 text-primary text-lg">{getInitials(topByRevenue.name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{topByRevenue.name}</p>
-                        <p className="text-sm text-muted-foreground">৳{topByRevenue.revenue.toLocaleString()} revenue</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          )}
+        </>
+      )}
+    </div>
   )
 }

@@ -936,7 +936,7 @@ export default function AppointmentsPage() {
                   Fill in the required details to create a new appointment.
                 </DialogDescription>
               </DialogHeader>
-              <div className="mt-2 space-y-5">
+              <div className="mt-2 space-y-5 pb-6">
                 <div className="space-y-2">
                   <Label className="text-[13px] font-semibold tracking-wide">Phone Number <span className="text-destructive">*</span></Label>
                   <Input
@@ -1348,7 +1348,7 @@ export default function AppointmentsPage() {
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent>
+        <DialogContent className="pb-8">
           <DialogHeader>
             <DialogTitle>Appointment Details</DialogTitle>
             <DialogDescription>
@@ -1412,7 +1412,7 @@ export default function AppointmentsPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedAppointment && (
-            <div className="mt-2 space-y-5">
+            <div className="mt-2 space-y-5 pb-24">
               <div className="space-y-2">
                 <Label className="text-[13px] font-semibold tracking-wide">Client Name</Label>
                 <Input
@@ -1586,7 +1586,7 @@ export default function AppointmentsPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="">
           <DialogHeader>
             <DialogTitle>Delete Appointment</DialogTitle>
             <DialogDescription>
@@ -1598,7 +1598,7 @@ export default function AppointmentsPage() {
             <span className="font-medium text-foreground">{selectedAppointment?.client}</span>?
             This action cannot be undone.
           </p>
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 pb-2">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>

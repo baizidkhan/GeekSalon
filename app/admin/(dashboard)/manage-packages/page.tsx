@@ -413,7 +413,7 @@ export default function ManagePackagesPage() {
               Book Package: {packageToBook?.title}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 pb-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Label>Client Name</Label>
@@ -476,7 +476,7 @@ export default function ManagePackagesPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{packageToView?.title}</DialogTitle></DialogHeader>
           {packageToView && (
-            <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4 pb-2">
               <div className="flex justify-between items-start">
                 <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider">
                   {packageToView.category}

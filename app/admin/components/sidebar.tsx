@@ -63,6 +63,7 @@ const navigation = [
     title: "HR & INTERNAL",
     items: [
       { name: "Attendance", href: "/admin/attendance", icon: ClipboardCheck, permission: "attendance" },
+      { name: "Unlinked Users", href: "/admin/unlinked-users", icon: Fingerprint, permission: "employee" },
       { name: "Leave Requests", href: "/admin/leave-request", icon: Calendar, permission: "leave-request" },
       { name: "Manage Payrolls", href: "/admin/manage-payrolls", icon: Building2, permission: "hr-payroll" },
     ],
@@ -136,8 +137,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}>
         <div className="flex items-center justify-center shrink-0">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 7V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V7M4 7L12 3L20 7M4 7H20" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M9 21V12H15V21" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4 7V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V7M4 7L12 3L20 7M4 7H20" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M9 21V12H15V21" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         {!collapsed && (
@@ -257,7 +258,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
       )}
-      
+
       {/* Collapsed Footer Logout */}
       {collapsed && user && (
         <div className="p-4 border-t border-slate-100 flex justify-center">

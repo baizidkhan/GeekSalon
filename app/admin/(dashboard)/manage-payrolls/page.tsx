@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Plus, Download, User, UserCheck, Receipt, MinusCircle, Zap, Loader2, MoreHorizontal, Pencil, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Download, User, UserCheck, Receipt, MinusCircle, Zap, Loader2, MoreHorizontal, Pencil, ChevronLeft, ChevronRight, Users } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +45,7 @@ import {
   type PayrollStatus,
 } from "@admin/api/hr-payroll/hr-payroll"
 import { getBasicEmployees } from "@admin/api/employees/employees"
+import { StatCard } from "@admin/components/stat-card"
 
 const MONTHS = [
   { value: 1, label: "January" },
@@ -146,24 +147,24 @@ export default function HRPayrollPage() {
     const isCurrentPeriod = selectedMonth === currentMonth && selectedYear === currentYear
     const missingRows = isCurrentPeriod
       ? employees
-          .filter((e) => !byName.has(e.name.toLowerCase()))
-          .map((e) => ({
-            id: `virtual-${e.id}`,
-            employeeId: e.id,
-            employeeName: e.name,
-            role: e.role || "",
-            baseSalary: Number(e.salary) || 0,
-            bonus: 0,
-            deductions: 0,
-            netSalary: Number(e.salary) || 0,
-            status: "Pending" as PayrollStatus,
-            payDate: "",
-            month: selectedMonth,
-            year: selectedYear,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            _virtual: true,
-          }))
+        .filter((e) => !byName.has(e.name.toLowerCase()))
+        .map((e) => ({
+          id: `virtual-${e.id}`,
+          employeeId: e.id,
+          employeeName: e.name,
+          role: e.role || "",
+          baseSalary: Number(e.salary) || 0,
+          bonus: 0,
+          deductions: 0,
+          netSalary: Number(e.salary) || 0,
+          status: "Pending" as PayrollStatus,
+          payDate: "",
+          month: selectedMonth,
+          year: selectedYear,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          _virtual: true,
+        }))
       : []
 
     return [...records, ...missingRows]
@@ -322,33 +323,28 @@ export default function HRPayrollPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6">
-        <div className="bg-card rounded-xl p-4 sm:p-5 border border-border">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-              <span className="w-5 h-5 text-primary font-bold text-base flex items-center justify-center">৳</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">Total Payroll</p>
-              <p className="text-lg sm:text-2xl font-semibold text-foreground truncate">৳{totalPayroll.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card rounded-xl p-4 sm:p-5 border border-border">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="p-2 bg-amber-100 rounded-lg shrink-0">
-              <span className="w-5 h-5 text-amber-600 font-bold text-base flex items-center justify-center">৳</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">Pending</p>
-              <p className="text-lg sm:text-2xl font-semibold text-foreground truncate">৳{pendingPayroll.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card rounded-xl p-4 sm:p-5 border border-border">
-          <p className="text-xs sm:text-sm text-muted-foreground">Employees</p>
-          <p className="text-lg sm:text-2xl font-semibold text-foreground mt-1">{employees.length || total}</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        <StatCard
+          title="Total Payroll"
+          value={`৳${totalPayroll.toLocaleString()}`}
+          icon={Receipt}
+          iconWrapperClassName="bg-blue-50 text-blue-500"
+          className="border-t-4 border-t-transparent hover:border-t-blue-500 transition-all"
+        />
+        <StatCard
+          title="Pending"
+          value={`৳${pendingPayroll.toLocaleString()}`}
+          icon={MinusCircle}
+          iconWrapperClassName="bg-amber-50 text-amber-500"
+          className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
+        />
+        <StatCard
+          title="Employees"
+          value={employees.length || total}
+          icon={Users}
+          iconWrapperClassName="bg-emerald-50 text-emerald-500"
+          className="border-t-4 border-t-transparent hover:border-t-emerald-500 transition-all"
+        />
       </div>
 
       {/* Payroll Table */}
@@ -362,11 +358,11 @@ export default function HRPayrollPage() {
                 Process Payroll
               </Button>
             </DialogTrigger> */}
-            <DialogContent>
+            <DialogContent className="">
               <DialogHeader>
                 <DialogTitle>Process Payroll</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 mt-4">
+              <div className="space-y-4 mt-4 pb-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Employee ID</Label>
@@ -529,7 +525,7 @@ export default function HRPayrollPage() {
             <DialogTitle>Payroll Details</DialogTitle>
           </DialogHeader>
           {viewRecord && (
-            <div className="space-y-4 py-2">
+            <div className="space-y-4 py-2 pb-2">
               <div className="flex items-center gap-3 border-b pb-4">
                 <Avatar className="h-12 w-12">
                   <AvatarFallback className="bg-primary/10 text-primary text-base">
@@ -578,7 +574,7 @@ export default function HRPayrollPage() {
                 </div>
               </div>
               <DialogFooter className="pt-2">
-                <Button variant="outline" onClick={() => { setViewRecord(null); openEdit(viewRecord, { stopPropagation: () => {} } as any) }}>
+                <Button variant="outline" onClick={() => { setViewRecord(null); openEdit(viewRecord, { stopPropagation: () => { } } as any) }}>
                   <Pencil className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
@@ -595,7 +591,7 @@ export default function HRPayrollPage() {
           <DialogHeader>
             <DialogTitle>Edit Payroll — {editRecord?.employeeName}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
+          <div className="space-y-4 mt-2 pb-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Base Salary</Label>
