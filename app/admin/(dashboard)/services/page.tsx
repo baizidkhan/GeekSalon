@@ -223,7 +223,7 @@ export default function ServicesPage() {
               <DialogHeader>
                 <DialogTitle>Add New Service</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 mt-4">
+              <div className="space-y-4 mt-4 pb-6">
                 <div>
                   <Label>Service Name</Label>
                   <Input
@@ -465,7 +465,7 @@ export default function ServicesPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Service Details</DialogTitle></DialogHeader>
           {serviceToView && (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-4 pb-2">
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground">Name</Label><p className="font-medium">{serviceToView.name}</p></div>
                 <div><Label className="text-muted-foreground">Category</Label><p className="font-medium">{serviceToView.category}</p></div>
@@ -485,7 +485,7 @@ export default function ServicesPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Service</DialogTitle></DialogHeader>
           {serviceToEdit && (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-4 pb-2">
               <div><Label>Name</Label><Input value={serviceToEdit.name} onChange={(e) => setServiceToEdit({ ...serviceToEdit, name: e.target.value })} /></div>
               <div>
                 <Label>Category</Label>

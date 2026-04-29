@@ -181,7 +181,7 @@ export default function InventoryPage() {
               <DialogHeader>
                 <DialogTitle>Add Inventory Item</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 mt-4">
+              <div className="space-y-4 mt-4 pb-2">
                 <div>
                   <Label>Product Name</Label>
                   <Input value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} placeholder="Enter product name" />
@@ -358,7 +358,7 @@ export default function InventoryPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Inventory Item Details</DialogTitle></DialogHeader>
           {viewItem && (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-4 pb-2">
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground">Name</Label><p className="font-medium">{viewItem.name}</p></div>
                 <div><Label className="text-muted-foreground">Category</Label><p className="font-medium">{viewItem.category}</p></div>
@@ -377,7 +377,7 @@ export default function InventoryPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Inventory Item</DialogTitle></DialogHeader>
           {editItem && (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-4 pb-2">
               <div><Label>Name</Label><Input value={editItem.name} onChange={(e) => setEditItem({ ...editItem, name: e.target.value })} /></div>
               <div>
                 <Label>Category</Label>

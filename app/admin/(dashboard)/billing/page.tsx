@@ -36,7 +36,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Plus, Search, Receipt, Printer, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Scissors, Calendar, Globe, Zap, Phone } from "lucide-react"
+import { Plus, Search, Receipt, Printer, MoreHorizontal, Download, Eye, Pencil, Trash2, User, Scissors, Calendar, Globe, Zap, Phone } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -335,7 +335,7 @@ export default function BillingPage() {
               <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />New Invoice</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Create New Invoice</DialogTitle></DialogHeader>
-                <div className="space-y-4 mt-4">
+                <div className="space-y-4 mt-4 pb-2">
                   <div>
                     <Label>Client</Label>
                     <Select value={newInvoice.clientId} onValueChange={(v) => setNewInvoice({ ...newInvoice, clientId: v })}>
@@ -507,7 +507,18 @@ export default function BillingPage() {
                     <TableCell><div className="flex items-center gap-2"><Receipt className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{invoice.invoiceNo}</span></div></TableCell>
                     <TableCell>{invoice.client}</TableCell>
                     <TableCell>{invoice.clientPhone}</TableCell>
-                    <TableCell><div className="text-sm">{invoice.services.join(", ")}</div></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 max-w-[200px]">
+                        <span className="text-sm truncate">
+                          {invoice.services.slice(0, 2).join(", ")}
+                        </span>
+                        {invoice.services.length > 2 && (
+                          <span className="shrink-0 text-[11px] font-medium text-primary whitespace-nowrap">
+                            +{invoice.services.length - 2} more
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium">
                       <div>৳{invoice.amount.toLocaleString()}</div>
                       {invoice.status === "Partial" && (
@@ -570,7 +581,7 @@ export default function BillingPage() {
           <DialogHeader><DialogTitle>Invoice Details</DialogTitle></DialogHeader>
           {viewInvoice && (
             <>
-              <div className="space-y-4 mt-4">
+              <div className="space-y-4 mt-4 pb-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div><Label className="text-muted-foreground">Invoice No</Label><p className="font-medium">{viewInvoice.invoiceNo}</p></div>
                   <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
@@ -603,7 +614,7 @@ export default function BillingPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Invoice</DialogTitle></DialogHeader>
           {editInvoiceState && (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-4 pb-2">
               <div>
                 <Label>Amount (৳)</Label>
                 <Input type="number" value={editInvoiceState.amount} onChange={(e) => setEditInvoiceState({ ...editInvoiceState, amount: parseFloat(e.target.value) || 0 })} />

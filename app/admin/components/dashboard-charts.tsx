@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { TrendingUp, CalendarDays } from "lucide-react"
 import {
   AreaChart,
   Area,
@@ -65,7 +66,10 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[15px] font-bold text-slate-800">Revenue Trend</h3>
+        <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-blue-500 shrink-0" />
+          Revenue Trend
+        </h3>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as any)}
@@ -94,9 +98,9 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
               interval={0}
               height={filter === "monthly" ? 48 : 30}
               tick={
-                filter === "monthly"
+                (filter === "monthly"
                   ? { fontSize: 9, fill: "#94a3b8", angle: -45, textAnchor: "end" }
-                  : { fontSize: 11, fill: "#94a3b8" }
+                  : { fontSize: 11, fill: "#94a3b8" }) as any
               }
             />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
@@ -124,7 +128,10 @@ export function AppointmentChart({ weeklyData, monthlyData }: AppointmentChartPr
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[15px] font-bold text-slate-800">Appointment Trends</h3>
+        <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
+          <CalendarDays className="w-4 h-4 text-blue-500 shrink-0" />
+          Appointment Trends
+        </h3>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as any)}
@@ -144,9 +151,10 @@ export function AppointmentChart({ weeklyData, monthlyData }: AppointmentChartPr
               tickLine={false}
               interval={0}
               height={filter === "monthly" ? 48 : 30}
-              tick={filter === "monthly"
-                ? { fontSize: 9, fill: "#94a3b8", angle: -45, textAnchor: "end" }
-                : { fontSize: 11, fill: "#94a3b8" }
+              tick={
+                (filter === "monthly"
+                  ? { fontSize: 9, fill: "#94a3b8", angle: -45, textAnchor: "end" }
+                  : { fontSize: 11, fill: "#94a3b8" }) as any
               }
             />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />

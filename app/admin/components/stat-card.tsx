@@ -35,15 +35,15 @@ export const StatCard = memo(function StatCard({
       "bg-white rounded-xl p-5 border border-slate-200 flex flex-col justify-between",
       className
     )}>
-      <div className="flex items-start justify-between mb-4">
-        <h3 className="text-[15px] font-medium text-slate-700">{title}</h3>
-        <div className={cn("p-2 rounded-lg flex items-center justify-center", iconWrapperClassName)}>
-          <Icon className={cn("w-4 h-4", iconClassName)} />
+      <div className="flex items-start justify-between ">
+        <h3 className="text-[17px] font-medium text-slate-700">{title}</h3>
+        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center  mr-2 shrink-0", iconWrapperClassName)}>
+          <Icon className={cn("w-8 h-8", iconClassName)} />
         </div>
       </div>
 
-      <div className="mb-4">
-        <div className="text-3xl font-bold text-slate-800 tracking-tight">
+      <div className="mb-2">
+        <div className="text-3xl font-bold mb-4 text-slate-800 tracking-tight">
           {value}
         </div>
         {subtitle && (

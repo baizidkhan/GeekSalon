@@ -222,7 +222,7 @@ export default function ClientHistoryPage() {
             <DialogTitle>Invoice Details</DialogTitle>
           </DialogHeader>
           {selectedInvoice && (
-            <div className="space-y-4 mt-2">
+            <div className="space-y-4 mt-2 pb-32">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Invoice Number</span>
                 <span className="font-mono font-medium">{selectedInvoice.invoiceNumber}</span>

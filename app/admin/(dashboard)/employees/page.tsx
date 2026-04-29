@@ -430,7 +430,7 @@ export default function EmployeesPage() {
                 <DialogTitle>Add New Employee</DialogTitle>
               </DialogHeader>
               <ScrollArea className="pr-4 py-2 h-[60vh]">
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-2 gap-4 mt-4 pb-2">
                   <div className="col-span-2">
                     <Label>Full Name <span className="text-destructive">*</span></Label>
                     <Input
@@ -776,7 +776,7 @@ export default function EmployeesPage() {
             {selectedEmployee && (
               modalEditMode && editDraft ? (
                 /* ── EDIT MODE ── */
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-2 gap-4 mt-4 pb-2">
                   <div className="col-span-2">
                     <Label>Full Name</Label>
                     <Input
@@ -1002,7 +1002,7 @@ export default function EmployeesPage() {
                 </div>
               ) : (
                 /* ── VIEW MODE ── */
-                <div className="space-y-6 py-4">
+                <div className="space-y-6 py-4 pb-2">
                   <div className="flex items-center gap-4 border-b pb-4">
                     <Avatar className="h-16 w-16 text-xl">
                       <AvatarImage src={selectedEmployee.image ?? undefined} alt={selectedEmployee.name} className="object-cover" />

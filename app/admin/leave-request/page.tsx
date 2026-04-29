@@ -198,7 +198,7 @@ export default function LeaveRequestsPage() {
                             <DialogHeader>
                                 <DialogTitle>{isPrivileged ? "Submit Leave Request" : "Request Time Off"}</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4 py-4">
+                            <div className="space-y-4 py-4 pb-32">
                                 {isPrivileged && (
                                     <div className="space-y-2">
                                         <Label>Employee</Label>

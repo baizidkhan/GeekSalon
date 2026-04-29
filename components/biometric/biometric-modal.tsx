@@ -106,7 +106,7 @@ export function BiometricModal({ payload, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md pb-8">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-600">

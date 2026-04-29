@@ -159,10 +159,10 @@ export default function EmployeeAccountPage() {
         const errors: Record<string, string> = {}
         if (!newUser.useremail) errors.useremail = "Email is required"
         else if (!/\S+@\S+\.\S+/.test(newUser.useremail)) errors.useremail = "Invalid email format"
-        
+
         if (!newUser.password) errors.password = "Password is required"
         else if (newUser.password.length < 6) errors.password = "Password must be at least 6 characters"
-        
+
         if (!newUser.role) errors.role = "Role is required"
         if (newUser.employeeId === "none") errors.employeeId = "Please link an employee account"
 
@@ -276,7 +276,7 @@ export default function EmployeeAccountPage() {
                             <DialogHeader>
                                 <DialogTitle>Create System User</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4 py-4">
+                            <div className="space-y-4 py-4 pb-2">
                                 <div className="space-y-2">
                                     <Label className={formErrors.employeeId ? "text-destructive" : ""}>Link an Employee Account <span className="text-destructive">*</span></Label>
                                     <Select
@@ -385,8 +385,8 @@ export default function EmployeeAccountPage() {
                                     </div>
                                 )}
                             </div>
-                            <DialogFooter>
-                                <Button onClick={handleAddUser} className="w-full" disabled={isCreating}>
+                            <DialogFooter className="pb-6">
+                                <Button onClick={handleAddUser} size="sm" className="w-full h-7" disabled={isCreating}>
                                     {isCreating ? "creating......." : "Create Account"}
                                 </Button>
                             </DialogFooter>
@@ -489,7 +489,7 @@ export default function EmployeeAccountPage() {
                 <DialogContent className="max-w-md">
                     <DialogHeader><DialogTitle>Edit Access Permissions</DialogTitle></DialogHeader>
                     {userToEdit && (
-                        <div className="space-y-4 py-4">
+                        <div className="space-y-4 py-4 pb-2">
                             <div className="flex items-center gap-2 p-3 bg-secondary/50 rounded-lg">
                                 <Mail className="h-4 w-4 text-primary" />
                                 <span className="font-medium text-sm">{userToEdit.useremail}</span>

@@ -232,7 +232,7 @@ export function BookingModal() {
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeBooking()}>
             <DialogContent data-public-modal="true" className="sm:max-w-[600px] bg-[#101010] border-white/10 text-white p-0 overflow-hidden">
-                <div className="p-8">
+                <div className="p-8 pb-32">
                     <DialogHeader className="mb-8 text-left">
                         <DialogTitle className="text-3xl font-semibold mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                             Book Your Experience
