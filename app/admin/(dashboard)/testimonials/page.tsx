@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -50,6 +51,7 @@ export default function TestimonialsPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   
@@ -82,10 +84,10 @@ export default function TestimonialsPage() {
   const filteredTestimonials = useMemo(() => {
     return Array.isArray(testimonials) ? testimonials.filter(
       (t) =>
-        t.name.toLowerCase().includes(search.toLowerCase()) ||
-        t.position.toLowerCase().includes(search.toLowerCase())
+        t.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        t.position.toLowerCase().includes(debouncedSearch.toLowerCase())
     ) : []
-  }, [testimonials, search])
+  }, [testimonials, debouncedSearch])
 
   const handleAddTestimonial = async () => {
     if (newTestimonial.name && newTestimonial.description) {
