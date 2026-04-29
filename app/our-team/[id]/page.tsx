@@ -4,6 +4,7 @@ import api from "@admin/api/base"
 import { SiteHeader } from "@/app/components/site-header"
 import { Footer } from "@/app/components/footer"
 import { TeamMemberImage } from "@/app/components/team-member-image"
+import { StylistBookingButton } from "@/app/components/stylist-booking-button"
 
 // Fallback images (premium grayscale portraits)
 const TEAM_IMAGES = [
@@ -145,13 +146,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
             {/* Action */}
             {employee.role?.toLowerCase() === 'stylist' && (
               <div className="pt-8 border-t border-white/10">
-                <Link
-                  href="/appointments"
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-[#c4a484] text-black font-semibold rounded hover:bg-white transition-all duration-300 group"
-                >
-                  Book Appointment with {employee.name?.split(' ')[0]}
-                  <ChevronLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
-                </Link>
+                <StylistBookingButton stylistName={employee.name} />
               </div>
             )}
 
