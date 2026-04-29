@@ -51,24 +51,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, oklch(0.988 0.007 58) 0%, oklch(0.972 0.018 14) 50%, oklch(0.982 0.012 30) 100%)' }}
-    >
-      {/* Decorative blurred orbs */}
-      <div className="absolute top-16 left-16 w-72 h-72 rounded-full blur-3xl opacity-40"
-        style={{ background: 'oklch(0.48 0.16 8 / 0.12)' }} />
-      <div className="absolute bottom-16 right-16 w-96 h-96 rounded-full blur-3xl opacity-30"
-        style={{ background: 'oklch(0.76 0.09 66 / 0.18)' }} />
-      <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full blur-3xl opacity-20"
-        style={{ background: 'oklch(0.60 0.11 330 / 0.15)' }} />
+    <div className="admin-root min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-50">
+      <style>{`
+        .admin-root {
+          --primary: oklch(0.6 0.155 258.8); /* #3b82f6 */
+          --primary-foreground: oklch(1 0 0);
+          --background: oklch(0.975 0.005 258);
+          --border: oklch(0.92 0.01 260);
+          --card: oklch(1 0 0);
+        }
+      `}</style>
+
+      {/* Decorative blurred orbs - Blue/Slate palette */}
+      <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-[100px] opacity-40 bg-blue-100" />
+      <div className="absolute -bottom-24 -right-24 w-[500px] h-[500px] rounded-full blur-[120px] opacity-30 bg-emerald-50" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-[140px] opacity-20 bg-slate-100" />
 
       <div className="w-full max-w-sm px-4 relative z-10">
         {/* Brand mark */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4 shadow-xl"
-            style={{ boxShadow: '0 8px 32px oklch(0.48 0.16 8 / 0.35)' }}
-          >
-            <Sparkles className="w-7 h-7 text-primary-foreground fill-primary-foreground/25" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-500 mb-4 shadow-xl shadow-blue-500/20">
+            <Sparkles className="w-7 h-7 text-white fill-white/25" />
           </div>
           <h1 className="text-3xl font-semibold text-foreground tracking-tight leading-tight"
             style={{ fontFamily: 'var(--font-serif, Georgia, serif)' }}
@@ -81,9 +84,8 @@ export default function LoginPage() {
         </div>
 
         {/* Form card */}
-        <div className="bg-card border border-border rounded-2xl p-7 shadow-2xl"
-          style={{ boxShadow: '0 20px 60px oklch(0.18 0.022 18 / 0.08), 0 4px 16px oklch(0.18 0.022 18 / 0.04)' }}
-        >
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-2xl shadow-slate-200/50 relative">
+          <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-foreground">Welcome back</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -110,7 +112,7 @@ export default function LoginPage() {
                 placeholder="admin@salon.com"
                 required
                 autoComplete="email"
-                className="mt-1.5 h-11 bg-muted/40 border-border focus:border-primary/50 focus:bg-card transition-colors"
+                className="mt-1.5 h-11 bg-slate-50/50 border-slate-200 focus:border-blue-500/50 focus:bg-white transition-all duration-200 rounded-xl"
               />
             </div>
             <div>
@@ -125,13 +127,12 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
-                className="mt-1.5 h-11 bg-muted/40 border-border focus:border-primary/50 focus:bg-card transition-colors"
+                className="mt-1.5 h-11 bg-slate-50/50 border-slate-200 focus:border-blue-500/50 focus:bg-white transition-all duration-200 rounded-xl"
               />
             </div>
             <Button
               type="submit"
-              className="w-full h-11 text-sm font-semibold mt-2 shadow-lg transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
-              style={{ boxShadow: '0 4px 16px oklch(0.48 0.16 8 / 0.30)' }}
+              className="w-full h-11 text-sm font-semibold mt-2 shadow-lg shadow-blue-500/25 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
               disabled={loading}
             >
               {loading ? "Signing in…" : "Sign in to Dashboard"}
