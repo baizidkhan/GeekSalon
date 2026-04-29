@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, Link2Off } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,8 +17,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import {
@@ -49,6 +49,8 @@ import {
   deleteEmployee
 } from "@admin/api/employees/employees"
 import { getServices } from "@admin/api/services/services"
+import { unlinkDeviceUser } from "@admin/api/biometric/biometric"
+import { CACHE, removeFromCache } from "@admin/lib/cache"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -122,9 +124,16 @@ export default function EmployeesPage() {
     about: "",
   })
 
-  const [serviceToView, setServiceToView] = useState<Employee | null>(null)
-  const [serviceToEdit, setServiceToEdit] = useState<Employee | null>(null)
+  // Unified employee detail/edit modal
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  const [modalEditMode, setModalEditMode] = useState(false)
+  const [editDraft, setEditDraft] = useState<Employee | null>(null)
+  const [isUnlinking, setIsUnlinking] = useState(false)
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false)
+
+  // Delete dialog
   const [serviceToDelete, setServiceToDelete] = useState<Employee | null>(null)
+
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [editImageFile, setEditImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -154,15 +163,15 @@ export default function EmployeesPage() {
               });
               resolve(webpFile);
             }
-          }, 'image/webp', 0.95); // High quality WebP
+          }, 'image/webp', 0.95);
         };
       };
     });
   };
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = async (silent = false) => {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const data = await getEmployeesFiltered()
       const mappedData = data.map((emp: any) => ({
         ...emp,
@@ -171,12 +180,11 @@ export default function EmployeesPage() {
       setEmployees(mappedData)
     } catch (error) {
       console.error("Failed to fetch employees:", error)
-      toast.error("Failed to load employees")
+      if (!silent) toast.error("Failed to load employees")
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
-
 
   useEffect(() => {
     fetchEmployees()
@@ -199,6 +207,24 @@ export default function EmployeesPage() {
 
   const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / PAGE_SIZE))
   const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  const openModal = (employee: Employee, editMode = false) => {
+    setSelectedEmployee(employee)
+    setEditDraft({ ...employee })
+    setModalEditMode(editMode)
+    setShowUnlinkConfirm(false)
+    setEditImageFile(null)
+    setEditImagePreview(null)
+  }
+
+  const closeModal = () => {
+    setSelectedEmployee(null)
+    setEditDraft(null)
+    setModalEditMode(false)
+    setShowUnlinkConfirm(false)
+    setEditImageFile(null)
+    setEditImagePreview(null)
+  }
 
   const handleAddEmployee = async () => {
     if (newEmployee.name && newEmployee.role && newEmployee.phone && parseFloat(newEmployee.salary) > 0) {
@@ -237,7 +263,6 @@ export default function EmployeesPage() {
 
         await createEmployee(formData)
 
-
         toast.success("Employee added successfully")
         setNewEmployee({
           name: "",
@@ -268,49 +293,75 @@ export default function EmployeesPage() {
   }
 
   const handleEditSave = async () => {
-    if (serviceToEdit) {
-      try {
-        setIsEditing(true)
-        const cleanPhone = serviceToEdit.phone.replace(/[\s-]/g, "")
-        const payload = {
-          name: serviceToEdit.name,
-          role: serviceToEdit.role,
-          phone: cleanPhone,
-          email: serviceToEdit.email || undefined,
-          salary: Number(serviceToEdit.salary) || 0,
-          commission: Number(serviceToEdit.commission) || 0,
-          shift: serviceToEdit.shift || undefined,
-          experience: Number(serviceToEdit.experience) || 0,
-          joinDate: serviceToEdit.joinDate || undefined,
-          status: serviceToEdit.status,
-          employmentType: serviceToEdit.employmentType,
-          fingerprintCode: serviceToEdit.fingerprintCode || undefined,
-          about: serviceToEdit.about || undefined,
-          specializations: Array.isArray(serviceToEdit.specializations)
-            ? serviceToEdit.specializations
-            : (serviceToEdit.specializations as string).split(',').map(s => s.trim()).filter(s => s !== "")
-        }
-
-        const formData = new FormData()
-        if (editImageFile) {
-          const webpFile = await compressToWebP(editImageFile)
-          formData.append('image', webpFile)
-        }
-        formData.append('data', JSON.stringify(payload))
-
-        await updateEmployee(serviceToEdit.id, formData)
-
-        toast.success("Employee updated successfully")
-        setServiceToEdit(null)
-        setEditImageFile(null)
-        setEditImagePreview(null)
-        fetchEmployees()
-      } catch (error) {
-        console.error("Failed to update employee:", error)
-        toast.error("Failed to update employee")
-      } finally {
-        setIsEditing(false)
+    if (!editDraft) return
+    try {
+      setIsEditing(true)
+      const cleanPhone = editDraft.phone.replace(/[\s-]/g, "")
+      const payload = {
+        name: editDraft.name,
+        role: editDraft.role,
+        phone: cleanPhone,
+        email: editDraft.email || undefined,
+        salary: Number(editDraft.salary) || 0,
+        commission: Number(editDraft.commission) || 0,
+        shift: editDraft.shift || undefined,
+        experience: Number(editDraft.experience) || 0,
+        joinDate: editDraft.joinDate || undefined,
+        status: editDraft.status,
+        employmentType: editDraft.employmentType,
+        about: editDraft.about || undefined,
+        specializations: Array.isArray(editDraft.specializations)
+          ? editDraft.specializations
+          : (editDraft.specializations as string).split(',').map(s => s.trim()).filter(s => s !== "")
       }
+
+      const formData = new FormData()
+      if (editImageFile) {
+        const webpFile = await compressToWebP(editImageFile)
+        formData.append('image', webpFile)
+      }
+      formData.append('data', JSON.stringify(payload))
+
+      await updateEmployee(editDraft.id, formData)
+
+      toast.success("Employee updated successfully")
+      setSelectedEmployee({ ...editDraft })
+      setModalEditMode(false)
+      setShowUnlinkConfirm(false)
+      setEditImageFile(null)
+      setEditImagePreview(null)
+      fetchEmployees()
+    } catch (error: any) {
+      console.error("Failed to update employee:", error)
+      toast.error(error?.response?.data?.message || "Failed to update employee")
+    } finally {
+      setIsEditing(false)
+    }
+  }
+
+  const handleUnlinkFingerprint = async () => {
+    if (!selectedEmployee?.fingerprintCode) return
+    try {
+      setIsUnlinking(true)
+      await unlinkDeviceUser(selectedEmployee.fingerprintCode)
+
+      // Optimistic update — badge disappears immediately in the modal and table
+      const updated = { ...selectedEmployee, fingerprintCode: null }
+      setSelectedEmployee(updated)
+      setEditDraft(prev => prev ? { ...prev, fingerprintCode: null } : null)
+      setEmployees(prev => prev.map(e => e.id === updated.id ? updated : e))
+      setShowUnlinkConfirm(false)
+      toast.success("Fingerprint unlinked. The user is now listed in Unlinked Users.")
+
+      // Purge cache so any future fetch (edit-save, navigation back) gets server truth.
+      // Then silently refresh the employees list in the background — no loading spinner.
+      removeFromCache(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS)
+      fetchEmployees(true)
+    } catch (error: any) {
+      console.error("Failed to unlink fingerprint:", error)
+      toast.error(error?.response?.data?.message || "Failed to unlink fingerprint")
+    } finally {
+      setIsUnlinking(false)
     }
   }
 
@@ -581,7 +632,11 @@ export default function EmployeesPage() {
                 <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No employees found.</TableCell></TableRow>
               ) : (
                 paginatedEmployees.map((employee) => (
-                  <TableRow key={employee.id}>
+                  <TableRow
+                    key={employee.id}
+                    className="cursor-pointer transition-colors"
+                    onClick={() => openModal(employee)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
@@ -648,18 +703,25 @@ export default function EmployeesPage() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setServiceToView(employee)}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openModal(employee) }}>
                             <Eye className="w-4 h-4 mr-2" />Profile
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setServiceToEdit({ ...employee })}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openModal(employee, true) }}>
                             <Pencil className="w-4 h-4 mr-2" />Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => setServiceToDelete(employee)}>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setServiceToDelete(employee) }}
+                          >
                             <Trash2 className="w-4 h-4 mr-2" />Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -699,236 +761,383 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      {/* View Details Dialog */}
-      <Dialog open={!!serviceToView} onOpenChange={() => setServiceToView(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Employee Profile</DialogTitle></DialogHeader>
-          <ScrollArea className="max-h-[70vh] pr-4">
-            {serviceToView && (
-              <div className="space-y-6 py-4">
-                <div className="flex items-center gap-4 border-b pb-4">
-                  <Avatar className="h-16 w-16 text-xl">
-                    <AvatarImage src={serviceToView.image ?? undefined} alt={serviceToView.name} className="object-cover" />
-                    <AvatarFallback>{getInitials(serviceToView.name)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-xl font-bold">{serviceToView.name}</h3>
-                    <p className="text-muted-foreground">{serviceToView.role} • {serviceToView.employmentType}</p>
-                    <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(serviceToView.status)}`}>
-                      {serviceToView.status}
-                    </span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-y-4 gap-x-8">
-                  <div><Label className="text-muted-foreground">Phone</Label><p className="font-medium">{serviceToView.phone}</p></div>
-                  <div><Label className="text-muted-foreground">Email</Label><p className="font-medium">{serviceToView.email}</p></div>
-                  <div><Label className="text-muted-foreground">Salary</Label><p className="font-medium">৳{Number(serviceToView.salary).toLocaleString()}</p></div>
-                  <div><Label className="text-muted-foreground">Commission</Label><p className="font-medium">{serviceToView.commission}%</p></div>
-                  <div><Label className="text-muted-foreground">Experience</Label><p className="font-medium">{serviceToView.experience} years</p></div>
-                  <div><Label className="text-muted-foreground">Join Date</Label><p className="font-medium">{serviceToView.joinDate}</p></div>
-                  <div className="col-span-2"><Label className="text-muted-foreground">About</Label><p className="font-medium text-sm italic">"{serviceToView.about || "No bio added yet."}"</p></div>
-                  <div><Label className="text-muted-foreground">Shift</Label><p className="font-medium">{serviceToView.shift || "Not set"}</p></div>
-                  <div>
-                    <Label className="text-muted-foreground">Fingerprint</Label>
-                    {serviceToView.fingerprintCode ? (
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <Fingerprint className="w-3.5 h-3.5 text-green-600" />
-                        <p className="font-medium text-green-700">Linked · UID {serviceToView.fingerprintCode}</p>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">Not linked</p>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Specializations</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {serviceToView.specializations?.map(s => (
-                      <span key={s} className="px-2 py-1 bg-secondary rounded text-xs">{s}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={!!serviceToEdit} onOpenChange={() => setServiceToEdit(null)}>
+      {/* Unified Employee Detail / Edit Modal */}
+      <Dialog open={!!selectedEmployee} onOpenChange={(open) => { if (!open) closeModal() }}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
-          <DialogHeader><DialogTitle>Edit Employee</DialogTitle></DialogHeader>
-          <ScrollArea className="pr-4 py-2 h-[60vh]">
-            {serviceToEdit && (
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="col-span-2">
-                  <Label>Full Name</Label>
-                  <Input
-                    value={serviceToEdit.name}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, name: e.target.value })}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Profile Image</Label>
-                  <div className="flex items-center gap-4 mt-2">
-                    <Avatar className="h-20 w-20">
-                      <AvatarImage
-                        src={editImagePreview ?? serviceToEdit.image ?? undefined}
-                        alt={serviceToEdit.name}
-                        className="object-cover"
-                      />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                        {getInitials(serviceToEdit.name)}
-                      </AvatarFallback>
-                    </Avatar>
+          <DialogHeader>
+            <DialogTitle>
+              {modalEditMode ? "Edit Employee" : "Employee Details"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="pr-4 py-2 h-[65vh]">
+            {selectedEmployee && (
+              modalEditMode && editDraft ? (
+                /* ── EDIT MODE ── */
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="col-span-2">
+                    <Label>Full Name</Label>
                     <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          setEditImageFile(file)
-                          setEditImagePreview(URL.createObjectURL(file))
-                        }
-                      }}
-                      className="max-w-[250px]"
+                      value={editDraft.name}
+                      onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })}
                     />
                   </div>
+                  <div className="col-span-2">
+                    <Label>Profile Image</Label>
+                    <div className="flex items-center gap-4 mt-2">
+                      <Avatar className="h-20 w-20">
+                        <AvatarImage
+                          src={editImagePreview ?? editDraft.image ?? undefined}
+                          alt={editDraft.name}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                          {getInitials(editDraft.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            setEditImageFile(file)
+                            setEditImagePreview(URL.createObjectURL(file))
+                          }
+                        }}
+                        className="max-w-[250px]"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Role</Label>
+                    <Select
+                      value={editDraft.role}
+                      onValueChange={(value) => setEditDraft({ ...editDraft, role: value as EmployeeRole })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.values(EmployeeRole).map(role => (
+                          <SelectItem key={role} value={role}>{role}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <Select
+                      value={editDraft.status}
+                      onValueChange={(value) => setEditDraft({ ...editDraft, status: value as EmployeeStatus })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.values(EmployeeStatus).map(status => (
+                          <SelectItem key={status} value={status}>{status}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Employment Type</Label>
+                    <Select
+                      value={editDraft.employmentType}
+                      onValueChange={(value) => setEditDraft({ ...editDraft, employmentType: value as EmploymentType })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.values(EmploymentType).map(type => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Phone Number</Label>
+                    <Input
+                      value={editDraft.phone}
+                      onChange={(e) => setEditDraft({ ...editDraft, phone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={editDraft.email}
+                      onChange={(e) => setEditDraft({ ...editDraft, email: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Salary (৳)</Label>
+                    <Input
+                      type="number"
+                      value={editDraft.salary}
+                      onChange={(e) => setEditDraft({ ...editDraft, salary: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Commission (%)</Label>
+                    <Input
+                      type="number"
+                      value={editDraft.commission}
+                      onChange={(e) => setEditDraft({ ...editDraft, commission: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Shift</Label>
+                    <Input
+                      value={editDraft.shift}
+                      onChange={(e) => setEditDraft({ ...editDraft, shift: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Experience (years)</Label>
+                    <Input
+                      type="number"
+                      value={editDraft.experience}
+                      onChange={(e) => setEditDraft({ ...editDraft, experience: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Join Date</Label>
+                    <Input
+                      type="date"
+                      value={editDraft.joinDate}
+                      onChange={(e) => setEditDraft({ ...editDraft, joinDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>About</Label>
+                    <Input
+                      value={editDraft.about || ""}
+                      onChange={(e) => setEditDraft({ ...editDraft, about: e.target.value })}
+                      placeholder="Write a short bio..."
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Specializations</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        >
+                          <span className={editDraft.specializations.length === 0 ? "text-muted-foreground" : "text-foreground"}>
+                            {editDraft.specializations.length === 0
+                              ? "Select services"
+                              : editDraft.specializations.join(", ")}
+                          </span>
+                          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+                        {serviceOptions.map((service) => (
+                          <div
+                            key={service}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                            onClick={() => {
+                              const selected = editDraft.specializations
+                              const next = selected.includes(service)
+                                ? selected.filter((x) => x !== service)
+                                : [...selected, service]
+                              setEditDraft({ ...editDraft, specializations: next })
+                            }}
+                          >
+                            <Checkbox checked={editDraft.specializations.includes(service)} />
+                            <span className="text-sm">{service}</span>
+                          </div>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Fingerprint section in edit mode */}
+                  <div className="col-span-2">
+                    <Label>Fingerprint</Label>
+                    <div className="flex items-center justify-between mt-1.5 p-3 rounded-lg border border-border bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <Fingerprint className={`w-4 h-4 ${editDraft.fingerprintCode ? 'text-green-600' : 'text-muted-foreground'}`} />
+                        {editDraft.fingerprintCode ? (
+                          <p className="text-sm font-medium text-green-700">Linked · UID: {editDraft.fingerprintCode}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Not linked</p>
+                        )}
+                      </div>
+                      {editDraft.fingerprintCode && (
+                        showUnlinkConfirm ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Confirm unlink?</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowUnlinkConfirm(false)}
+                              disabled={isUnlinking}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={handleUnlinkFingerprint}
+                              disabled={isUnlinking}
+                            >
+                              {isUnlinking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlink"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                            onClick={() => setShowUnlinkConfirm(true)}
+                          >
+                            <Link2Off className="w-3.5 h-3.5 mr-1.5" />
+                            Unlink
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label>Role</Label>
-                  <Select
-                    value={serviceToEdit.role}
-                    onValueChange={(value) => setServiceToEdit({ ...serviceToEdit, role: value as EmployeeRole })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.values(EmployeeRole).map(role => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              ) : (
+                /* ── VIEW MODE ── */
+                <div className="space-y-6 py-4">
+                  <div className="flex items-center gap-4 border-b pb-4">
+                    <Avatar className="h-16 w-16 text-xl">
+                      <AvatarImage src={selectedEmployee.image ?? undefined} alt={selectedEmployee.name} className="object-cover" />
+                      <AvatarFallback>{getInitials(selectedEmployee.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-xl font-bold">{selectedEmployee.name}</h3>
+                      <p className="text-muted-foreground">{selectedEmployee.role} · {selectedEmployee.employmentType}</p>
+                      <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedEmployee.status)}`}>
+                        {selectedEmployee.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                    <div><Label className="text-muted-foreground">Phone</Label><p className="font-medium">{selectedEmployee.phone}</p></div>
+                    <div><Label className="text-muted-foreground">Email</Label><p className="font-medium">{selectedEmployee.email || "—"}</p></div>
+                    <div><Label className="text-muted-foreground">Salary</Label><p className="font-medium">৳{Number(selectedEmployee.salary).toLocaleString()}</p></div>
+                    <div><Label className="text-muted-foreground">Commission</Label><p className="font-medium">{selectedEmployee.commission}%</p></div>
+                    <div><Label className="text-muted-foreground">Experience</Label><p className="font-medium">{selectedEmployee.experience} years</p></div>
+                    <div><Label className="text-muted-foreground">Join Date</Label><p className="font-medium">{selectedEmployee.joinDate || "—"}</p></div>
+                    <div><Label className="text-muted-foreground">Shift</Label><p className="font-medium">{selectedEmployee.shift || "Not set"}</p></div>
+                    <div className="col-span-2">
+                      <Label className="text-muted-foreground">About</Label>
+                      <p className="font-medium text-sm italic">"{selectedEmployee.about || "No bio added yet."}"</p>
+                    </div>
+                  </div>
+
+                  {/* Fingerprint section in view mode */}
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <Fingerprint className={`w-4 h-4 ${selectedEmployee.fingerprintCode ? 'text-green-600' : 'text-muted-foreground'}`} />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Fingerprint</p>
+                        {selectedEmployee.fingerprintCode ? (
+                          <p className="text-sm font-medium text-green-700">Linked · UID: {selectedEmployee.fingerprintCode}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Not linked</p>
+                        )}
+                      </div>
+                    </div>
+                    {selectedEmployee.fingerprintCode && (
+                      showUnlinkConfirm ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Confirm unlink?</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowUnlinkConfirm(false)}
+                            disabled={isUnlinking}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleUnlinkFingerprint}
+                            disabled={isUnlinking}
+                          >
+                            {isUnlinking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlink"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                          onClick={() => setShowUnlinkConfirm(true)}
+                        >
+                          <Link2Off className="w-3.5 h-3.5 mr-1.5" />
+                          Unlink Fingerprint
+                        </Button>
+                      )
+                    )}
+                  </div>
+
+                  {selectedEmployee.specializations?.length > 0 && (
+                    <div>
+                      <Label className="text-muted-foreground">Specializations</Label>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {selectedEmployee.specializations.map(s => (
+                          <span key={s} className="px-2 py-1 bg-secondary rounded text-xs">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <Label>Status</Label>
-                  <Select
-                    value={serviceToEdit.status}
-                    onValueChange={(value) => setServiceToEdit({ ...serviceToEdit, status: value as EmployeeStatus })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.values(EmployeeStatus).map(status => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Employment Type</Label>
-                  <Select
-                    value={serviceToEdit.employmentType}
-                    onValueChange={(value) => setServiceToEdit({ ...serviceToEdit, employmentType: value as EmploymentType })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.values(EmploymentType).map(type => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Phone Number</Label>
-                  <Input
-                    value={serviceToEdit.phone}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, phone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={serviceToEdit.email}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, email: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Salary (৳)</Label>
-                  <Input
-                    type="number"
-                    value={serviceToEdit.salary}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, salary: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label>Commission (%)</Label>
-                  <Input
-                    type="number"
-                    value={serviceToEdit.commission}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, commission: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label>Shift</Label>
-                  <Input
-                    value={serviceToEdit.shift}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, shift: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Experience (years)</Label>
-                  <Input
-                    type="number"
-                    value={serviceToEdit.experience}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, experience: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label>Join Date</Label>
-                  <Input
-                    type="date"
-                    value={serviceToEdit.joinDate}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, joinDate: e.target.value })}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Fingerprint Code</Label>
-                  <Input
-                    value={serviceToEdit.fingerprintCode || ""}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, fingerprintCode: e.target.value })}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>About Yourself</Label>
-                  <Input
-                    value={serviceToEdit.about || ""}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, about: e.target.value })}
-                    placeholder="Write a short bio..."
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Specializations (comma separated)</Label>
-                  <Input
-                    value={Array.isArray(serviceToEdit.specializations) ? serviceToEdit.specializations.join(', ') : ""}
-                    onChange={(e) => setServiceToEdit({ ...serviceToEdit, specializations: e.target.value.split(',').map(s => s.trim()) })}
-                  />
-                </div>
-              </div>
+              )
             )}
           </ScrollArea>
+
           <DialogFooter>
-            <Button className="w-full" onClick={handleEditSave} disabled={isEditing}>
-              {isEditing ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving Changes...</>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
+            {modalEditMode ? (
+              <div className="flex w-full gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setModalEditMode(false)
+                    setEditDraft({ ...selectedEmployee! })
+                    setShowUnlinkConfirm(false)
+                    setEditImageFile(null)
+                    setEditImagePreview(null)
+                  }}
+                  disabled={isEditing}
+                >
+                  Cancel
+                </Button>
+                <Button className="flex-1" onClick={handleEditSave} disabled={isEditing}>
+                  {isEditing ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex w-full gap-2">
+                <Button
+                  variant="outline"
+                  className="text-destructive hover:bg-destructive/10 hover:border-destructive/40"
+                  onClick={() => { closeModal(); setServiceToDelete(selectedEmployee!) }}
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Delete
+                </Button>
+                <Button className="flex-1" onClick={() => setModalEditMode(true)}>
+                  <Pencil className="w-4 h-4 mr-1.5" />
+                  Edit
+                </Button>
+              </div>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
+      {/* Delete Confirmation Dialog */}
       <Dialog open={!!serviceToDelete} onOpenChange={() => setServiceToDelete(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Delete Employee</DialogTitle></DialogHeader>
