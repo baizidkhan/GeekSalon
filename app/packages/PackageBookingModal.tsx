@@ -31,6 +31,12 @@ const MIN_DATE = (() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 })()
 
+const MAX_DATE = (() => {
+  const d = new Date()
+  d.setDate(d.getDate() + 30)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+})()
+
 function calcTotal(price: number | string, taxRate: number): string {
   const base = parseFloat(String(price)) || 0
   const tax = (base * taxRate) / 100
@@ -206,6 +212,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
                   type="date"
                   value={date}
                   min={MIN_DATE}
+                  max={MAX_DATE}
                   onChange={(e) => { setDate(e.target.value); setErrors((er) => ({ ...er, date: "" })) }}
                   className={`w-full bg-white/5 border ${errors.date ? "border-red-500/60" : "border-white/10"} rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#c4a484]/50 transition-all [color-scheme:dark]`}
                 />
