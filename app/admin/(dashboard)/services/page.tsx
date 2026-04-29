@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import api from "@admin/api/base"
 import { getServices, createService, updateService, deleteService } from "@admin/api/services/services"
 import { toast } from "sonner"
@@ -65,6 +66,7 @@ export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [priceSort, setPriceSort] = useState("none")
@@ -105,8 +107,8 @@ export default function ServicesPage() {
   const filteredServices = useMemo(() => {
     let result = services.filter(
       (service) =>
-        (service.name.toLowerCase().includes(search.toLowerCase()) ||
-          service.category.toLowerCase().includes(search.toLowerCase())) &&
+        (service.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+          service.category.toLowerCase().includes(debouncedSearch.toLowerCase())) &&
         (categoryFilter === "All" || service.category === categoryFilter)
     )
 
@@ -117,11 +119,11 @@ export default function ServicesPage() {
     }
 
     return result
-  }, [services, search, categoryFilter, priceSort])
+  }, [services, debouncedSearch, categoryFilter, priceSort])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, categoryFilter, priceSort])
+  }, [debouncedSearch, categoryFilter, priceSort])
 
   const totalPages = Math.max(1, Math.ceil(filteredServices.length / PAGE_SIZE))
   const paginatedServices = filteredServices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
