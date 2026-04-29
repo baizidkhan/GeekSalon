@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { useBiometricSocket, type AttendanceUpdatedPayload } from "@/hooks/use-biometric-socket"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -165,6 +166,7 @@ export default function AttendancePage() {
   const currentMonth = today.getMonth() + 1
   const [viewMode, setViewMode] = useState<ViewMode>("today")
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
   const [year, setYear] = useState(String(today.getFullYear()))
   const [month, setMonth] = useState(String(today.getMonth()))  // 0-indexed for display
   const [empFilter, setEmpFilter] = useState<string>("all")
@@ -290,10 +292,10 @@ export default function AttendancePage() {
   // ── Today table filtered ───────────────────────────────────────────────────
   const todayFiltered = useMemo(() => {
     return todayRecords.filter(r =>
-      r.employeeName.toLowerCase().includes(search.toLowerCase()) &&
+      r.employeeName.toLowerCase().includes(debouncedSearch.toLowerCase()) &&
       (empFilter === "all" || r.employeeId === empFilter)
     )
-  }, [todayRecords, search, empFilter])
+  }, [todayRecords, debouncedSearch, empFilter])
 
   // ── Calendar data ──────────────────────────────────────────────────────────
   const daysInMonth = useMemo(() => new Date(Number(year), Number(month) + 1, 0).getDate(), [year, month])
@@ -311,8 +313,8 @@ export default function AttendancePage() {
     }
 
     return Array.from(empMap.values())
-      .filter(e => e.name.toLowerCase().includes(search.toLowerCase()))
-  }, [monthRecords, search])
+      .filter(e => e.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
+  }, [monthRecords, debouncedSearch])
 
   const calendarPaged = calendarRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const calendarTotal = Math.max(1, Math.ceil(calendarRows.length / PAGE_SIZE))

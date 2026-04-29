@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -58,6 +59,7 @@ export default function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
   const [stockSort, setStockSort] = useState("none")
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -72,7 +74,7 @@ export default function InventoryPage() {
     try {
       setLoading(true)
       const res = await getInventory({
-        name: search || undefined,
+        name: debouncedSearch || undefined,
         sortStock: stockSort !== "none" ? (stockSort as 'asc' | 'desc') : undefined,
         limit: 100,
       })
@@ -83,7 +85,7 @@ export default function InventoryPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, stockSort])
+  }, [debouncedSearch, stockSort])
 
   useEffect(() => {
     fetchInventory()
@@ -91,7 +93,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, stockSort])
+  }, [debouncedSearch, stockSort])
 
   const totalPages = Math.max(1, Math.ceil(inventory.length / PAGE_SIZE))
   const paginatedInventory = inventory.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)

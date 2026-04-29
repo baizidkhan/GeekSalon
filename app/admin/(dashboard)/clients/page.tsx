@@ -2,6 +2,7 @@
 
 import { getClients, createClient, updateClient, deleteClient } from "@admin/api/clients/clients"
 import { useState, useMemo, useEffect, useCallback } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
@@ -142,6 +143,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState("all")
   const [customDateFrom, setCustomDateFrom] = useState("")
@@ -205,8 +207,8 @@ export default function ClientsPage() {
   }
 
   const filteredClients = useMemo(() => {
-    const searchTerm = search.trim().toLowerCase()
-    const normalizedSearch = normalizePhone(search)
+    const searchTerm = debouncedSearch.trim().toLowerCase()
+    const normalizedSearch = normalizePhone(debouncedSearch)
 
     let result = clients.filter(
       (client) => {
@@ -237,11 +239,11 @@ export default function ClientsPage() {
     })
 
     return result
-  }, [clients, search, timeFilter, customDateFrom, customDateTo])
+  }, [clients, debouncedSearch, timeFilter, customDateFrom, customDateTo])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, timeFilter, customDateFrom, customDateTo])
+  }, [debouncedSearch, timeFilter, customDateFrom, customDateTo])
 
   const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE))
   const paginatedClients = filteredClients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)

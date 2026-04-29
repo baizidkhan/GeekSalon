@@ -231,7 +231,7 @@ export function BookingModal() {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeBooking()}>
-            <DialogContent className="sm:max-w-[600px] bg-[#101010] border-white/10 text-white p-0 overflow-hidden">
+            <DialogContent data-public-modal="true" className="sm:max-w-[600px] bg-[#101010] border-white/10 text-white p-0 overflow-hidden">
                 <div className="p-8">
                     <DialogHeader className="mb-8 text-left">
                         <DialogTitle className="text-3xl font-semibold mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -308,15 +308,15 @@ export function BookingModal() {
                                     <div className="mt-8 p-6 bg-white/5 border border-white/5 space-y-3">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-white/40">Subtotal</span>
-                                            <span>Tk {subtotal.toFixed(2)}</span>
+                                            <span>৳ {subtotal.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="text-white/40">Tax ({taxRate}%)</span>
-                                            <span>Tk {tax.toFixed(2)}</span>
+                                            <span>৳ {tax.toFixed(2)}</span>
                                         </div>
                                         <div className="pt-3 border-t border-white/10 flex justify-between font-semibold">
                                             <span className="uppercase tracking-widest text-[11px]">Total Price</span>
-                                            <span className="text-xl">Tk {total.toFixed(2)}</span>
+                                            <span className="text-xl">৳ {total.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 )}
@@ -410,7 +410,7 @@ export function BookingModal() {
                                     </div>
                                     <div className="pt-4 border-t border-white/10 flex justify-between font-semibold">
                                         <span className="text-white/40">Total Amount</span>
-                                        <span className="text-xl">Tk {total.toFixed(2)}</span>
+                                        <span className="text-xl">৳ {total.toFixed(2)}</span>
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-center text-white/30 tracking-wider">

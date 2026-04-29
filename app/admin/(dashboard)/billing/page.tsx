@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice } from "@admin/api/billing/billing"
 import { useBusiness } from "@/context/BusinessContext"
 import { getClients } from "@admin/api/clients/clients"
@@ -95,6 +96,7 @@ export default function BillingPage() {
   const [clientOptions, setClientOptions] = useState<Array<{ id: string; name: string; phone: string }>>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -162,16 +164,16 @@ export default function BillingPage() {
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter((inv) => {
-      const matchesSearch = inv.client.toLowerCase().includes(search.toLowerCase()) || inv.invoiceNo.toLowerCase().includes(search.toLowerCase())
+      const matchesSearch = inv.client.toLowerCase().includes(debouncedSearch.toLowerCase()) || inv.invoiceNo.toLowerCase().includes(debouncedSearch.toLowerCase())
       const matchesDate = filterByDate(inv.date)
       const matchesStatus = statusFilter === "all" || inv.status === statusFilter
       return matchesSearch && matchesDate && matchesStatus
     })
-  }, [invoices, search, timeFilter, customDateFrom, customDateTo, statusFilter])
+  }, [invoices, debouncedSearch, timeFilter, customDateFrom, customDateTo, statusFilter])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, timeFilter, customDateFrom, customDateTo, statusFilter])
+  }, [debouncedSearch, timeFilter, customDateFrom, customDateTo, statusFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / PAGE_SIZE))
   const paginatedInvoices = filteredInvoices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)

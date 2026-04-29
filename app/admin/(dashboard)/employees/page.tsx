@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { Loader2, Link2Off } from "lucide-react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -106,6 +107,7 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
   const [currentPage, setCurrentPage] = useState(1)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [serviceOptions, setServiceOptions] = useState<string[]>([])
@@ -196,14 +198,14 @@ export default function EmployeesPage() {
   const filteredEmployees = useMemo(() => {
     return employees.filter(
       (emp) =>
-        emp.name.toLowerCase().includes(search.toLowerCase()) ||
-        emp.role.toLowerCase().includes(search.toLowerCase())
+        emp.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        emp.role.toLowerCase().includes(debouncedSearch.toLowerCase())
     )
-  }, [employees, search])
+  }, [employees, debouncedSearch])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search])
+  }, [debouncedSearch])
 
   const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / PAGE_SIZE))
   const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
