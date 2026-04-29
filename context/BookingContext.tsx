@@ -6,7 +6,8 @@ import { Service } from '@/lib/types'
 interface BookingContextType {
     isOpen: boolean
     selectedService: Service | null
-    openBooking: (service?: Service) => void
+    preSelectedStylist: string | null
+    openBooking: (service?: Service, stylist?: string) => void
     closeBooking: () => void
 }
 
@@ -15,23 +16,32 @@ const BookingContext = createContext<BookingContextType | undefined>(undefined)
 export function BookingProvider({ children }: { children: ReactNode }) {
     const [isOpen, setIsOpen] = useState(false)
     const [selectedService, setSelectedService] = useState<Service | null>(null)
+    const [preSelectedStylist, setPreSelectedStylist] = useState<string | null>(null)
 
-    const openBooking = (service?: Service) => {
+    const openBooking = (service?: Service, stylist?: string) => {
         if (service) {
             setSelectedService(service)
         } else {
             setSelectedService(null)
         }
+        
+        if (stylist) {
+            setPreSelectedStylist(stylist)
+        } else {
+            setPreSelectedStylist(null)
+        }
+        
         setIsOpen(true)
     }
 
     const closeBooking = () => {
         setIsOpen(false)
         setSelectedService(null)
+        setPreSelectedStylist(null)
     }
 
     return (
-        <BookingContext.Provider value={{ isOpen, selectedService, openBooking, closeBooking }}>
+        <BookingContext.Provider value={{ isOpen, selectedService, preSelectedStylist, openBooking, closeBooking }}>
             {children}
         </BookingContext.Provider>
     )
