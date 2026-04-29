@@ -1,3 +1,7 @@
+"use client"
+
+import { useState, useEffect } from "react"
+
 const stats = [
     { value: "15+", label: "Years of Excellence" },
     { value: "50K+", label: "Happy Clients" },
@@ -5,14 +9,36 @@ const stats = [
     { value: "25", label: "Premium Locations" },
 ]
 
-const dummyImages = [
-    { tone: "from-stone-400 via-stone-500 to-stone-700", label: "Dummy Image 1" },
-    { tone: "from-zinc-300 via-zinc-400 to-zinc-600", label: "Dummy Image 2" },
-    { tone: "from-neutral-400 via-stone-500 to-neutral-700", label: "Dummy Image 3" },
-    { tone: "from-stone-300 via-neutral-400 to-zinc-600", label: "Dummy Image 4" },
-]
-
 export function WhyChooseUsSection() {
+    const [images, setImages] = useState<(string | null)[]>([null, null, null, null])
+
+    useEffect(() => {
+        const fetchImages = async () => {
+            try {
+                const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
+                const res = await fetch(`${baseUrl}/why-choose-us-image`)
+                const data = await res.json()
+                if (data) {
+                    setImages([
+                        data.image1 || null,
+                        data.image2 || null,
+                        data.image3 || null,
+                        data.image4 || null
+                    ])
+                }
+            } catch (err) {
+                console.error("Failed to fetch why-choose-us images:", err)
+            }
+        }
+        fetchImages()
+    }, [])
+
+    const placeholderTones = [
+        "from-stone-400 via-stone-500 to-stone-700",
+        "from-zinc-300 via-zinc-400 to-zinc-600",
+        "from-neutral-400 via-stone-500 to-neutral-700",
+        "from-stone-300 via-neutral-400 to-zinc-600",
+    ]
     return (
         <section className="bg-[#0b0b0b] px-4 py-20 sm:px-6 lg:px-8">
             <div className="mx-auto w-full max-w-7xl">
@@ -52,19 +78,27 @@ export function WhyChooseUsSection() {
                         <div className="absolute -bottom-5 -left-5 h-14 w-14 border-b border-l border-white/20" />
 
                         <div className="grid grid-cols-2 gap-3">
-                            {dummyImages.map((img) => (
+                            {images.map((img, index) => (
                                 <div
-                                    key={img.label}
-                                    className={`aspect-square overflow-hidden bg-gradient-to-br ${img.tone}`}
+                                    key={index}
+                                    className={`aspect-square overflow-hidden relative ${!img ? `bg-gradient-to-br ${placeholderTones[index]}` : 'bg-stone-900'}`}
                                 >
-                                    <div className="flex h-full items-center justify-center">
-                                        <div
-                                            className="border border-white/35 bg-black/25 px-4 py-2 text-[8px] uppercase tracking-[0.3em] text-white/90 backdrop-blur-sm"
-                                            style={{ fontFamily: 'Inter, sans-serif' }}
-                                        >
-                                            {img.label}
+                                    {img ? (
+                                        <img 
+                                            src={img} 
+                                            alt={`Privé Experience ${index + 1}`} 
+                                            className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
+                                        />
+                                    ) : (
+                                        <div className="flex h-full items-center justify-center">
+                                            <div
+                                                className="border border-white/35 bg-black/25 px-4 py-2 text-[8px] uppercase tracking-[0.3em] text-white/90 backdrop-blur-sm"
+                                                style={{ fontFamily: 'Inter, sans-serif' }}
+                                            >
+                                                Signature Experience
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
