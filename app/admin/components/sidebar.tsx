@@ -34,7 +34,7 @@ import { useBusiness } from "@/context/BusinessContext"
 
 const navigation = [
   {
-    title: "Core Operations",
+    title: "CORE OPERATIONS",
     items: [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard, permission: "dashboard" },
       { name: "Appointments", href: "/admin/appointments", icon: Calendar, permission: "appointments" },
@@ -43,37 +43,34 @@ const navigation = [
     ],
   },
   {
-    title: "Service & Staff",
+    title: "SERVICE & STAFF",
     items: [
       { name: "Services", href: "/admin/services", icon: Scissors, permission: "service" },
-      { name: "Employee Account", href: "/admin/employee-account", icon: UserLock, permission: "user-management" },
+      { name: "Employee Management", href: "/admin/employee-account", icon: UserLock, permission: "user-management" },
       { name: "Employees", href: "/admin/employees", icon: UserCheck, permission: "employee" },
     ],
   },
   {
-    title: "Business",
+    title: "BUSINESS OPERATIONS",
     items: [
       { name: "Inventory", href: "/admin/inventory", icon: Package, permission: "inventory" },
-      { name: "Packages", href: "/admin/manage-packages", icon: Sparkles, permission: "makeover-packages" },
-      { name: "Reports", href: "/admin/reports", icon: BarChart3, permission: "reports" },
+      { name: "Report and Analysis", href: "/admin/reports", icon: BarChart3, permission: "reports" },
       { name: "Staff Reports", href: "/admin/staff-reports", icon: UserCog, permission: "reports" },
-      { name: "Testimonials", href: "/admin/testimonials", icon: Quote, permission: "testimonial" },
+      { name: "Manage Packages", href: "/admin/manage-packages", icon: Sparkles, permission: "makeover-packages" },
     ],
   },
   {
-    title: "HR & Internal",
+    title: "HR & INTERNAL",
     items: [
       { name: "Attendance", href: "/admin/attendance", icon: ClipboardCheck, permission: "attendance" },
-      { name: "Unlinked Users", href: "/admin/unlinked-users", icon: Fingerprint, permission: "attendance" },
       { name: "Leave Requests", href: "/admin/leave-request", icon: Calendar, permission: "leave-request" },
       { name: "Manage Payrolls", href: "/admin/manage-payrolls", icon: Building2, permission: "hr-payroll" },
     ],
   },
   {
-    title: "System",
+    title: "SYSTEM",
     items: [
       { name: "Settings", href: "/admin/settings", icon: Settings, permission: "settings" },
-      { name: "Change Password", href: "/admin/update-password", icon: UserLock, permission: "update-password" },
     ],
   },
 ]
@@ -126,49 +123,57 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 z-50",
+        "flex flex-col bg-white border-r border-slate-200 transition-all duration-300 z-50 font-sans",
         "fixed top-0 left-0 h-full md:sticky md:top-0 md:min-h-screen md:max-h-screen",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        collapsed ? "md:w-16 w-64" : "w-64"
+        collapsed ? "md:w-16 w-64" : "w-[260px]"
       )}
     >
       {/* Logo */}
       <div className={cn(
-        "flex items-center gap-3 border-b border-sidebar-border shrink-0",
-        collapsed ? "p-4 justify-center" : "p-5"
+        "flex items-center gap-3 shrink-0 h-16",
+        collapsed ? "px-4 justify-center" : "px-6"
       )}>
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-sidebar-primary shrink-0 shadow-lg shadow-black/20">
-          <Sparkles className="w-4 h-4 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
+        <div className="flex items-center justify-center shrink-0">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 7V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V7M4 7L12 3L20 7M4 7H20" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M9 21V12H15V21" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
         {!collapsed && (
           <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-sidebar-foreground tracking-wide leading-tight" style={{ fontFamily: 'var(--font-serif, Georgia, serif)', fontSize: '1rem' }}>
-              {businessName}
+            <h1 className="font-bold text-blue-500 text-[16px] leading-tight tracking-wide">
+              {businessName || "Salonbos"}
             </h1>
-            <p className="text-[9px] text-sidebar-foreground/40 tracking-[0.2em] uppercase mt-0.5">
-              Salon Management
+            <p className="text-[10px] text-slate-400 font-medium">
+              Business os
             </p>
           </div>
         )}
         <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden md:flex p-1 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <LayoutDashboard className="w-4 h-4" />}
+        </button>
+        <button
           onClick={onClose}
-          className="md:hidden p-1 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors"
+          className="md:hidden p-1 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-5">
+      <nav className="flex-1 overflow-y-auto py-2 px-4 space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
         {loading ? (
-          // Show loading placeholder while user is being fetched
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-2">
-                <div className="h-3 w-16 bg-sidebar-accent rounded animate-pulse" />
+                <div className="h-3 w-16 bg-slate-100 rounded animate-pulse" />
                 <div className="space-y-1">
                   {[1, 2].map((j) => (
-                    <div key={j} className="h-8 bg-sidebar-accent/50 rounded animate-pulse" />
+                    <div key={j} className="h-8 bg-slate-50 rounded animate-pulse" />
                   ))}
                 </div>
               </div>
@@ -183,13 +188,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             if (visibleItems.length === 0) return null
 
             return (
-              <div key={section.title}>
+              <div key={section.title} className="relative">
                 {!collapsed && (
-                  <p className="text-[9px] font-semibold tracking-[0.22em] text-sidebar-foreground/35 mb-1.5 px-3 uppercase">
+                  <p className="text-[11px] font-bold text-slate-800 mb-2 px-2 tracking-wide">
                     {section.title}
                   </p>
                 )}
-                <ul className="space-y-0.5">
+                <ul className="space-y-1">
                   {visibleItems.map((item) => {
                     const isActive = item.href === "/admin"
                       ? pathname === "/admin" || pathname === "/admin/dashboard"
@@ -200,17 +205,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           href={item.href}
                           onClick={handleNavClick}
                           className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+                            "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative",
                             collapsed && "justify-center",
                             isActive
-                              ? "bg-sidebar-primary/14 text-sidebar-primary font-medium"
-                              : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              ? "bg-blue-50 text-blue-500"
+                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                           )}
                           title={collapsed ? item.name : undefined}
                         >
+                          {isActive && !collapsed && (
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[70%] bg-blue-500 rounded-r-full" />
+                          )}
                           <item.icon className={cn(
                             "w-4 h-4 shrink-0",
-                            isActive ? "text-sidebar-primary" : "text-sidebar-foreground/50"
+                            isActive ? "text-blue-500" : "text-slate-400"
                           )} />
                           {!collapsed && <span className="truncate">{item.name}</span>}
                         </Link>
@@ -224,54 +232,44 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
       </nav>
 
-      {/* User Info */}
+      {/* Footer User Info & Logout */}
       {!collapsed && user && (
-        <div className="px-5 py-4 border-t border-sidebar-border bg-sidebar-accent/30">
+        <div className="p-4 border-t border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary font-bold text-xs uppercase">
-              {user.useremail.charAt(0)}
+            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+              <span className="text-slate-400 text-sm font-medium uppercase">
+                {user.useremail.charAt(0)}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-sidebar-foreground truncate">{user.useremail}</p>
-              <p className="text-[10px] text-sidebar-foreground/50 capitalize">{user.role}</p>
+              <p className="text-[13px] font-bold text-slate-800 truncate leading-none mb-1 capitalize">
+                {(user as any).name || (user as any).username || user.useremail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ')}
+              </p>
+              <p className="text-[11px] text-slate-400 truncate leading-none">{user.useremail}</p>
             </div>
+            <button
+              onClick={handleLogoutClick}
+              className="p-2 text-slate-400 hover:text-rose-500 transition-colors shrink-0"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
-
-      {/* Logout */}
-      <button
-        type="button"
-        onClick={handleLogoutClick}
-        className={cn(
-          "flex items-center gap-3 px-5 py-3.5 border-t border-sidebar-border",
-          "text-sidebar-foreground/45 hover:text-rose-400 transition-colors shrink-0 cursor-pointer text-sm",
-          collapsed && "justify-center px-4"
-        )}
-        title={collapsed ? "Sign Out" : undefined}
-      >
-        <LogOut className="w-4 h-4 shrink-0" />
-        {!collapsed && <span>Sign Out</span>}
-      </button>
-
-      {/* Collapse Button — desktop only */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className={cn(
-          "hidden md:flex items-center gap-3 px-5 py-3.5 border-t border-sidebar-border",
-          "text-sidebar-foreground/35 hover:text-sidebar-foreground/65 transition-colors shrink-0 cursor-pointer text-sm",
-          collapsed && "justify-center px-4"
-        )}
-      >
-        {collapsed ? (
-          <ChevronRight className="w-4 h-4" />
-        ) : (
-          <>
-            <ChevronLeft className="w-4 h-4" />
-            <span>Collapse</span>
-          </>
-        )}
-      </button>
+      
+      {/* Collapsed Footer Logout */}
+      {collapsed && user && (
+        <div className="p-4 border-t border-slate-100 flex justify-center">
+          <button
+            onClick={handleLogoutClick}
+            className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
+            title="Sign Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </aside>
   )
 }
