@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { useRouter, useSearchParams } from "next/navigation"
 import { format } from "date-fns"
 import { useAuth } from "@admin/hooks/use-auth"
@@ -502,7 +503,9 @@ export default function AppointmentsPage() {
   const [clientOptions, setClientOptions] = useState<ClientOption[]>([])
 
   const [searchName, setSearchName] = useState("")
+  const debouncedSearchName = useDebounce(searchName, 500)
   const [searchPhone, setSearchPhone] = useState("")
+  const debouncedSearchPhone = useDebounce(searchPhone, 500)
   const [timeFilter, setTimeFilter] = useState(() => {
     const param = searchParams.get("timeFilter")
     return param && timeFilterOptions.includes(param) ? param : "All Time"
@@ -618,8 +621,8 @@ export default function AppointmentsPage() {
   }, [fetchAppointments, fetchClients])
 
   const filteredAppointments = appointments.filter((apt) => {
-    const matchesName = apt.client.toLowerCase().includes(searchName.toLowerCase())
-    const matchesPhone = apt.phone.includes(searchPhone)
+    const matchesName = apt.client.toLowerCase().includes(debouncedSearchName.toLowerCase())
+    const matchesPhone = apt.phone.includes(debouncedSearchPhone)
     const matchesSource = sourceFilter === "All Sources" || apt.source === sourceFilter
     const matchesStatus = statusFilter === "All Status" || apt.status === statusFilter
 
@@ -663,7 +666,7 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchName, searchPhone, timeFilter, sourceFilter, statusFilter])
+  }, [debouncedSearchName, debouncedSearchPhone, timeFilter, sourceFilter, statusFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredAppointments.length / PAGE_SIZE))
   const paginatedAppointments = filteredAppointments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
