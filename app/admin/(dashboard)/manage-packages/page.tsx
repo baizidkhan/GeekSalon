@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -64,6 +65,7 @@ export default function ManagePackagesPage() {
   const [packages, setPackages] = useState<Package[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -112,10 +114,10 @@ export default function ManagePackagesPage() {
   const filteredPackages = useMemo(() => {
     return packages.filter(
       (pkg) =>
-        pkg.title.toLowerCase().includes(search.toLowerCase()) ||
-        pkg.category.toLowerCase().includes(search.toLowerCase())
+        pkg.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        pkg.category.toLowerCase().includes(debouncedSearch.toLowerCase())
     )
-  }, [packages, search])
+  }, [packages, debouncedSearch])
 
   const handleAddPackage = async () => {
     if (newPackage.title && newPackage.price) {
