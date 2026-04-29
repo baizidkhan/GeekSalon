@@ -95,7 +95,7 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
               height={filter === "monthly" ? 48 : 30}
               tick={
                 filter === "monthly"
-                  ? { fontSize: 9, fill: "#94a3b8", angle: -45, textAnchor: "end" }
+                  ? ({ fontSize: 9, fill: "#94a3b8", angle: -45, textAnchor: "end" } as any)
                   : { fontSize: 11, fill: "#94a3b8" }
               }
             />
@@ -145,7 +145,7 @@ export function AppointmentChart({ weeklyData, monthlyData }: AppointmentChartPr
               interval={0}
               height={filter === "monthly" ? 48 : 30}
               tick={filter === "monthly"
-                ? { fontSize: 9, fill: "#94a3b8", angle: -45, textAnchor: "end" }
+                ? ({ fontSize: 9, fill: "#94a3b8", angle: -45, textAnchor: "end" } as any)
                 : { fontSize: 11, fill: "#94a3b8" }
               }
             />
