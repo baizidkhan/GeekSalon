@@ -61,3 +61,16 @@ export async function updateAppointmentSettings(appointmentData: AppointmentSett
   markStale(CACHE.APPOINTMENT_SETTING, CACHE.APPOINTMENTS)
   return data
 }
+
+// Why Choose Us Images
+export async function getWhyChooseUsImages() {
+  const { data } = await api.get('/why-choose-us-image', { cache: false })
+  return data
+}
+
+export async function updateWhyChooseUsImages(formData: FormData) {
+  const { data } = await api.patch('/why-choose-us-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return data
+}
