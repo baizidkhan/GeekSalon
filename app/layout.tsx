@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 }
 
 import { BookingProvider } from '@/context/BookingContext'
+import { BusinessProvider } from '@/context/BusinessContext'
 import { BookingModal } from '@/components/booking-modal'
 import { Toaster } from 'sonner'
 
@@ -30,11 +31,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={playfair.variable}>
       <body className="font-sans antialiased">
-        <BookingProvider>
-          {children}
-          <BookingModal />
-          <Toaster position="top-center" theme="dark" richColors />
-        </BookingProvider>
+        <BusinessProvider>
+          <BookingProvider>
+            {children}
+            <BookingModal />
+            <Toaster position="top-center" theme="dark" richColors />
+          </BookingProvider>
+        </BusinessProvider>
       </body>
     </html>
   )

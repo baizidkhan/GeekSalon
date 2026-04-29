@@ -1,9 +1,20 @@
+"use client"
+
+import { useBusiness } from "@/context/BusinessContext"
+
 import Link from "next/link"
 
-const links = {
-    Experience: ["Our Services", "Packages", "Membership", "Gift Cards"],
-    Company: ["Our Story", "Our Team", "Careers", "Press", "Blog"],
-    Support: ["Contact Us", "FAQs", "Terms of Service", "Privacy Policy"],
+const footerLinks = {
+    Experience: [
+        { name: "Our Services", href: "/services" },
+        { name: "Packages", href: "/packages" },
+    ],
+    Company: [
+        { name: "Our Team", href: "/our-team" },
+    ],
+    Support: [
+        { name: "Book Appointment", href: "/services" }, // Directing to services for booking
+    ],
 }
 
 const socials = [
@@ -46,6 +57,8 @@ const socials = [
 ]
 
 export function Footer() {
+    const { businessInfo, businessName } = useBusiness()
+
     return (
         <footer className="bg-[#080808]">
             <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-20 sm:px-6 lg:px-8">
@@ -54,8 +67,8 @@ export function Footer() {
                     {/* Brand column */}
                     <div>
                         <p className="mb-5 text-xl font-semibold" style={{ fontFamily: 'Playfair Display, serif' }}>
-                            <span className="text-white">Geek</span>
-                            <span className="text-teal-400">Salon</span>
+                            <span className="text-white">{businessName.split(/(?=[A-Z])/)[0] || businessName}</span>
+                            <span className="text-teal-400">{businessName.split(/(?=[A-Z])/)[1] || ""}</span>
                         </p>
                         <p className="mb-8 text-sm leading-7 text-white/50" style={{ fontFamily: 'Inter, sans-serif' }}>
                             Where luxury meets artistry. Experience the finest in beauty and wellness services, crafted for the modern connoisseur.
@@ -70,7 +83,7 @@ export function Footer() {
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                                         </svg>
                                     ),
-                                    text: "123 Luxury Avenue, Beverly Hills, CA 90210",
+                                    text: businessInfo?.address || "123 Luxury Avenue, Beverly Hills, CA 90210",
                                 },
                                 {
                                     icon: (
@@ -78,7 +91,7 @@ export function Footer() {
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
                                         </svg>
                                     ),
-                                    text: "+1 (555) 123-4567",
+                                    text: businessInfo?.phone || "+1 (555) 123-4567",
                                 },
                                 {
                                     icon: (
@@ -86,7 +99,7 @@ export function Footer() {
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                                         </svg>
                                     ),
-                                    text: "hello@geeksalon.com",
+                                    text: businessInfo?.email || "hello@geeksalon.com",
                                 },
                             ].map((item) => (
                                 <li key={item.text} className="flex items-start gap-3 text-sm text-white/50" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -112,21 +125,21 @@ export function Footer() {
                     </div>
 
                     {/* Link columns */}
-                    {Object.entries(links).map(([heading, items]) => (
+                    {Object.entries(footerLinks).map(([heading, items]) => (
                         <div key={heading}>
                             <p className="mb-6 text-[11px] uppercase tracking-[0.45em] text-white/40" style={{ fontFamily: 'Inter, sans-serif' }}>
                                 {heading}
                             </p>
                             <ul className="space-y-4">
                                 {items.map((item) => (
-                                    <li key={item}>
-                                        <a
-                                            href="#"
+                                    <li key={item.name}>
+                                        <Link
+                                            href={item.href}
                                             className="text-sm text-white/55 transition-colors duration-300 hover:text-white"
                                             style={{ fontFamily: 'Inter, sans-serif' }}
                                         >
-                                            {item}
-                                        </a>
+                                            {item.name}
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>
@@ -140,7 +153,7 @@ export function Footer() {
             <div className="border-t border-white/10">
                 <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6 lg:px-8">
                     <p className="flex items-center gap-3 text-xs text-white/35" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        © 2026 GeekSalon. All rights reserved.
+                        © 2026 {businessName}. All rights reserved.
                         <span className="text-white/20">•</span>
                         Developed by <a href="https://geekssort.com/" target="_blank" rel="noopener noreferrer" className="font-semibold text-white/55 underline transition-colors duration-300 hover:text-white">GeekSSort</a>
                     </p>

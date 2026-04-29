@@ -30,7 +30,7 @@ import { useState } from "react"
 import { logout } from "@admin/api/auth/auth"
 import { useAuth } from "@admin/hooks/use-auth"
 import { hasPermission } from "@admin/lib/auth-utils"
-import { useBusinessName } from "@admin/context/business-context"
+import { useBusiness } from "@/context/BusinessContext"
 
 const navigation = [
   {
@@ -88,7 +88,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const { user, loading } = useAuth()
-  const { businessName } = useBusinessName()
+  const { businessName } = useBusiness()
 
   const clearAccessTokenCookie = () => {
     document.cookie = "accessToken=; path=/; max-age=0; samesite=strict"

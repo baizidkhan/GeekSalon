@@ -1014,7 +1014,7 @@ export default function AppointmentsPage() {
                 <div className="space-y-2">
                   <Label className="text-[13px] font-semibold tracking-wide">Total Price (incl. tax)</Label>
                   <Input
-                    value={`$${(() => {
+                    value={`Tk ${(() => {
                       const subtotal = newAppointment.services.reduce((acc, serviceName) => {
                         const service = serviceOptions.find((s) => s.name === serviceName)
                         return acc + parseFloat((service?.price || 0).toString())

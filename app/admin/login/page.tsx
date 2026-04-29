@@ -8,7 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Sparkles } from "lucide-react"
 import { login } from "@admin/api/auth/auth"
 
+import { useBusiness } from "@/context/BusinessContext"
+
 export default function LoginPage() {
+  const { businessName } = useBusiness()
   const router = useRouter()
   const [useremail, setUseremail] = useState("")
   const [password, setPassword] = useState("")
@@ -70,7 +73,7 @@ export default function LoginPage() {
           <h1 className="text-3xl font-semibold text-foreground tracking-tight leading-tight"
             style={{ fontFamily: 'var(--font-serif, Georgia, serif)' }}
           >
-            GeekSalon
+            {businessName}
           </h1>
           <p className="text-xs text-muted-foreground tracking-[0.2em] uppercase mt-1.5">
             Salon Management Platform
@@ -137,7 +140,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground/60 mt-6 tracking-wide">
-          Premium Salon Management · GeekSalon
+          Premium Salon Management · {businessName}
         </p>
       </div>
     </div>

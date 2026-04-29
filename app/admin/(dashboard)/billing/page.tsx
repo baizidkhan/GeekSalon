@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice } from "@admin/api/billing/billing"
-import { useBusinessName } from "@admin/context/business-context"
+import { useBusiness } from "@/context/BusinessContext"
 import { getClients } from "@admin/api/clients/clients"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -90,7 +90,7 @@ function getStatusLabel(status: Invoice["status"]) {
 }
 
 export default function BillingPage() {
-  const { businessName } = useBusinessName()
+  const { businessName } = useBusiness()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clientOptions, setClientOptions] = useState<Array<{ id: string; name: string; phone: string }>>([])
   const [loading, setLoading] = useState(true)

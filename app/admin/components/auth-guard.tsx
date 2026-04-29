@@ -25,6 +25,8 @@ const pathPermissionMap: Record<string, string> = {
   "/admin/settings": "settings",
 }
 
+import { useBusiness } from "@/context/BusinessContext"
+
 export function AuthGuard({ 
   children, 
   initialUser 
@@ -32,6 +34,7 @@ export function AuthGuard({
   children: React.ReactNode, 
   initialUser?: User | null 
 }) {
+  const { businessName } = useBusiness()
   const { user: clientUser, loading } = useAuth()
   // Use server user initially, then sync with client user
   const [user, setUser] = useState<User | null>(initialUser || null)
@@ -73,7 +76,7 @@ export function AuthGuard({
             </div>
           </div>
           <div className="space-y-1 text-center">
-            <h3 className="text-lg font-medium text-foreground tracking-tight">GeekSalon</h3>
+            <h3 className="text-lg font-medium text-foreground tracking-tight">{businessName}</h3>
             <p className="text-xs text-muted-foreground tracking-[0.2em] uppercase">Authenticating...</p>
           </div>
         </div>
