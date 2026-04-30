@@ -229,11 +229,31 @@ export function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-slate-50">
-                  <td className="py-3 text-slate-500">Loading...</td>
-                  <td className="py-3 text-slate-500">--</td>
-                  <td className="py-3 text-slate-500">--</td>
-                </tr>
+                {loading || !stats ? (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-center text-slate-400">Loading…</td>
+                  </tr>
+                ) : (stats.todaysAttendance ?? []).length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-center text-slate-400">No attendance recorded today</td>
+                  </tr>
+                ) : (
+                  (stats.todaysAttendance as any[]).map((rec, i) => (
+                    <tr key={i} className="border-b border-slate-50">
+                      <td className="py-2.5 text-slate-700 font-medium">{rec.employeeName}</td>
+                      <td className="py-2.5 text-slate-500">
+                        {rec.checkInTime
+                          ? new Date(rec.checkInTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Dhaka" })
+                          : "—"}
+                      </td>
+                      <td className="py-2.5 text-slate-500">
+                        {rec.checkOutTime
+                          ? new Date(rec.checkOutTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Dhaka" })
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
