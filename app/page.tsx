@@ -7,8 +7,13 @@ import { TestimonialsSection } from "./components/testimonials"
 import { CtaSection } from "./components/cta-section"
 import { Footer } from "./components/footer"
 import { getActiveServices } from "./api/services/services"
+import { getAppreciateExcellence } from "./api/appreciate-excellence/appreciate-excellence"
+
 export default async function Home() {
-    const services = await getActiveServices();
+    const [services, excellence] = await Promise.all([
+        getActiveServices(),
+        getAppreciateExcellence()
+    ]);
     return (
         <div className="min-h-screen bg-[#f7f1eb] text-slate-900">
             <div
@@ -30,7 +35,7 @@ export default async function Home() {
 
             <SignatureExperiencesSection services={services} />
             <WhyChooseUsSection />
-            <TheExperienceSection />
+            <TheExperienceSection excellence={excellence} />
             <TestimonialsSection />
             <CtaSection />
             <Footer />
