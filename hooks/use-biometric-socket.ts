@@ -15,9 +15,16 @@ export interface AttendanceUpdatedPayload {
   deviceUserIds: string[]
 }
 
+export interface UnlinkedFingerprintScannedPayload {
+  deviceUserId: string
+  name: string | null
+  attendanceDate: string
+}
+
 interface SocketHandlers {
   onNewDeviceUser?: (payload: NewDeviceUserPayload) => void
   onAttendanceUpdated?: (payload: AttendanceUpdatedPayload) => void
+  onUnlinkedFingerprintScanned?: (payload: UnlinkedFingerprintScannedPayload) => void
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000'
@@ -53,6 +60,10 @@ export function useBiometricSocket(handlers: SocketHandlers) {
 
     socket.on('attendance-updated', (payload: AttendanceUpdatedPayload) => {
       handlerRef.current.onAttendanceUpdated?.(payload)
+    })
+
+    socket.on('unlinked-fingerprint-scanned', (payload: UnlinkedFingerprintScannedPayload) => {
+      handlerRef.current.onUnlinkedFingerprintScanned?.(payload)
     })
 
     return () => {
