@@ -52,7 +52,7 @@ interface Service {
   imageUrl?: string
 }
 
-const CATEGORIES = ["All", "Hair", "Makeup", "Skin", "Bridal", "Nails", "Other"]
+const CATEGORIES = ["All", "Hair", "Makeup", "Skin", "Bridal", "Nails", "Spa", "Other"]
 
 
 const PRICE_SORT_OPTIONS = [
@@ -65,17 +65,55 @@ const PAGE_SIZE = 10
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 500)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [priceSort, setPriceSort] = useState("none")
   const [currentPage, setCurrentPage] = useState(1)
-  const [newService, setNewService] = useState({ name: "", category: "", duration: "", price: "", description: "", imageUrl: "" })
+  const [newService, setNewService] = useState({
+    name: "",
+    category: "",
+    duration: "",
+    price: "",
+    description: "",
+    imageUrl: "",
+    imageFile: null as File | null,
+    previewUrl: ""
+  })
 
   const [serviceToView, setServiceToView] = useState<Service | null>(null)
-  const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null)
+  const [serviceToEdit, setServiceToEdit] = useState<(Service & { imageFile?: File | null, previewUrl?: string }) | null>(null)
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null)
+
+  const compressToWebP = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const webpFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                type: 'image/webp',
+                lastModified: Date.now(),
+              });
+              resolve(webpFile);
+            }
+          }, 'image/webp', 0.95);
+        };
+      };
+    });
+  };
 
 
   const fetchServices = async () => {
@@ -130,49 +168,79 @@ export default function ServicesPage() {
 
   const handleAddService = async () => {
     if (newService.name && newService.category && newService.price) {
+      setIsSubmitting(true)
       try {
+        if (!newService.imageFile) {
+          toast.error("Please select an image for the service")
+          setIsSubmitting(false)
+          return
+        }
+
+        const formData = new FormData()
         const payload = {
           name: newService.name,
           category: newService.category,
           duration: parseInt(newService.duration) || 30,
-          price: parseFloat(newService.price),
+          price: parseFloat(newService.price) || 0,
           status: 'active',
           description: newService.description,
-          imageUrl: newService.imageUrl || undefined,
         }
-        await createService(payload)
+
+        formData.append('data', JSON.stringify(payload))
+        formData.append('image', newService.imageFile)
+
+        await createService(formData)
+
         toast.success("Service added successfully")
-        setNewService({ name: "", category: "", duration: "", price: "", description: "", imageUrl: "" })
+        setNewService({ name: "", category: "", duration: "", price: "", description: "", imageUrl: "", imageFile: null, previewUrl: "" })
         setIsDialogOpen(false)
         fetchServices()
       } catch (error) {
         console.error("Failed to add service:", error)
         toast.error("Failed to add service")
+      } finally {
+        setIsSubmitting(false)
       }
     }
   }
 
   const handleEditSave = async () => {
     if (serviceToEdit) {
+      setIsSubmitting(true)
       try {
+        if (!serviceToEdit.name || !serviceToEdit.category || !serviceToEdit.price) {
+          toast.error("Please fill in all required fields")
+          setIsSubmitting(false)
+          return
+        }
+
+        const formData = new FormData()
         const payload = {
           name: serviceToEdit.name,
           category: serviceToEdit.category,
-          duration: Number(serviceToEdit.duration),
-          price: Number(serviceToEdit.price),
+          duration: Number(serviceToEdit.duration) || 30,
+          price: Number(serviceToEdit.price) || 0,
           status: serviceToEdit.active ? 'active' : 'hidden',
           description: serviceToEdit.description || "",
-          imageUrl: serviceToEdit.imageUrl || undefined,
+          imageUrl: serviceToEdit.imageFile ? undefined : serviceToEdit.imageUrl,
         }
 
+        formData.append('data', JSON.stringify(payload))
 
-        await updateService(serviceToEdit.id, payload)
+        if (serviceToEdit.imageFile) {
+          formData.append('image', serviceToEdit.imageFile)
+        }
+
+        await updateService(serviceToEdit.id, formData)
+
         toast.success("Service updated successfully")
         setServiceToEdit(null)
         fetchServices()
       } catch (error) {
         console.error("Failed to update service:", error)
         toast.error("Failed to update service")
+      } finally {
+        setIsSubmitting(false)
       }
     }
   }
@@ -265,23 +333,24 @@ export default function ServicesPage() {
                     onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
-                      const form = new FormData()
-                      form.append('file', file)
+                      setIsPreviewLoading(true)
                       try {
-                        const res = await api.post('/service/upload-image', form, {
-                          headers: { 'Content-Type': 'multipart/form-data' },
-                          cache: false,
-                        })
-                        setNewService((prev) => ({ ...prev, imageUrl: res.data.imageUrl }))
-                        toast.success("Image uploaded")
+                        const webpFile = await compressToWebP(file)
+                        setNewService((prev) => ({
+                          ...prev,
+                          imageFile: webpFile,
+                          previewUrl: URL.createObjectURL(webpFile)
+                        }))
                       } catch {
-                        toast.error("Image upload failed")
+                        toast.error("Image processing failed")
+                      } finally {
+                        setIsPreviewLoading(false)
                       }
                     }}
                   />
-                  {newService.imageUrl && (
+                  {(newService.previewUrl || newService.imageUrl) && (
                     <img
-                      src={newService.imageUrl}
+                      src={newService.previewUrl || newService.imageUrl}
                       alt="preview"
                       className="mt-2 h-24 w-full object-cover rounded"
                     />
@@ -307,8 +376,8 @@ export default function ServicesPage() {
                     />
                   </div>
                 </div>
-                <Button onClick={handleAddService} className="w-full">
-                  Add Service
+                <Button onClick={handleAddService} className="w-full" disabled={isSubmitting || isPreviewLoading}>
+                  {isPreviewLoading ? "Processing Image..." : (isSubmitting ? "Adding..." : "Add Service")}
                 </Button>
               </div>
             </DialogContent>
@@ -383,7 +452,22 @@ export default function ServicesPage() {
               ) : (
                 paginatedServices.map((service) => (
                   <TableRow key={service.id}>
-                    <TableCell className="font-medium">{service.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        {service.imageUrl ? (
+                          <img
+                            src={service.imageUrl}
+                            alt={service.name}
+                            className="h-10 w-10 object-cover rounded-md border border-border"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 bg-secondary rounded-md flex items-center justify-center">
+                            <Scissors className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span>{service.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <span className="px-2 py-1 bg-secondary rounded-md text-sm">
                         {service.category}
@@ -460,6 +544,17 @@ export default function ServicesPage() {
         </div>
       </div>
 
+      {/* Loading Modal/Overlay */}
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-2xl flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+            <p className="text-lg font-medium">Processing Request...</p>
+            <p className="text-sm text-muted-foreground">Uploading data and images to Cloudinary</p>
+          </div>
+        </div>
+      )}
+
       {/* View Dialog */}
       <Dialog open={!!serviceToView} onOpenChange={() => setServiceToView(null)}>
         <DialogContent>
@@ -503,23 +598,24 @@ export default function ServicesPage() {
                   onChange={async (e) => {
                     const file = e.target.files?.[0]
                     if (!file) return
-                    const form = new FormData()
-                    form.append('file', file)
+                    setIsPreviewLoading(true)
                     try {
-                      const res = await api.post('/service/upload-image', form, {
-                        headers: { 'Content-Type': 'multipart/form-data' },
-                        cache: false,
-                      })
-                      setServiceToEdit((prev) => prev ? { ...prev, imageUrl: res.data.imageUrl } : prev)
-                      toast.success("Image uploaded")
+                      const webpFile = await compressToWebP(file)
+                      setServiceToEdit((prev) => prev ? {
+                        ...prev,
+                        imageFile: webpFile,
+                        previewUrl: URL.createObjectURL(webpFile)
+                      } : prev)
                     } catch {
-                      toast.error("Image upload failed")
+                      toast.error("Image processing failed")
+                    } finally {
+                      setIsPreviewLoading(false)
                     }
                   }}
                 />
-                {serviceToEdit.imageUrl && (
+                {(serviceToEdit.previewUrl || serviceToEdit.imageUrl) && (
                   <img
-                    src={serviceToEdit.imageUrl}
+                    src={serviceToEdit.previewUrl || serviceToEdit.imageUrl}
                     alt="preview"
                     className="mt-2 h-24 w-full object-cover rounded"
                   />
@@ -529,7 +625,9 @@ export default function ServicesPage() {
                 <div><Label>Duration (min)</Label><Input type="number" value={serviceToEdit.duration} onChange={(e) => setServiceToEdit({ ...serviceToEdit, duration: parseInt(e.target.value) || 0 })} /></div>
                 <div><Label>Price (৳)</Label><Input type="number" value={serviceToEdit.price} onChange={(e) => setServiceToEdit({ ...serviceToEdit, price: parseFloat(e.target.value) || 0 })} /></div>
               </div>
-              <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
+              <Button className="w-full" onClick={handleEditSave} disabled={isSubmitting || isPreviewLoading}>
+                {isPreviewLoading ? "Processing Image..." : (isSubmitting ? "Updating..." : "Save Changes")}
+              </Button>
             </div>
           )}
         </DialogContent>

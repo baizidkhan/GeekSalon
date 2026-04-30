@@ -14,7 +14,7 @@ export async function getServices(filters?: { name?: string; category?: string; 
 
 export async function getActiveServices() {
   const override = consumeStale(CACHE.SERVICES_ACTIVE)
-  const { data } = await api.get('/service/active', { id: CACHE.SERVICES_ACTIVE, cache: { ttl: TTL, override } })
+  const { data } = await api.get('/service/active', { cache: { ttl: TTL, override } })
   return data
 }
 
@@ -23,14 +23,28 @@ export async function getServiceById(id: string) {
   return data
 }
 
+import axios from 'axios'
+
+// Create a raw axios instance for file uploads to avoid interceptor interference
+const rawApi = axios.create({
+  baseURL: api.defaults.baseURL,
+  withCredentials: true,
+})
+
 export async function createService(serviceData: any) {
-  const { data } = await api.post('/service', serviceData)
+  const isFormData = serviceData instanceof FormData
+  const { data } = await (isFormData ? rawApi : api).post('/service', serviceData, { 
+    cache: false
+  })
   markStale(CACHE.SERVICES, CACHE.SERVICES_ACTIVE, CACHE.DASHBOARD)
   return data
 }
 
 export async function updateService(id: string, serviceData: any) {
-  const { data } = await api.patch(`/service/${id}`, serviceData)
+  const isFormData = serviceData instanceof FormData
+  const { data } = await (isFormData ? rawApi : api).patch(`/service/${id}`, serviceData, { 
+    cache: false
+  })
   markStale(CACHE.SERVICES, CACHE.SERVICES_ACTIVE)
   return data
 }
