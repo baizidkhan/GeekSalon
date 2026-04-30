@@ -49,15 +49,24 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
   const [date, setDate] = useState("")
   const [time, setTime] = useState("")
   const [notes, setNotes] = useState("")
+  const [staff, setStaff] = useState("")
+  const [staffList, setStaffList] = useState<any[]>([])
   const [taxRate, setTaxRate] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Fetch tax rate once on mount
+  // Fetch tax rate and staff list on mount
   useEffect(() => {
     getInvoiceSettings()
       .then((s) => { if (s?.taxRate) setTaxRate(Number(s.taxRate)) })
+      .catch(() => {})
+      
+    api.get("/employee/basic")
+      .then((res) => {
+        const stylists = Array.isArray(res.data) ? res.data.filter((emp: any) => emp.role === "Stylist") : []
+        setStaffList(stylists)
+      })
       .catch(() => {})
   }, [])
 
@@ -68,6 +77,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
     setDate("")
     setTime("")
     setNotes("")
+    setStaff("")
     setErrors({})
     setSuccess(false)
   }, [pkg?.id])
@@ -99,6 +109,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
         date,
         time,
         source: "online",
+        staff: staff === "Any Expert" ? "" : staff,
         ...(notes.trim() ? { notes: notes.trim() } : {}),
       })
       setSuccess(true)
@@ -132,8 +143,8 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
                 Package Booking
               </p>
               <h2 className="text-xl font-serif text-white">{pkg.title}</h2>
-              <p className="text-white/40 text-sm mt-0.5">
-                ${pkg.price} / {pkg.billingCycle || "session"}
+              <p className="text-white/60 text-sm mt-0.5 font-medium">
+                ৳{Number(pkg.price).toLocaleString()} / {pkg.billingCycle || "session"}
               </p>
             </div>
             <button
@@ -166,7 +177,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
           <div className="px-6 py-5 space-y-4">
             {/* Phone */}
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-white/50">
+              <label className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-white/70">
                 <Phone className="w-3 h-3" />
                 Phone Number <span className="text-[#c4a484]">*</span>
               </label>
@@ -176,7 +187,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
                   value={phone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder="017XXXXXXXX"
-                  className={`w-full bg-white/5 border ${errors.phone ? "border-red-500/60" : "border-white/10"} rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#c4a484]/50 focus:bg-white/8 transition-all`}
+                  className={`w-full bg-white/5 border ${errors.phone ? "border-red-500/60" : "border-white/10"} rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#c4a484]/50 focus:bg-white/8 transition-all autofill:shadow-[0_0_0_1000px_#111_inset] autofill:text-white`}
                 />
               </div>
               {errors.phone && <p className="text-xs text-red-400">{errors.phone}</p>}
@@ -184,7 +195,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
 
             {/* Client Name */}
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-white/50">
+              <label className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-white/70">
                 <User className="w-3 h-3" />
                 Full Name <span className="text-[#c4a484]">*</span>
               </label>
@@ -196,7 +207,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
                   setErrors((er) => ({ ...er, clientName: "" }))
                 }}
                 placeholder="Enter your full name"
-                className={`w-full bg-white/5 border ${errors.clientName ? "border-red-500/60" : "border-white/10"} rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#c4a484]/50 focus:bg-white/8 transition-all`}
+                className={`w-full bg-white/5 border ${errors.clientName ? "border-red-500/60" : "border-white/10"} rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#c4a484]/50 focus:bg-white/8 transition-all autofill:shadow-[0_0_0_1000px_#111_inset] autofill:text-white`}
               />
               {errors.clientName && <p className="text-xs text-red-400">{errors.clientName}</p>}
             </div>
@@ -214,7 +225,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
                   min={MIN_DATE}
                   max={MAX_DATE}
                   onChange={(e) => { setDate(e.target.value); setErrors((er) => ({ ...er, date: "" })) }}
-                  className={`w-full bg-white/5 border ${errors.date ? "border-red-500/60" : "border-white/10"} rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#c4a484]/50 transition-all [color-scheme:dark]`}
+                  className={`w-full bg-white/5 border ${errors.date ? "border-red-500/60" : "border-white/10"} rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#c4a484]/50 transition-all [color-scheme:dark] autofill:shadow-[0_0_0_1000px_#111_inset] autofill:text-white`}
                 />
                 {errors.date && <p className="text-xs text-red-400">{errors.date}</p>}
               </div>
@@ -228,39 +239,58 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
                   type="time"
                   value={time}
                   onChange={(e) => { setTime(e.target.value); setErrors((er) => ({ ...er, time: "" })) }}
-                  className={`w-full bg-white/5 border ${errors.time ? "border-red-500/60" : "border-white/10"} rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#c4a484]/50 transition-all [color-scheme:dark]`}
+                  className={`w-full bg-white/5 border ${errors.time ? "border-red-500/60" : "border-white/10"} rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#c4a484]/50 transition-all [color-scheme:dark] autofill:shadow-[0_0_0_1000px_#111_inset] autofill:text-white`}
                 />
                 {errors.time && <p className="text-xs text-red-400">{errors.time}</p>}
               </div>
             </div>
 
+            {/* Preferred Expert */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-white/70">
+                <User className="w-3 h-3" />
+                Preferred Expert
+              </label>
+              <select
+                value={staff}
+                onChange={(e) => setStaff(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#c4a484]/50 transition-all appearance-none"
+                style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'white\' stroke-width=\'1.5\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M19.5 8.25l-7.5 7.5-7.5-7.5\' /%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1rem' }}
+              >
+                <option value="Any Expert" className="bg-[#111]">Any Expert (Default)</option>
+                {staffList.map((s) => (
+                  <option key={s.id} value={s.name} className="bg-[#111]">{s.name}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Notes */}
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-white/50">
+              <label className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-white/70">
                 <FileText className="w-3 h-3" />
-                Notes <span className="text-white/20 normal-case font-normal">(optional)</span>
+                Notes <span className="text-white/40 normal-case font-normal">(optional)</span>
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any special requests or preferences..."
+                placeholder="Any special requests..."
                 rows={2}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#c4a484]/50 focus:bg-white/8 transition-all resize-none"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#c4a484]/50 focus:bg-white/8 transition-all resize-none autofill:shadow-[0_0_0_1000px_#111_inset] autofill:text-white"
               />
             </div>
 
             {/* Price Breakdown */}
             <div className="mt-4 p-4 bg-white/5 border border-white/5 space-y-3 rounded-lg">
               <div className="flex justify-between text-sm">
-                <span className="text-white/40 tracking-wider text-[10px] uppercase">Subtotal</span>
-                <span className="text-white/80 font-medium">৳{parseFloat(String(pkg.price)).toLocaleString()}</span>
+                <span className="text-white/70 tracking-wider text-[10px] uppercase font-bold">Subtotal</span>
+                <span className="text-white font-medium">৳{parseFloat(String(pkg.price)).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-white/40 tracking-wider text-[10px] uppercase">Tax ({taxRate}%)</span>
-                <span className="text-white/80 font-medium">৳{(parseFloat(String(pkg.price)) * taxRate / 100).toFixed(2)}</span>
+                <span className="text-white/70 tracking-wider text-[10px] uppercase font-bold">Tax ({taxRate}%)</span>
+                <span className="text-white font-medium">৳{(parseFloat(String(pkg.price)) * taxRate / 100).toFixed(2)}</span>
               </div>
               <div className="pt-3 border-t border-white/10 flex justify-between items-baseline">
-                <span className="uppercase tracking-[0.2em] text-[10px] text-white/60 font-bold">Total Price</span>
+                <span className="uppercase tracking-[0.2em] text-[10px] text-white font-bold">Total Price</span>
                 <span className="text-2xl font-serif text-[#c4a484]">৳{calcTotal(pkg.price, taxRate)}</span>
               </div>
             </div>
