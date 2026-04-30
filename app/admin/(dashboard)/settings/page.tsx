@@ -13,9 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Building2, Clock, CreditCard, Loader2, Image as ImageIcon, Plus, X, Upload } from "lucide-react"
+import { Building2, Clock, CreditCard, Loader2, Image as ImageIcon, Plus, X, Upload, Video, Trash2, Pencil, Sparkles } from "lucide-react"
 import { ClockPickerField } from "@/components/ui/clock-picker"
-import { getBusinessInfo, updateBusinessInfo, getAppointmentSettings, updateAppointmentSettings, getInvoiceSettings, updateInvoiceSettings, getWhyChooseUsImages, updateWhyChooseUsImages, type BusinessInfo, type AppointmentSetting, type InvoiceSetting } from "@admin/api/settings/settings"
+import { 
+  getBusinessInfo, 
+  updateBusinessInfo, 
+  getAppointmentSettings, 
+  updateAppointmentSettings, 
+  getInvoiceSettings, 
+  updateInvoiceSettings, 
+  getWhyChooseUsImages, 
+  updateWhyChooseUsImages, 
+  getAppreciateExcellence,
+  upsertAppreciateExcellence,
+  type BusinessInfo, 
+  type AppointmentSetting, 
+  type InvoiceSetting 
+} from "@admin/api/settings/settings"
 import { toast } from "sonner"
 import { useBusiness } from "@/context/BusinessContext"
 
@@ -47,13 +61,23 @@ export default function SettingsPage() {
     taxRate: 15,
   })
 
+  // Appreciate Excellence states
+  const [savingAppreciation, setSavingAppreciation] = useState(false)
+  const [appreciationForm, setAppreciationForm] = useState<{
+    title: string;
+    description: string;
+    videoFile: File | null;
+    videoUrl?: string;
+  }>({ title: '', description: '', videoFile: null })
+
   useEffect(() => {
     async function loadSettings() {
-      const [businessResult, appointmentResult, invoiceResult, whyChooseUsResult] = await Promise.allSettled([
+      const [businessResult, appointmentResult, invoiceResult, whyChooseUsResult, appreciationResult] = await Promise.allSettled([
         getBusinessInfo(),
         getAppointmentSettings(),
         getInvoiceSettings(),
         getWhyChooseUsImages(),
+        getAppreciateExcellence(),
       ])
       if (businessResult.status === 'fulfilled' && businessResult.value) setBusinessSettings(businessResult.value)
       if (appointmentResult.status === 'fulfilled' && appointmentResult.value) setBookingSettings(appointmentResult.value)
@@ -66,6 +90,14 @@ export default function SettingsPage() {
           whyChooseUsResult.value.image3 || null,
           whyChooseUsResult.value.image4 || null,
         ])
+      }
+      if (appreciationResult.status === 'fulfilled' && appreciationResult.value) {
+        setAppreciationForm({
+          title: appreciationResult.value.title || '',
+          description: appreciationResult.value.description || '',
+          videoFile: null,
+          videoUrl: appreciationResult.value.videoUrl
+        })
       }
       setLoading(false)
     }
@@ -185,6 +217,37 @@ export default function SettingsPage() {
     }
   }
 
+  const handleSaveAppreciation = async () => {
+    if (!appreciationForm.title && !appreciationForm.videoFile && !appreciationForm.videoUrl) {
+       toast.error("Please fill in the title or upload a video")
+       return
+    }
+
+    setSavingAppreciation(true)
+    try {
+      const formData = new FormData()
+      if (appreciationForm.title) formData.append('title', appreciationForm.title)
+      if (appreciationForm.description) formData.append('description', appreciationForm.description)
+      if (appreciationForm.videoFile) formData.append('video', appreciationForm.videoFile)
+
+      const response = await upsertAppreciateExcellence(formData)
+      if (response) {
+        setAppreciationForm({
+          title: response.title || '',
+          description: response.description || '',
+          videoFile: null,
+          videoUrl: response.videoUrl
+        })
+      }
+      toast.success("Excellence record updated successfully")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to save appreciation record")
+    } finally {
+      setSavingAppreciation(false)
+    }
+  }
+
   return (
     <div className="premium-page p-4 sm:p-6 md:p-8">
       <div className="mb-6">
@@ -194,7 +257,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="grid w-full max-w-2xl grid-cols-2 sm:grid-cols-4">
+        <TabsList className="grid w-full max-w-3xl grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">Business</span>
@@ -210,6 +273,10 @@ export default function SettingsPage() {
           <TabsTrigger value="whychooseus" className="flex items-center gap-2">
             <ImageIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Why Us</span>
+          </TabsTrigger>
+          <TabsTrigger value="appreciation" className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden sm:inline">Excellence</span>
           </TabsTrigger>
         </TabsList>
 
@@ -437,6 +504,125 @@ export default function SettingsPage() {
               <div className="text-sm text-amber-800">
                 <p className="font-semibold mb-1">Important Note on Indices:</p>
                 <p className="opacity-90">Images are updated based on their position. To update a specific slot, ensure you upload the image to the correct card above.</p>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="appreciation">
+          <div className="bg-card rounded-xl border border-border p-6">
+            <div className="mb-6">
+              <h3 className="font-medium text-foreground">Appreciate Excellence</h3>
+              <p className="text-sm text-muted-foreground">Manage the showcase video and award details displayed on your home page</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl">
+              {/* Form */}
+              <div className="space-y-4">
+                <div className="p-6 bg-slate-50/50 rounded-xl border border-slate-200">
+                  <div className="space-y-5">
+                    <div>
+                      <Label>Award Title</Label>
+                      <Input 
+                        placeholder="e.g. Best Salon of the Year" 
+                        value={appreciationForm.title}
+                        onChange={(e) => setAppreciationForm({ ...appreciationForm, title: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Award Description</Label>
+                      <Textarea 
+                        placeholder="Describe the achievement..." 
+                        rows={4}
+                        value={appreciationForm.description}
+                        onChange={(e) => setAppreciationForm({ ...appreciationForm, description: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Showcase Video</Label>
+                      <div className="mt-1 relative group aspect-video rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden hover:border-blue-400 transition-all">
+                        {appreciationForm.videoFile ? (
+                          <div className="text-center p-4">
+                            <Video className="w-10 h-10 text-blue-500 mx-auto mb-2" />
+                            <p className="text-sm font-medium truncate max-w-[250px]">{appreciationForm.videoFile.name}</p>
+                            <p className="text-[10px] text-muted-foreground mt-1">Ready to upload</p>
+                            <button 
+                              onClick={() => setAppreciationForm({ ...appreciationForm, videoFile: null })}
+                              className="text-xs text-destructive hover:underline mt-2 font-medium"
+                            >
+                              Replace Video
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center gap-2 p-6 text-center w-full h-full justify-center">
+                            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-1">
+                              <Upload className="w-6 h-6" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-600">Click to upload video</span>
+                            <span className="text-xs text-slate-400">MP4, WebM or MOV (Max 50MB)</span>
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="video/*" 
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) setAppreciationForm({ ...appreciationForm, videoFile: file })
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                    <Button 
+                      className="w-full h-11" 
+                      onClick={handleSaveAppreciation} 
+                      disabled={savingAppreciation}
+                    >
+                      {savingAppreciation && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Excellence Settings
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="space-y-4">
+                <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Current Live Preview</Label>
+                <div className="rounded-xl border border-border overflow-hidden bg-white shadow-sm">
+                  <div className="aspect-video bg-slate-900 flex items-center justify-center relative">
+                    {appreciationForm.videoUrl ? (
+                      <video 
+                        key={appreciationForm.videoUrl}
+                        src={appreciationForm.videoUrl} 
+                        className="w-full h-full object-cover"
+                        controls
+                      />
+                    ) : (
+                      <div className="text-center p-8">
+                        <Video className="w-12 h-12 text-slate-700 mx-auto mb-3 opacity-20" />
+                        <p className="text-slate-500 text-sm italic">No video uploaded yet</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-start gap-3 mb-3">
+                      <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                      <h4 className="text-lg font-bold text-slate-900 leading-tight">
+                        {appreciationForm.title || "Excellence Title"}
+                      </h4>
+                    </div>
+                    <p className="text-sm text-slate-600 leading-relaxed italic">
+                      "{appreciationForm.description || "The achievement description will appear here..."}"
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex gap-3 mt-4">
+                  <div className="w-5 h-5 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">i</div>
+                  <p className="text-xs text-blue-800 leading-relaxed">
+                    This section highlights your salon's major achievements. The video and text will be displayed prominently on your public home page.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

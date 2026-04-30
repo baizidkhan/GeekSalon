@@ -74,3 +74,15 @@ export async function updateWhyChooseUsImages(formData: FormData) {
   })
   return data
 }
+// Appreciate Excellence
+export async function getAppreciateExcellence() {
+  const { data } = await api.get('/appreciate-excellence', { cache: false })
+  return data
+}
+
+export async function upsertAppreciateExcellence(formData: FormData) {
+  const { data } = await api.post('/appreciate-excellence', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return data
+}

@@ -33,6 +33,7 @@ export function BookingModal() {
     const [taxRate, setTaxRate] = useState(0)
     const [errors, setErrors] = useState<Record<string, string>>({})
 
+    const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
     const [formData, setFormData] = useState({
         clientName: "",
         phoneNumber: "",
@@ -57,6 +58,9 @@ export function BookingModal() {
                     serviceId: selectedService.id,
                     serviceName: selectedService.name
                 }))
+                setSelectedServiceIds([selectedService.id])
+            } else {
+                setSelectedServiceIds([])
             }
             if (preSelectedStylist) {
                 setFormData(prev => ({
@@ -113,7 +117,7 @@ export function BookingModal() {
         const newErrors: Record<string, string> = {}
 
         if (currentStep === 1) {
-            if (!formData.serviceId) newErrors.serviceId = "Please select a service"
+            if (selectedServiceIds.length === 0) newErrors.serviceId = "Please select at least one service"
         } else if (currentStep === 2) {
             if (!formData.date) newErrors.date = "Please select a date"
             if (!formData.time) {
@@ -183,8 +187,21 @@ export function BookingModal() {
         }
     }
 
-    const currentService = availableServices.find(s => s.id === formData.serviceId) || selectedService
-    const subtotal = currentService ? Number(currentService.price) : 0
+    const toggleService = (id: string) => {
+        setSelectedServiceIds(prev => 
+            prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+        )
+        if (errors.serviceId) {
+            setErrors(prev => {
+                const next = { ...prev }
+                delete next.serviceId
+                return next
+            })
+        }
+    }
+
+    const currentServices = availableServices.filter(s => selectedServiceIds.includes(s.id))
+    const subtotal = currentServices.reduce((acc, s) => acc + Number(s.price), 0)
     const tax = subtotal * (taxRate / 100)
     const total = subtotal + tax
 
@@ -200,7 +217,7 @@ export function BookingModal() {
                 clientName: formData.clientName,
                 date: formData.date,
                 time: formData.time,
-                services: [formData.serviceName],
+                services: currentServices.map(s => s.name),
                 status: "Confirmed",
                 staff: formData.staff === "Any Expert" ? "" : formData.staff,
                 source: "Online"
@@ -270,35 +287,60 @@ export function BookingModal() {
                         {step === 1 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] uppercase tracking-[0.2em] text-white/40">Select Service</Label>
-                                    <Select
-                                        disabled={!!selectedService}
-                                        value={formData.serviceId}
-                                        onValueChange={(val) => handleSelectChange("serviceId", val)}
-                                    >
-                                        <SelectTrigger className={`bg-transparent border-white/10 h-14 rounded-none focus:ring-white/20 ${errors.serviceId ? 'border-red-500' : ''}`}>
-                                            <SelectValue placeholder="Choose a service" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-[#101010] border-white/10 text-white">
-                                            {availableServices?.map((s) => (
-                                                <SelectItem key={s.id} value={s.id} className="focus:bg-white focus:text-black">
-                                                    {s.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Label className="text-[11px] uppercase tracking-[0.2em] text-white/70 font-semibold">
+                                        {selectedService ? "Service" : "Select Services"}
+                                    </Label>
+                                    
+                                    {selectedService ? (
+                                        <div className="h-14 flex items-center px-4 border border-white/10 bg-white/5 text-white">
+                                            {selectedService.name}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <div className="max-h-[220px] overflow-y-auto border border-white/10 bg-[#151515] p-2 custom-scrollbar">
+                                                {availableServices.map((s) => (
+                                                    <div 
+                                                        key={s.id} 
+                                                        onClick={() => toggleService(s.id)}
+                                                        className={`flex items-center justify-between p-3 mb-1 cursor-pointer transition-all duration-200 ${
+                                                            selectedServiceIds.includes(s.id) 
+                                                            ? "bg-white text-black" 
+                                                            : "hover:bg-white/5 text-white/70"
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-4 h-4 border flex items-center justify-center ${
+                                                                selectedServiceIds.includes(s.id) ? "border-black" : "border-white/30"
+                                                            }`}>
+                                                                {selectedServiceIds.includes(s.id) && <Check className="w-3 h-3" />}
+                                                            </div>
+                                                            <span className="text-[13px] font-medium">{s.name}</span>
+                                                        </div>
+                                                        <span className={`text-[10px] font-mono ${
+                                                            selectedServiceIds.includes(s.id) ? "text-black/60" : "text-white/40"
+                                                        }`}>
+                                                            ৳{Number(s.price).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="text-[10px] text-white/30 italic">
+                                                You can select multiple treatments for a complete makeover experience.
+                                            </p>
+                                        </div>
+                                    )}
                                     {errors.serviceId && <p className="text-[10px] text-red-500 tracking-wider">{errors.serviceId}</p>}
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] uppercase tracking-[0.2em] text-white/40">Preferred Stylist</Label>
+                                    <Label className="text-[11px] uppercase tracking-[0.2em] text-white/70 font-semibold">Preferred Stylist</Label>
                                     <Select 
                                         disabled={!!preSelectedStylist}
                                         value={formData.staff} 
                                         onValueChange={(val) => handleSelectChange("staff", val)}
                                     >
-                                        <SelectTrigger className={`bg-transparent border-white/10 h-14 rounded-none focus:ring-white/20 ${errors.staff ? 'border-red-500' : ''} ${preSelectedStylist ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                                            <SelectValue placeholder="Select an expert" />
+                                        <SelectTrigger className={`bg-transparent border-white/10 h-14 rounded-none focus:ring-white/20 text-white ${errors.staff ? 'border-red-500' : ''} ${preSelectedStylist ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                                            <SelectValue placeholder="Select an expert" className="text-white" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-[#101010] border-white/10 text-white">
                                             <SelectItem value="Any Expert" className="focus:bg-white focus:text-black">
@@ -314,7 +356,7 @@ export function BookingModal() {
                                     {errors.staff && <p className="text-[10px] text-red-500 tracking-wider">{errors.staff}</p>}
                                 </div>
 
-                                {currentService && (
+                                {selectedServiceIds.length > 0 && (
                                     <div className="mt-8 p-6 bg-white/5 border border-white/5 space-y-3">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-white/40">Subtotal</span>
@@ -337,7 +379,7 @@ export function BookingModal() {
                         {step === 2 && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] uppercase tracking-[0.2em] text-white/40">Select Date</Label>
+                                    <Label className="text-[11px] uppercase tracking-[0.2em] text-white/70 font-semibold">Select Date</Label>
                                     <div className="relative">
                                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                                         <Input
@@ -353,7 +395,7 @@ export function BookingModal() {
                                     {errors.date && <p className="text-[10px] text-red-500 tracking-wider">{errors.date}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] uppercase tracking-[0.2em] text-white/40">Select Time</Label>
+                                    <Label className="text-[11px] uppercase tracking-[0.2em] text-white/70 font-semibold">Select Time</Label>
                                     <div className="relative">
                                         <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                                         <Input
@@ -373,7 +415,7 @@ export function BookingModal() {
                         {step === 3 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] uppercase tracking-[0.2em] text-white/40">Full Name</Label>
+                                    <Label className="text-[11px] uppercase tracking-[0.2em] text-white/70 font-semibold">Full Name</Label>
                                     <div className="relative">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                                         <Input
@@ -381,13 +423,13 @@ export function BookingModal() {
                                             value={formData.clientName}
                                             onChange={handleInputChange}
                                             placeholder="John Doe"
-                                            className={`bg-transparent border-white/10 h-14 pl-12 rounded-none focus-visible:ring-white/20 placeholder:text-white/10 ${errors.clientName ? 'border-red-500' : ''}`}
+                                            className={`bg-transparent border-white/10 h-14 pl-12 rounded-none focus-visible:ring-white/20 placeholder:text-white/10 text-white autofill:shadow-[0_0_0_1000px_#101010_inset] autofill:text-white ${errors.clientName ? 'border-red-500' : ''}`}
                                         />
                                     </div>
                                     {errors.clientName && <p className="text-[10px] text-red-500 tracking-wider">{errors.clientName}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] uppercase tracking-[0.2em] text-white/40">Phone Number</Label>
+                                    <Label className="text-[11px] uppercase tracking-[0.2em] text-white/70 font-semibold">Phone Number</Label>
                                     <div className="relative">
                                         <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                                         <Input
@@ -395,7 +437,7 @@ export function BookingModal() {
                                             value={formData.phoneNumber}
                                             onChange={handleInputChange}
                                             placeholder="017XXXXXXXX"
-                                            className={`bg-transparent border-white/10 h-14 pl-12 rounded-none focus-visible:ring-white/20 placeholder:text-white/10 ${errors.phoneNumber ? 'border-red-500' : ''}`}
+                                            className={`bg-transparent border-white/10 h-14 pl-12 rounded-none focus-visible:ring-white/20 placeholder:text-white/10 text-white autofill:shadow-[0_0_0_1000px_#101010_inset] autofill:text-white ${errors.phoneNumber ? 'border-red-500' : ''}`}
                                         />
                                     </div>
                                     {errors.phoneNumber && <p className="text-[10px] text-red-500 tracking-wider">{errors.phoneNumber}</p>}
@@ -407,21 +449,25 @@ export function BookingModal() {
                         {step === 4 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                                 <div className="p-6 border border-white/10 bg-white/5 space-y-4">
-                                    <h4 className="text-[11px] uppercase tracking-[0.2em] text-white/40 mb-4">Booking Summary</h4>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-white/40">Service</span>
-                                        <span className="font-medium">{formData.serviceName}</span>
+                                    <h4 className="text-[11px] uppercase tracking-[0.2em] text-white/60 mb-4 font-bold">Booking Summary</h4>
+                                    <div className="flex justify-between text-sm items-start">
+                                        <span className="text-white/70">Services</span>
+                                        <div className="flex flex-col items-end gap-1">
+                                            {currentServices.map(s => (
+                                                <span key={s.id} className="font-medium">{s.name}</span>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-white/40">Expert</span>
+                                        <span className="text-white/70">Expert</span>
                                         <span className="font-medium">{formData.staff || "Any Expert"}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-white/40">Date & Time</span>
+                                        <span className="text-white/70">Date & Time</span>
                                         <span className="font-medium">{formData.date} at {formData.time}</span>
                                     </div>
                                     <div className="pt-4 border-t border-white/10 flex justify-between font-semibold">
-                                        <span className="text-white/40">Total Amount</span>
+                                        <span className="text-white/70">Total Amount</span>
                                         <span className="text-xl">৳ {total.toFixed(2)}</span>
                                     </div>
                                 </div>
@@ -446,7 +492,7 @@ export function BookingModal() {
                         {step < 4 ? (
                             <Button
                                 onClick={handleNext}
-                                disabled={step === 1 && !formData.serviceId}
+                                disabled={step === 1 && selectedServiceIds.length === 0}
                                 className="flex-1 h-14 rounded-none bg-white text-black hover:bg-stone-200 transition-all duration-300 uppercase tracking-widest text-[11px]"
                             >
                                 Continue

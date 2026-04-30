@@ -1,6 +1,16 @@
 import Link from "next/link";
 
-export function TheExperienceSection() {
+interface ExcellenceData {
+    title?: string;
+    description?: string;
+    videoUrl?: string;
+}
+
+export function TheExperienceSection({ excellence }: { excellence: ExcellenceData | null }) {
+    const displayTitle = excellence?.title || "Crafted for Those Who Appreciate Excellence";
+    const displayDescription = excellence?.description || "Every visit to PrivéforYou is a journey through refined luxury. From our curated environments to our bespoke treatments, we create moments that transcend the ordinary.";
+    const videoUrl = excellence?.videoUrl;
+
     return (
         <section className="bg-[#0b0b0b] px-4 py-20 sm:px-6 lg:px-8">
             <div className="mx-auto w-full max-w-7xl">
@@ -12,11 +22,13 @@ export function TheExperienceSection() {
                             The Experience
                         </p>
                         <h2 className="mb-6 text-4xl font-semibold leading-tight text-white sm:text-5xl" style={{ fontFamily: 'Playfair Display, serif' }}>
-                            Crafted for Those Who{" "}
-                            <span className="text-stone-400">Appreciate Excellence</span>
+                            {displayTitle.split('Appreciate Excellence')[0]}
+                            <span className="text-stone-400">
+                                {displayTitle.includes('Appreciate Excellence') ? 'Appreciate Excellence' : displayTitle}
+                            </span>
                         </h2>
                         <p className="mb-10 max-w-md text-sm leading-7 text-white/60" style={{ fontFamily: 'Inter, sans-serif' }}>
-                            Every visit to PrivéforYou is a journey through refined luxury. From our curated environments to our bespoke treatments, we create moments that transcend the ordinary.
+                            {displayDescription}
                         </p>
 
                         <Link href={"/services"}>
@@ -30,35 +42,38 @@ export function TheExperienceSection() {
                         </Link>
                     </div>
 
-                    {/* Right: Video placeholder */}
-                    <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-zinc-400 via-stone-500 to-neutral-700">
-                        <div className="absolute inset-0 bg-black/30" />
+                    {/* Right: Video Container */}
+                    <div className="relative aspect-video overflow-hidden rounded-sm bg-gradient-to-br from-zinc-800 via-stone-900 to-black group">
+                        {videoUrl ? (
+                            <video
+                                src={videoUrl}
+                                className="h-full w-full object-cover opacity-80 transition-opacity duration-700 group-hover:opacity-100"
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                            />
+                        ) : (
+                            <div className="absolute inset-0 bg-black/30" />
+                        )}
 
-                        {/* Play button */}
-                        <button
-                            type="button"
-                            aria-label="Play video"
-                            className="absolute inset-0 flex items-center justify-center group"
-                        >
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/50 bg-white/10 backdrop-blur-sm transition-all duration-300 group-hover:bg-white/20 group-hover:scale-110">
-                                <svg
-                                    className="ml-1 h-6 w-6 text-white"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path d="M8 5v14l11-7z" />
-                                </svg>
-                            </div>
-                        </button>
+                        {/* Aesthetic Overlays */}
+                        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-                        {/* Dummy label */}
+                        {/* Dynamic label */}
                         <div className="absolute bottom-4 left-4">
                             <div
-                                className="border border-white/35 bg-black/25 px-4 py-2 text-[8px] uppercase tracking-[0.3em] text-white/90 backdrop-blur-sm"
+                                className="border border-white/20 bg-black/40 px-4 py-2 text-[8px] uppercase tracking-[0.3em] text-white/90 backdrop-blur-md"
                                 style={{ fontFamily: 'Inter, sans-serif' }}
                             >
-                                Video Placeholder
+                                {videoUrl ? "Featured Experience" : "Video Placeholder"}
                             </div>
+                        </div>
+
+                        {/* Top corner detail */}
+                        <div className="absolute top-4 right-4">
+                            <div className="h-[1px] w-8 bg-white/30" />
+                            <div className="mt-1 h-[1px] w-4 bg-white/20" />
                         </div>
                     </div>
 
