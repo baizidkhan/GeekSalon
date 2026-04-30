@@ -115,6 +115,9 @@ export default function BillingPage() {
   })
 
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
+  const [viewEditStatus, setViewEditStatus] = useState<Invoice["status"]>("Unpaid")
+  const [viewEditPaidAmount, setViewEditPaidAmount] = useState("")
+  const [viewIsSaving, setViewIsSaving] = useState(false)
   const [editInvoiceState, setEditInvoiceState] = useState<Invoice | null>(null)
   const [deleteInvoiceState, setDeleteInvoiceState] = useState<Invoice | null>(null)
 
@@ -221,6 +224,30 @@ export default function BillingPage() {
       fetchInvoices()
     } catch (err) {
       console.error(err)
+    }
+  }
+
+  useEffect(() => {
+    if (viewInvoice) {
+      setViewEditStatus(viewInvoice.status)
+      setViewEditPaidAmount(viewInvoice.paidAmount != null ? String(viewInvoice.paidAmount) : "")
+    }
+  }, [viewInvoice])
+
+  const handleViewSave = async () => {
+    if (!viewInvoice) return
+    setViewIsSaving(true)
+    try {
+      await updateInvoice(viewInvoice.id, {
+        status: viewEditStatus,
+        paidAmount: viewEditStatus === "Partial" ? parseFloat(viewEditPaidAmount) : null,
+      })
+      setViewInvoice(null)
+      fetchInvoices()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setViewIsSaving(false)
     }
   }
 
@@ -579,33 +606,82 @@ export default function BillingPage() {
       <Dialog open={!!viewInvoice} onOpenChange={() => setViewInvoice(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Invoice Details</DialogTitle></DialogHeader>
-          {viewInvoice && (
-            <>
-              <div className="space-y-4 mt-4 pb-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label className="text-muted-foreground">Invoice No</Label><p className="font-medium">{viewInvoice.invoiceNo}</p></div>
-                  <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
-                  <div><Label className="text-muted-foreground">Services</Label><p className="font-medium">{viewInvoice.services.join(", ")}</p></div>
-                  <div><Label className="text-muted-foreground">Amount</Label><p className="font-medium">৳{viewInvoice.amount.toLocaleString()}</p></div>
-                  {viewInvoice.status === "Partial" && (
-                    <>
-                      <div><Label className="text-muted-foreground">Amount Paid</Label><p className="font-medium text-green-600">৳{(viewInvoice.paidAmount ?? 0).toLocaleString()}</p></div>
-                      <div><Label className="text-muted-foreground">Amount Due</Label><p className="font-medium text-red-500">৳{Math.max(0, viewInvoice.amount - (viewInvoice.paidAmount ?? 0)).toLocaleString()}</p></div>
-                    </>
-                  )}
-                  <div><Label className="text-muted-foreground">Payment Method</Label><p className="font-medium">{viewInvoice.paymentMethod}</p></div>
-                  <div><Label className="text-muted-foreground">Date</Label><p className="font-medium">{viewInvoice.date}</p></div>
-                  <div><Label className="text-muted-foreground">Status</Label><p className="font-medium">{getStatusLabel(viewInvoice.status)}</p></div>
+          {viewInvoice && (() => {
+            const parsedPaid = parseFloat(viewEditPaidAmount)
+            const partialError = viewEditStatus === "Partial" && viewEditPaidAmount !== "" && parsedPaid >= viewInvoice.amount
+              ? `Must be less than ৳${viewInvoice.amount.toLocaleString()}`
+              : null
+            const canSave = (viewEditStatus !== "Partial" || (viewEditPaidAmount !== "" && parsedPaid > 0 && !partialError))
+            const hasChanged = viewEditStatus !== viewInvoice.status ||
+              (viewEditStatus === "Partial" && viewEditPaidAmount !== String(viewInvoice.paidAmount ?? ""))
+
+            return (
+              <>
+                <div className="space-y-4 mt-4 pb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><Label className="text-muted-foreground">Invoice No</Label><p className="font-medium">{viewInvoice.invoiceNo}</p></div>
+                    <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
+                    <div><Label className="text-muted-foreground">Services</Label><p className="font-medium">{viewInvoice.services.join(", ")}</p></div>
+                    <div><Label className="text-muted-foreground">Amount</Label><p className="font-medium">৳{viewInvoice.amount.toLocaleString()}</p></div>
+                    <div><Label className="text-muted-foreground">Payment Method</Label><p className="font-medium">{viewInvoice.paymentMethod}</p></div>
+                    <div><Label className="text-muted-foreground">Date</Label><p className="font-medium">{viewInvoice.date}</p></div>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <div className={`grid gap-3 items-end ${viewEditStatus === "Partial" ? "grid-cols-2" : "grid-cols-1"}`}>
+                      <div>
+                        <Label>Status</Label>
+                        <Select value={viewEditStatus} onValueChange={(v: Invoice["status"]) => {
+                          setViewEditStatus(v)
+                          if (v !== "Partial") setViewEditPaidAmount("")
+                        }}>
+                          <SelectTrigger className="mt-1 w-full"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Paid">Paid</SelectItem>
+                            <SelectItem value="Unpaid">Unpaid</SelectItem>
+                            <SelectItem value="Partial">Partial</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {viewEditStatus === "Partial" && (
+                        <div>
+                          <Label>Amount Paid (৳)</Label>
+                          <Input
+                            type="number"
+                            className={`mt-1 ${partialError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                            value={viewEditPaidAmount}
+                            onChange={(e) => setViewEditPaidAmount(e.target.value)}
+                            placeholder={`< ৳${viewInvoice.amount.toLocaleString()}`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {viewEditStatus === "Partial" && (
+                      <p className="text-xs mt-1 min-h-[1rem]">
+                        {partialError
+                          ? <span className="text-destructive">{partialError}</span>
+                          : viewEditPaidAmount !== "" && parsedPaid > 0
+                          ? <span className="text-muted-foreground">Due: ৳{Math.max(0, viewInvoice.amount - parsedPaid).toLocaleString()}</span>
+                          : null}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <DialogFooter className="mt-2">
-                <Button variant="outline" className="w-full" onClick={() => handlePrintInvoice(viewInvoice)}>
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Invoice
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+
+                <div className="flex flex-col gap-2 mt-2 pt-4 border-t border-border/60 -mx-6 sm:-mx-7 px-6 sm:px-7 pb-4 sm:pb-6 bg-muted/30">
+                  {hasChanged && (
+                    <Button className="w-full" onClick={handleViewSave} disabled={!canSave || viewIsSaving}>
+                      {viewIsSaving ? "Saving…" : "Save Changes"}
+                    </Button>
+                  )}
+                  <Button variant="outline" className="w-full" onClick={() => handlePrintInvoice(viewInvoice)}>
+                    <Printer className="w-4 h-4 mr-2" />Print Invoice
+                  </Button>
+                </div>
+              </>
+            )
+          })()}
         </DialogContent>
       </Dialog>
 
