@@ -544,7 +544,14 @@ export default function AppointmentsPage() {
   const maxDateObject = new Date(`${maxDate}T23:59:59`)
 
   useEffect(() => {
-  }, [])
+    if (searchParams.get("new") === "true") {
+      setIsDialogOpen(true)
+      // Optional: remove the query param so it doesn't stay in the URL
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("new")
+      router.replace(`/admin/appointments${params.toString() ? `?${params.toString()}` : ""}`)
+    }
+  }, [searchParams, router])
 
 
   const normalizePhone = (value: string) => {
