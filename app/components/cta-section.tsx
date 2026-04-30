@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function CtaSection() {
     return (
         <section className="bg-[#0b0b0b] px-4 py-24 sm:px-6 lg:px-8">
@@ -25,13 +27,15 @@ export function CtaSection() {
                     >
                         Enter Dashboard
                     </a>
-                    <button
-                        type="button"
-                        className="border border-white/40 bg-transparent px-10 py-4 text-[11px] font-medium uppercase tracking-[0.3em] text-white transition-all duration-300 hover:border-white hover:bg-white hover:text-black"
-                        style={{ fontFamily: 'Inter, sans-serif' }}
-                    >
-                        Packages
-                    </button>
+                    < Link href="/packages">
+                        <button
+                            type="button"
+                            className="border border-white/40 bg-transparent px-10 py-4 text-[11px] font-medium uppercase tracking-[0.3em] text-white transition-all duration-300 hover:border-white hover:bg-white hover:text-black"
+                            style={{ fontFamily: 'Inter, sans-serif' }}
+                        >
+                            Packages
+                        </button>
+                    </Link>
                 </div>
 
             </div>
