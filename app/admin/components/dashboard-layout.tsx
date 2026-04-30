@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Sidebar } from "./sidebar"
+import { UnlinkedFingerprintModal } from "./unlinked-fingerprint-modal"
 import { Menu, Sparkles } from "lucide-react"
 import { useBusiness } from "@/context/BusinessContext"
 
@@ -112,6 +113,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           margin-bottom: 0.5rem; /* Additional bottom margin */
         }
       `}</style>
+      <UnlinkedFingerprintModal />
       <div className="admin-root flex min-h-screen bg-[var(--background)]">
         {/* Mobile backdrop */}
       {sidebarOpen && (

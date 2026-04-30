@@ -47,6 +47,17 @@ export async function syncAttendanceNow(): Promise<void> {
   await api.post('/attendance/sync', {})
 }
 
+export async function reprocessAttendanceForDevice(deviceUid: string): Promise<void> {
+  await api.post(`/attendance/reprocess/device/${encodeURIComponent(deviceUid)}`, {})
+}
+
+export async function suppressUnlinkedScan(deviceUid: string, attendanceDate: string): Promise<void> {
+  await api.post(
+    `/attendance/suppress/device/${encodeURIComponent(deviceUid)}/date/${encodeURIComponent(attendanceDate)}`,
+    {},
+  )
+}
+
 export async function getAttendanceSummary(year: number, month: number): Promise<MonthSummary> {
   const { data } = await api.get('/attendance/summary', { params: { year, month }, cache: false })
   return data

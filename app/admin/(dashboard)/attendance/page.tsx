@@ -1,6 +1,10 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+} from "recharts"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useBiometricSocket, type AttendanceUpdatedPayload } from "@/hooks/use-biometric-socket"
 import { Button } from "@/components/ui/button"
@@ -60,21 +64,8 @@ import {
 import { Label } from "@/components/ui/label"
 import { ClockPickerField } from "@/components/ui/clock-picker"
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts"
-import {
   getAttendance,
   getTodayAttendance,
-  getAttendanceSummary,
   syncAttendanceNow,
   updateAttendanceRecord,
   deleteAttendanceRecord,
@@ -82,7 +73,6 @@ import {
   formatWorkingTime,
   type AttendanceRecord,
   type AttendanceStatus,
-  type MonthSummary,
 } from "@admin/api/attendance/attendance"
 import { getEmployees } from "@admin/api/employees/employees"
 import { toast } from "sonner"
@@ -93,7 +83,7 @@ const YEARS = ["2024", "2025", "2026"]
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 const PAGE_SIZE = 10
 
-type ViewMode = "today" | "calendar"
+type ViewMode = "today" | "calendar" | "date"
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
@@ -133,10 +123,6 @@ function DayCell({ status }: { status: AttendanceStatus | null | "off" | "future
   return null
 }
 
-// ─── Summary bar chart ────────────────────────────────────────────────────────
-
-const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
 // ─── CSV Export ───────────────────────────────────────────────────────────────
 
 function exportCSV(records: AttendanceRecord[], label: string) {
@@ -162,8 +148,6 @@ function exportCSV(records: AttendanceRecord[], label: string) {
 export default function AttendancePage() {
   const today = new Date()
   const todayDate = today.toISOString().split("T")[0]
-  const currentYear = today.getFullYear()
-  const currentMonth = today.getMonth() + 1
   const [viewMode, setViewMode] = useState<ViewMode>("today")
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 500)
@@ -174,12 +158,9 @@ export default function AttendancePage() {
 
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([])
   const [monthRecords, setMonthRecords] = useState<AttendanceRecord[]>([])
-  const [summary, setSummary] = useState<MonthSummary | null>(null)
-  const [employees, setEmployees] = useState<{ id: string; name: string; status?: string }[]>([])
+  const [employees, setEmployees] = useState<{ id: string; name: string; status?: string; fingerprintCode?: string | null }[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [trendData, setTrendData] = useState<{ month: string; Present: number; Late: number; Absent: number }[]>([])
-  const [trendLoading, setTrendLoading] = useState(true)
   const [recordToDelete, setRecordToDelete] = useState<AttendanceRecord | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -189,6 +170,16 @@ export default function AttendancePage() {
   const [editCheckOut, setEditCheckOut] = useState("")
   const [editStatus, setEditStatus] = useState<AttendanceStatus | "">("")
   const [isSaving, setIsSaving] = useState(false)
+
+  // date picker modal
+  const [calPickerOpen, setCalPickerOpen] = useState(false)
+  const [calPickerYear, setCalPickerYear] = useState(today.getFullYear())
+  const [calPickerMonth, setCalPickerMonth] = useState(today.getMonth())
+  const [calPickerSelectedDate, setCalPickerSelectedDate] = useState<string | null>(null)
+
+  // date view (main page)
+  const [pickerDate, setPickerDate] = useState<string | null>(null)
+  const [pickerDateRecords, setPickerDateRecords] = useState<AttendanceRecord[]>([])
 
   // ── Fetch today ────────────────────────────────────────────────────────────
   const loadToday = useCallback(async (showError = true) => {
@@ -210,12 +201,8 @@ export default function AttendancePage() {
     setLoading(true)
     try {
       const m = Number(month) + 1  // convert from 0-indexed
-      const [recs, summ] = await Promise.all([
-        getAttendance({ month: m, year: Number(year) }),
-        getAttendanceSummary(Number(year), m),
-      ])
+      const recs = await getAttendance({ month: m, year: Number(year) })
       setMonthRecords(recs)
-      setSummary(summ)
     } catch {
       if (showError) {
         toast.error("Failed to load attendance")
@@ -231,6 +218,9 @@ export default function AttendancePage() {
       await syncAttendanceNow()
       if (viewMode === "today") {
         await loadToday()
+      } else if (viewMode === "date" && pickerDate) {
+        const recs = await getAttendance({ date: pickerDate })
+        setPickerDateRecords(recs)
       } else {
         await loadMonth()
       }
@@ -239,39 +229,23 @@ export default function AttendancePage() {
     } finally {
       setSyncing(false)
     }
-  }, [loadMonth, loadToday, viewMode])
+  }, [loadMonth, loadToday, viewMode, pickerDate])
 
   useEffect(() => {
+    // Always load both: month for the bar chart, today for the pie chart and today table
     if (viewMode === "today") {
       loadToday()
-      return
+      loadMonth(false)
+    } else {
+      loadMonth()
+      loadToday(false)
     }
-    loadMonth()
   }, [viewMode, loadToday, loadMonth])
   useEffect(() => {
     getEmployees()
       .then((list: any[]) => setEmployees(Array.isArray(list) ? list : []))
       .catch(() => { })
   }, [])
-
-  useEffect(() => {
-    setTrendLoading(true)
-    Promise.all(
-      Array.from({ length: 12 }, (_, i) =>
-        getAttendanceSummary(currentYear, i + 1).catch(() => null)
-      )
-    ).then(results => {
-      setTrendData(
-        results.map((s, i) => ({
-          month: MONTHS_SHORT[i],
-          Present: s?.present ?? 0,
-          Late: s?.late ?? 0,
-          Absent: s?.absent ?? 0,
-        }))
-      )
-      setTrendLoading(false)
-    })
-  }, [currentYear])
 
   const handleAttendanceUpdated = useCallback((payload: AttendanceUpdatedPayload) => {
     if (viewMode === "today") {
@@ -281,11 +255,18 @@ export default function AttendancePage() {
       return
     }
 
+    if (viewMode === "date" && pickerDate) {
+      if (payload.attendanceDates.includes(pickerDate)) {
+        void getAttendance({ date: pickerDate }).then(setPickerDateRecords).catch(() => { })
+      }
+      return
+    }
+
     const monthPrefix = `${year}-${String(Number(month) + 1).padStart(2, "0")}`
     if (payload.attendanceDates.some((date) => date.startsWith(monthPrefix))) {
       void loadMonth(false)
     }
-  }, [loadMonth, loadToday, month, todayDate, viewMode, year])
+  }, [loadMonth, loadToday, month, todayDate, viewMode, year, pickerDate])
 
   useBiometricSocket({ onAttendanceUpdated: handleAttendanceUpdated })
 
@@ -322,47 +303,54 @@ export default function AttendancePage() {
   const todayTotal = Math.max(1, Math.ceil(todayFiltered.length / PAGE_SIZE))
   const todayPaged = todayFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  // In today view, compute summary from todayRecords so cards always match the table.
-  // In calendar view, use the API summary for the selected month.
-  const displaySummary = useMemo<MonthSummary | null>(() => {
-    if (viewMode === "today") {
-      return {
-        from: todayDate,
-        to: todayDate,
-        total: todayRecords.length,
-        present: todayRecords.filter(r => r.status === "present").length,
-        late: todayRecords.filter(r => r.status === "late").length,
-        half_day: todayRecords.filter(r => r.status === "half_day").length,
-        absent: todayRecords.filter(r => r.status === "absent").length,
-        no_exit: todayRecords.filter(r => !r.status && !!r.checkInTime && !r.checkOutTime).length,
-      }
+  const pickerDateFiltered = useMemo(() => {
+    return pickerDateRecords.filter(r =>
+      r.employeeName.toLowerCase().includes(debouncedSearch.toLowerCase()) &&
+      (empFilter === "all" || r.employeeId === empFilter)
+    )
+  }, [pickerDateRecords, debouncedSearch, empFilter])
+
+  const pickerDateTotal = Math.max(1, Math.ceil(pickerDateFiltered.length / PAGE_SIZE))
+  const pickerDatePaged = pickerDateFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Number of employees who have a fingerprint linked — Y-axis ceiling for the bar chart
+  const fingerprintedCount = useMemo(
+    () => employees.filter(e => e.fingerprintCode).length,
+    [employees],
+  )
+
+  // ── Chart data ─────────────────────────────────────────────────────────────
+  const { barData, pieData } = useMemo(() => {
+    // Bar chart — always the full current month, one bar per day
+    const dayMap = new Map<number, { present: number; late: number; half_day: number; absent: number }>()
+    for (const r of monthRecords) {
+      const d = Number(r.attendanceDate.split("-")[2])
+      if (!dayMap.has(d)) dayMap.set(d, { present: 0, late: 0, half_day: 0, absent: 0 })
+      if (r.status) dayMap.get(d)![r.status as keyof ReturnType<typeof dayMap.get>]++
     }
-    return summary
-  }, [viewMode, todayRecords, summary, todayDate])
+    const bar = Array.from({ length: daysInMonth }, (_, i) => {
+      const d = i + 1
+      const dateStr = `${year}-${String(Number(month) + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+      if (dateStr > todayStr) return null
+      const day = dayMap.get(d) ?? { present: 0, late: 0, half_day: 0, absent: 0 }
+      return { day: String(d), ...day }
+    }).filter(Boolean) as { day: string; present: number; late: number; half_day: number; absent: number }[]
 
-  const pieChartData = useMemo(() => {
-    if (!displaySummary) return []
-    return [
-      { name: "Present", value: displaySummary.present, color: "#22c55e" },
-      { name: "Late", value: displaySummary.late, color: "#f59e0b" },
-      { name: "Half Day", value: displaySummary.half_day, color: "#fb923c" },
-      { name: "Absent", value: displaySummary.absent, color: "#f87171" },
+    // Pie chart — selected date records when in date view, otherwise today
+    const pieSource = viewMode === "date" ? pickerDateRecords : todayRecords
+    const tc = { present: 0, late: 0, half_day: 0, absent: 0 }
+    for (const r of pieSource) {
+      if (r.status && r.status in tc) tc[r.status as keyof typeof tc]++
+    }
+    const pie = [
+      { name: "Present",  value: tc.present,  fill: "#22c55e" },
+      { name: "Late",     value: tc.late,      fill: "#f59e0b" },
+      { name: "Half Day", value: tc.half_day,  fill: "#f97316" },
+      { name: "Absent",   value: tc.absent,    fill: "#ef4444" },
     ].filter(d => d.value > 0)
-  }, [displaySummary])
 
-  const todayStats = useMemo(() => {
-    const checkedInIds = new Set(todayRecords.filter(r => r.checkInTime).map(r => r.employeeId))
-    const working = todayRecords.filter(r => r.checkInTime && !r.checkOutTime && !r.status).length
-    const onLeave = employees.filter(e => e.status === 'ON_LEAVE').length
-    const notCheckedIn = employees.filter(e => e.status !== 'ON_LEAVE' && !checkedInIds.has(e.id)).length
-    return { working, onLeave, absent: notCheckedIn }
-  }, [todayRecords, employees])
-
-  const workforcePieData = useMemo(() => [
-    { name: "Working", value: todayStats.working, color: "#3b82f6" },
-    { name: "Not In", value: todayStats.absent, color: "#f43f5e" },
-    { name: "On Leave", value: todayStats.onLeave, color: "#94a3b8" },
-  ].filter(d => d.value > 0), [todayStats])
+    return { barData: bar, pieData: pie }
+  }, [todayRecords, monthRecords, pickerDateRecords, daysInMonth, year, month, todayStr, viewMode])
 
   function toTimeInput(iso: string | null): string {
     if (!iso) return ""
@@ -381,6 +369,51 @@ export default function AttendancePage() {
     setEditStatus(r.status ?? "")
   }
 
+  function openCalPicker() {
+    setCalPickerYear(today.getFullYear())
+    setCalPickerMonth(today.getMonth())
+    setCalPickerSelectedDate(null)
+    setCalPickerOpen(true)
+  }
+
+  async function handleCalPickerDateClick(dateStr: string) {
+    setCalPickerSelectedDate(dateStr)
+    setCalPickerOpen(false)
+    setPickerDate(dateStr)
+    setPickerDateRecords([])
+    setViewMode("date")
+    setPage(1)
+    setLoading(true)
+    try {
+      const recs = await getAttendance({ date: dateStr })
+      setPickerDateRecords(recs)
+    } catch {
+      toast.error("Failed to load attendance for this date")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function prevCalPickerMonth() {
+    if (calPickerMonth === 0) {
+      setCalPickerMonth(11)
+      setCalPickerYear(y => y - 1)
+    } else {
+      setCalPickerMonth(m => m - 1)
+    }
+    setCalPickerSelectedDate(null)
+  }
+
+  function nextCalPickerMonth() {
+    if (calPickerMonth === 11) {
+      setCalPickerMonth(0)
+      setCalPickerYear(y => y + 1)
+    } else {
+      setCalPickerMonth(m => m + 1)
+    }
+    setCalPickerSelectedDate(null)
+  }
+
   async function handleSaveEdit() {
     if (!recordToEdit) return
     setIsSaving(true)
@@ -393,6 +426,7 @@ export default function AttendancePage() {
       const updated = await updateAttendanceRecord(recordToEdit.id, payload)
       setTodayRecords(prev => prev.map(r => r.id === updated.id ? updated : r))
       setMonthRecords(prev => prev.map(r => r.id === updated.id ? updated : r))
+      setPickerDateRecords(prev => prev.map(r => r.id === updated.id ? updated : r))
       toast.success(`Updated attendance for ${recordToEdit.employeeName}`)
       setRecordToEdit(null)
     } catch (err: unknown) {
@@ -405,6 +439,8 @@ export default function AttendancePage() {
   function handleDownload() {
     if (viewMode === "today") {
       exportCSV(todayFiltered, `today-${todayStr}`)
+    } else if (viewMode === "date" && pickerDate) {
+      exportCSV(pickerDateFiltered, `attendance-${pickerDate}`)
     } else {
       exportCSV(monthRecords, `${MONTH_NAMES[Number(month)]}-${year}`)
     }
@@ -417,9 +453,13 @@ export default function AttendancePage() {
       await deleteAttendanceRecord(record.id)
       setTodayRecords(prev => prev.filter(r => r.id !== record.id))
       setMonthRecords(prev => prev.filter(r => r.id !== record.id))
+      setPickerDateRecords(prev => prev.filter(r => r.id !== record.id))
       toast.success(`Attendance record deleted for ${record.employeeName}`)
       if (viewMode === "today") {
         await loadToday()
+      } else if (viewMode === "date" && pickerDate) {
+        const recs = await getAttendance({ date: pickerDate })
+        setPickerDateRecords(recs)
       } else {
         await loadMonth()
       }
@@ -432,7 +472,7 @@ export default function AttendancePage() {
     }
   }
 
-  const totalPages = viewMode === "today" ? todayTotal : calendarTotal
+  const totalPages = viewMode === "today" ? todayTotal : viewMode === "date" ? pickerDateTotal : calendarTotal
 
   return (
     <div className="premium-page p-6 space-y-6">
@@ -442,11 +482,17 @@ export default function AttendancePage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            <span>Dashboard</span><span className="mx-1">/</span>
-            <span className="text-foreground">Attendance</span>
+            {viewMode === "today"
+              ? today.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+              : viewMode === "date" && pickerDate
+              ? new Date(pickerDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+              : `${MONTH_NAMES[Number(month)]} ${year}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={openCalPicker} title="Browse attendance by date">
+            <Calendar className="w-4 h-4" />
+          </Button>
           <Button variant="outline" size="sm" onClick={refreshCurrentView} disabled={loading || syncing}>
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${(loading || syncing) ? "animate-spin" : ""}`} />
             {syncing ? "Syncing" : "Refresh"}
@@ -469,263 +515,169 @@ export default function AttendancePage() {
       </div>
 
 
-      {/* ── Charts Row ────────────────────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row gap-4">
+      {/* ── Charts ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* Monthly Trend – 65% */}
-        <div className="lg:w-[65%] bg-card rounded-xl border border-border p-5">
-          <div className="flex items-start justify-between mb-5">
+        {/* Bar chart — each bar = one day, segments coloured by status */}
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
+          <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="font-semibold text-foreground">Monthly Trend</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Year-round attendance breakdown</p>
+              <h3 className="font-semibold text-foreground text-sm">Attendance Breakdown</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {`${MONTH_NAMES[Number(month)]} ${year} · each bar is one day`}
+              </p>
             </div>
-            <div className="flex items-center gap-3">
+            {/* colour legend */}
+            <div className="flex items-center gap-3 flex-wrap justify-end">
               {[
-                { color: "#22c55e", label: "Present" },
-                { color: "#f59e0b", label: "Late" },
-                { color: "#f87171", label: "Absent" },
-              ].map(item => (
-                <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                  {item.label}
+                { label: "Present",  color: "#22c55e" },
+                { label: "Late",     color: "#f59e0b" },
+                { label: "Half Day", color: "#f97316" },
+                { label: "Absent",   color: "#ef4444" },
+              ].map(({ label, color }) => (
+                <div key={label} className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: color }} />
+                  {label}
                 </div>
               ))}
             </div>
           </div>
-          {trendLoading ? (
-            <div className="h-[240px] flex items-center justify-center">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Loading trend data…
-              </div>
+          {barData.length === 0 ? (
+            <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">
+              No data for {MONTH_NAMES[Number(month)]} {year}
             </div>
-          ) : null}
-          <ResponsiveContainer width="100%" height={trendLoading ? 0 : 240}>
-            <BarChart data={trendData} barSize={14} barCategoryGap="30%">
-              <defs>
-                <linearGradient id="gradPresent" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4ade80" />
-                  <stop offset="100%" stopColor="#16a34a" />
-                </linearGradient>
-                <linearGradient id="gradLate" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#fbbf24" />
-                  <stop offset="100%" stopColor="#d97706" />
-                </linearGradient>
-                <linearGradient id="gradAbsent" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#fca5a5" />
-                  <stop offset="100%" stopColor="#dc2626" />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.8} />
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
-                dy={6}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
-                width={36}
-              />
-              <Tooltip
-                cursor={{ fill: "#f8fafc", radius: 4 } as any}
-                contentStyle={{
-                  borderRadius: 10,
-                  border: "1px solid #e2e8f0",
-                  fontSize: 12,
-                  padding: "8px 14px",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-                }}
-                labelStyle={{ fontWeight: 600, marginBottom: 2, color: "#1e293b" }}
-                itemStyle={{ color: "#475569" }}
-              />
-              <Bar dataKey="Present" stackId="a" fill="url(#gradPresent)" animationDuration={600} />
-              <Bar dataKey="Late" stackId="a" fill="url(#gradLate)" animationDuration={700} />
-              <Bar dataKey="Absent" stackId="a" fill="url(#gradAbsent)" radius={[4, 4, 0, 0]} animationDuration={800} />
-            </BarChart>
-          </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={barData} barSize={10} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={2}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  domain={[0, fingerprintedCount > 0 ? fingerprintedCount : 'auto']}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--muted))", radius: 4 }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", color: "hsl(var(--foreground))" }}
+                />
+                <Bar dataKey="present"  stackId="a" fill="#22c55e" name="Present"  radius={[0, 0, 0, 0]} />
+                <Bar dataKey="late"     stackId="a" fill="#f59e0b" name="Late" />
+                <Bar dataKey="half_day" stackId="a" fill="#f97316" name="Half Day" />
+                <Bar dataKey="absent"   stackId="a" fill="#ef4444" name="Absent"   radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
-        {/* Attendance Distribution – 35% */}
-        <div className="lg:w-[35%] bg-card rounded-xl border border-border p-5 flex flex-col">
+        {/* Pie chart — selected date or today's snapshot */}
+        <div className="bg-card rounded-xl border border-border p-5 flex flex-col">
           <div className="mb-4">
-            <h2 className="font-semibold text-foreground">Today's Attendance</h2>
+            <h3 className="font-semibold text-foreground text-sm">
+              {viewMode === "date" && pickerDate
+                ? `Date: ${pickerDate.split("-").reverse().map((p, i) => i === 2 ? p.slice(2) : p).join("-")} Status`
+                : "Today's Status"}
+            </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {viewMode === "today"
-                ? "Today's breakdown"
-                : `${MONTH_NAMES[Number(month)]} ${year} breakdown`}
+              {viewMode === "date" ? "Selected date snapshot" : "Live today snapshot"}
             </p>
           </div>
-          <div className="flex-1 flex flex-col">
-            {displaySummary && pieChartData.length > 0 ? (
-              <>
-                <ResponsiveContainer width="100%" height={190}>
-                  <PieChart>
-                    <Pie
-                      data={pieChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={82}
-                      paddingAngle={3}
-                      dataKey="value"
-                      animationDuration={700}
-                    >
-                      {pieChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: 10,
-                        border: "1px solid #e2e8f0",
-                        fontSize: 12,
-                        padding: "8px 14px",
-                        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-                      }}
-                      formatter={(value: number, name: string) => [`${value}`, name]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  {[
-                    { label: "Present", value: displaySummary.present, color: "#22c55e", bg: "bg-green-50", text: "text-green-700" },
-                    { label: "Late", value: displaySummary.late, color: "#f59e0b", bg: "bg-amber-50", text: "text-amber-700" },
-                    { label: "Half Day", value: displaySummary.half_day, color: "#fb923c", bg: "bg-orange-50", text: "text-orange-700" },
-                    { label: "Absent", value: displaySummary.absent, color: "#f87171", bg: "bg-red-50", text: "text-red-700" },
-                  ].map(item => (
-                    <div key={item.label} className={`${item.bg} rounded-lg px-3 py-2 flex items-center gap-2`}>
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-muted-foreground leading-none mb-0.5">{item.label}</p>
-                        <p className={`text-sm font-bold ${item.text}`}>{item.value}</p>
-                      </div>
+          {pieData.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground text-sm py-6">
+              <Calendar className="w-8 h-8 opacity-25" />
+              {viewMode === "date" ? "No records for this date" : "No records today"}
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={72}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} stroke="transparent" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", color: "hsl(var(--foreground))" }}
+                    formatter={(value: number, name: string) => [value, name]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-3 w-full space-y-1.5">
+                {pieData.map((entry, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
+                      <span className="text-muted-foreground">{entry.name}</span>
                     </div>
-                  ))}
-                </div>
-              </>
-            ) : viewMode === "calendar" && (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <div className="w-14 h-14 rounded-full bg-muted/40 flex items-center justify-center mx-auto mb-3">
-                    <Calendar className="w-6 h-6 opacity-30" />
+                    <span className="font-semibold text-foreground tabular-nums">{entry.value}</span>
                   </div>
-                  <p className="text-sm">No summary data</p>
-                  <p className="text-xs mt-0.5 opacity-60">Load attendance to see distribution</p>
-                </div>
+                ))}
               </div>
-            )}
-            {viewMode === "today" && (
-              <div className="mt-3">
-                {workforcePieData.length > 0 ? (
-                  <>
-                    <ResponsiveContainer width="100%" height={190}>
-                      <PieChart>
-                        <Pie
-                          data={workforcePieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={55}
-                          outerRadius={82}
-                          paddingAngle={3}
-                          dataKey="value"
-                          animationDuration={700}
-                        >
-                          {workforcePieData.map((entry, index) => (
-                            <Cell key={`wf-${index}`} fill={entry.color} stroke="transparent" />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            borderRadius: 10,
-                            border: "1px solid #e2e8f0",
-                            fontSize: 12,
-                            padding: "8px 14px",
-                            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-                          }}
-                          formatter={(value: number, name: string) => [`${value}`, name]}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex items-center justify-center gap-4 mt-4">
-                      {[
-                        { name: "Working", color: "#3b82f6", value: todayStats.working },
-                        { name: "Not In", color: "#f43f5e", value: todayStats.absent },
-                        { name: "On Leave", color: "#94a3b8", value: todayStats.onLeave },
-                      ].map(item => (
-                        <div key={item.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                          <span>{item.name}</span>
-                          <span className="font-semibold text-foreground">{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted-foreground text-center py-4">No data yet</p>
-                )}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-
       </div>
 
       {/* ── Main Table Card ───────────────────────────────────────────── */}
       <div className="bg-card rounded-xl border border-border">
 
         {/* Table toolbar */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border gap-3 flex-wrap">
-          <h2 className="font-semibold text-foreground">
-            {viewMode === "today"
-              ? `Today · ${today.toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })}`
-              : `${MONTH_NAMES[Number(month)]} ${year}`}
-          </h2>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search employee"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1) }}
-                className="pl-8 h-8 w-44 text-sm"
-              />
-            </div>
+        <div className="flex items-center px-5 py-4 border-b border-border gap-2 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search employee"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              className="pl-8 h-8 w-44 text-sm"
+            />
+          </div>
 
-            {viewMode === "today" && (
-              <Select value={empFilter} onValueChange={v => { setEmpFilter(v); setPage(1) }}>
-                <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+          {(viewMode === "today" || viewMode === "date") && (
+            <Select value={empFilter} onValueChange={v => { setEmpFilter(v); setPage(1) }}>
+              <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All employees</SelectItem>
+                {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+
+          {viewMode === "calendar" && (
+            <>
+              <Select value={month} onValueChange={v => { setMonth(v); setPage(1) }}>
+                <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All employees</SelectItem>
-                  {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                  {MONTH_NAMES.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
-            )}
+              <Select value={year} onValueChange={v => { setYear(v); setPage(1) }}>
+                <SelectTrigger className="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {YEARS.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </>
+          )}
 
-            {viewMode === "calendar" && (
-              <>
-                <Select value={month} onValueChange={v => { setMonth(v); setPage(1) }}>
-                  <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {MONTH_NAMES.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Select value={year} onValueChange={v => { setYear(v); setPage(1) }}>
-                  <SelectTrigger className="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {YEARS.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </>
-            )}
-
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={handleDownload}>
-              <Download className="w-3.5 h-3.5" />Export CSV
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 ml-auto" onClick={handleDownload}>
+            <Download className="w-3.5 h-3.5" />Export CSV
+          </Button>
         </div>
 
         {/* ── TODAY view ─────────────────────────────────────────────── */}
@@ -757,6 +709,77 @@ export default function AttendancePage() {
                 </TableRow>
               ) : (
                 todayPaged.map(r => (
+                  <TableRow key={r.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                          {r.employeeName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                        </div>
+                        <span className="font-medium text-sm">{r.employeeName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{r.machineId}</TableCell>
+                    <TableCell className="text-sm">{formatTime(r.checkInTime)}</TableCell>
+                    <TableCell className="text-sm">{formatTime(r.checkOutTime)}</TableCell>
+                    <TableCell className="text-sm">{formatWorkingTime(r.workingMinutes)}</TableCell>
+                    <TableCell><StatusBadge status={r.status} checkInTime={r.checkInTime} checkOutTime={r.checkOutTime} /></TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openEditDialog(r)}
+                          disabled={deletingId === r.id}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => setRecordToDelete(r)}
+                          disabled={deletingId === r.id}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
+
+        {/* ── DATE view ──────────────────────────────────────────────── */}
+        {viewMode === "date" && (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead><span className="flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Fingerprint className="w-3.5 h-3.5 text-primary/60" />Device UID</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary/60" />Check In</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary/60" />Check Out</span></TableHead>
+                <TableHead>Working Hours</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Loading…</TableCell></TableRow>
+              ) : pickerDatePaged.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Calendar className="w-8 h-8 opacity-30" />
+                      <p className="text-sm">No attendance records for this date</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                pickerDatePaged.map(r => (
                   <TableRow key={r.id}>
                     <TableCell>
                       <div className="flex items-center gap-2.5">
@@ -892,6 +915,8 @@ export default function AttendancePage() {
           <span>
             {viewMode === "today"
               ? `${todayFiltered.length} record(s) today`
+              : viewMode === "date"
+              ? `${pickerDateFiltered.length} record(s)`
               : `${calendarRows.length} employee(s)`}
           </span>
           <div className="flex items-center gap-1">
@@ -972,6 +997,69 @@ export default function AttendancePage() {
               {isSaving ? <><Clock className="mr-2 h-4 w-4 animate-spin" />Saving…</> : "Save Changes"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Date picker modal ─────────────────────────────────────────── */}
+      <Dialog open={calPickerOpen} onOpenChange={(open) => {
+        setCalPickerOpen(open)
+        if (!open) setCalPickerSelectedDate(null)
+      }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-primary" />
+              Browse by Date
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Month navigation */}
+          <div className="flex items-center justify-between px-1 -mt-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={prevCalPickerMonth}>
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </Button>
+            <span className="text-sm font-semibold">{MONTH_NAMES[calPickerMonth]} {calPickerYear}</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={nextCalPickerMonth}>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 gap-y-1">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => (
+              <div key={d} className="text-center text-xs text-muted-foreground pb-1 font-medium">{d}</div>
+            ))}
+            {Array.from({ length: new Date(calPickerYear, calPickerMonth, 1).getDay() }, (_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
+            {Array.from({ length: new Date(calPickerYear, calPickerMonth + 1, 0).getDate() }, (_, i) => {
+              const day = i + 1
+              const dateStr = `${calPickerYear}-${String(calPickerMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+              const isFuture = dateStr > todayStr
+              const isToday = dateStr === todayStr
+              const isSelected = dateStr === calPickerSelectedDate
+              return (
+                <button
+                  key={day}
+                  disabled={isFuture}
+                  onClick={() => handleCalPickerDateClick(dateStr)}
+                  className={[
+                    "h-8 rounded-md text-xs flex items-center justify-center transition-colors w-full",
+                    isFuture ? "text-muted-foreground/30 cursor-not-allowed" : "hover:bg-muted cursor-pointer",
+                    isToday && !isSelected ? "font-bold text-primary ring-1 ring-inset ring-primary/40" : "",
+                    isSelected ? "bg-primary text-primary-foreground hover:bg-primary font-semibold" : "",
+                  ].filter(Boolean).join(" ")}
+                >
+                  {day}
+                </button>
+              )
+            })}
+          </div>
+
+          <p className="text-xs text-center text-muted-foreground -mt-1 pb-1">
+            Click a date to view its attendance on the main page
+          </p>
+
         </DialogContent>
       </Dialog>
 
