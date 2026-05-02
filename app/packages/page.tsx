@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ChevronLeft, Sparkles } from "lucide-react"
 import { getPackages } from "@admin/api/packages/packages"
 import PackagesGrid from "./PackagesGrid"
+import ContactSpecialistsModal from "./ContactSpecialistsModal"
 import { SiteHeader } from "@/app/components/site-header"
 import { Footer } from "@/app/components/footer"
 
@@ -50,12 +51,7 @@ export default async function PackagesPage() {
             Can't find exactly what you're looking for? Our consultants can help you create a
             bespoke experience tailored specifically to your needs and preferences.
           </p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 text-[#c4a484] text-xs font-bold tracking-widest uppercase hover:text-white transition-colors"
-          >
-            Contact our specialists <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          <ContactSpecialistsModal />
         </div>
       </main>
 
@@ -65,17 +61,3 @@ export default async function PackagesPage() {
   )
 }
 
-function ArrowRight({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-    </svg>
-  )
-}
