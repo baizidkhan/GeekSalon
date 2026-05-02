@@ -780,7 +780,7 @@ export default function EmployeesPage() {
                   <div className="col-span-2">
                     <Label>Full Name</Label>
                     <Input
-                      value={editDraft.name}
+                      value={editDraft.name || ""}
                       onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })}
                     />
                   </div>
@@ -856,7 +856,7 @@ export default function EmployeesPage() {
                   <div>
                     <Label>Phone Number</Label>
                     <Input
-                      value={editDraft.phone}
+                      value={editDraft.phone || ""}
                       onChange={(e) => setEditDraft({ ...editDraft, phone: e.target.value })}
                     />
                   </div>
@@ -864,7 +864,7 @@ export default function EmployeesPage() {
                     <Label>Email</Label>
                     <Input
                       type="email"
-                      value={editDraft.email}
+                      value={editDraft.email || ""}
                       onChange={(e) => setEditDraft({ ...editDraft, email: e.target.value })}
                     />
                   </div>
@@ -872,7 +872,7 @@ export default function EmployeesPage() {
                     <Label>Salary (৳)</Label>
                     <Input
                       type="number"
-                      value={editDraft.salary}
+                      value={editDraft.salary ?? ""}
                       onChange={(e) => setEditDraft({ ...editDraft, salary: Number(e.target.value) })}
                     />
                   </div>
@@ -880,14 +880,14 @@ export default function EmployeesPage() {
                     <Label>Commission (%)</Label>
                     <Input
                       type="number"
-                      value={editDraft.commission}
+                      value={editDraft.commission ?? ""}
                       onChange={(e) => setEditDraft({ ...editDraft, commission: Number(e.target.value) })}
                     />
                   </div>
                   <div>
                     <Label>Shift</Label>
                     <Input
-                      value={editDraft.shift}
+                      value={editDraft.shift || ""}
                       onChange={(e) => setEditDraft({ ...editDraft, shift: e.target.value })}
                     />
                   </div>
@@ -895,7 +895,7 @@ export default function EmployeesPage() {
                     <Label>Experience (years)</Label>
                     <Input
                       type="number"
-                      value={editDraft.experience}
+                      value={editDraft.experience ?? ""}
                       onChange={(e) => setEditDraft({ ...editDraft, experience: Number(e.target.value) })}
                     />
                   </div>
@@ -903,7 +903,7 @@ export default function EmployeesPage() {
                     <Label>Join Date</Label>
                     <Input
                       type="date"
-                      value={editDraft.joinDate}
+                      value={editDraft.joinDate || ""}
                       onChange={(e) => setEditDraft({ ...editDraft, joinDate: e.target.value })}
                     />
                   </div>
