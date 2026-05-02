@@ -32,6 +32,23 @@ export function markStale(...keys: string[]) {
 }
 
 /**
+ * Immediately remove the axios-cache-interceptor localStorage entries that start with a prefix.
+ */
+export function clearCacheByPrefix(prefix: string) {
+  if (typeof window === 'undefined') return
+  try {
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.startsWith(`aci:${prefix}`) || key === `aci:${prefix}`)) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k))
+  } catch { }
+}
+
+/**
  * Immediately remove the axios-cache-interceptor localStorage entry for one or
  * more keys.  Call this when you need the cache gone NOW rather than waiting
  * for the next fetch to consume a stale flag.
@@ -41,7 +58,7 @@ export function removeFromCache(...keys: string[]) {
   keys.forEach((k) => {
     try {
       localStorage.removeItem(`aci:${k}`)
-    } catch {}
+    } catch { }
   })
 }
 
