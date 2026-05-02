@@ -51,6 +51,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "@admin/api/appointments/appointments"
 import { getClients } from "@admin/api/clients/clients"
 import { getActiveServices } from "@admin/api/services/services"
+import { getPackages } from "@admin/api/packages/packages"
 import { getStylists } from "@admin/api/employees/employees"
 import { getAppointmentSettings, getInvoiceSettings } from "@admin/api/settings/settings"
 import { toast } from "sonner"
@@ -65,6 +66,8 @@ interface AppointmentRecord {
   services: string[] | null
   source: string
   status: string
+  isPackage?: boolean
+  packageName?: string
 }
 
 interface ClientOption {
@@ -87,6 +90,8 @@ interface Appointment {
   time: string
   status: AppointmentStatus
   source: AppointmentSource
+  isPackage: boolean
+  packageName: string
 }
 
 const statusOptions: AppointmentStatus[] = ["Pending", "Confirmed", "Checked In", "In Service", "Completed", "Cancelled"]
@@ -477,6 +482,8 @@ function toUIAppointment(r: AppointmentRecord): Appointment {
     time: toInputTime(r.time),
     status: r.status as AppointmentStatus,
     source: normalizeSource(r.source),
+    isPackage: r.isPackage || false,
+    packageName: r.packageName || "",
   }
 }
 
@@ -488,6 +495,8 @@ const emptyForm = {
   date: "",
   time: "",
   source: "Online" as AppointmentSource,
+  isPackage: false,
+  packageName: "",
 }
 
 type NewAppointmentField = "phone" | "client" | "services" | "employee" | "date" | "time"
@@ -499,6 +508,7 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [serviceOptions, setServiceOptions] = useState<{ name: string; price: number }[]>([])
+  const [packageOptions, setPackageOptions] = useState<{ name: string; price: number }[]>([])
   const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
   const [clientOptions, setClientOptions] = useState<ClientOption[]>([])
 
@@ -609,6 +619,12 @@ export default function AppointmentsPage() {
     getActiveServices()
       .then((list: { name: string; price: number }[]) => setServiceOptions(list.map((s) => ({ name: s.name, price: s.price }))))
       .catch(console.error)
+    getPackages()
+      .then((res) => {
+        const list = res?.data ?? res ?? []
+        setPackageOptions(list.map((p: any) => ({ name: p.title || p.name, price: p.price })))
+      })
+      .catch(console.error)
     getStylists()
       .then((list: { name: string }[]) => setEmployeeOptions(list.map((e) => e.name)))
       .catch(console.error)
@@ -691,7 +707,12 @@ export default function AppointmentsPage() {
     const errors: Partial<Record<NewAppointmentField, string>> = {}
     if (!newAppointment.phone.trim()) errors.phone = "Please fill this field."
     if (!newAppointment.client.trim()) errors.client = "Please fill this field."
-    if (newAppointment.services.length === 0) errors.services = "Please select at least one service."
+    if (!newAppointment.isPackage && newAppointment.services.length === 0) {
+      errors.services = "Please select at least one service."
+    }
+    if (newAppointment.isPackage && !newAppointment.packageName) {
+      errors.services = "Please select a package."
+    }
     if (!newAppointment.employee.trim()) errors.employee = "Please fill this field."
     if (!newAppointment.date.trim()) {
       errors.date = "Please fill this field."
@@ -723,7 +744,9 @@ export default function AppointmentsPage() {
         date: newAppointment.date,
         time: newAppointment.time,
         staff: newAppointment.employee || undefined,
-        services: newAppointment.services.length > 0 ? newAppointment.services : undefined,
+        services: !newAppointment.isPackage && newAppointment.services.length > 0 ? newAppointment.services : undefined,
+        isPackage: newAppointment.isPackage,
+        packageName: newAppointment.isPackage ? newAppointment.packageName : undefined,
         source: newAppointment.source,
       })
       setNewAppointment(emptyForm)
@@ -782,7 +805,9 @@ export default function AppointmentsPage() {
         date: selectedAppointment.date,
         time: selectedAppointment.time,
         staff: selectedAppointment.employee || undefined,
-        services: selectedServices.length > 0 ? selectedServices : undefined,
+        services: !selectedAppointment.isPackage && selectedServices.length > 0 ? selectedServices : undefined,
+        isPackage: selectedAppointment.isPackage,
+        packageName: selectedAppointment.isPackage ? selectedAppointment.packageName : undefined,
         status: selectedAppointment.status,
         source: selectedAppointment.source,
       })
@@ -979,8 +1004,29 @@ export default function AppointmentsPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[13px] font-semibold tracking-wide">Service <span className="text-destructive">*</span></Label>
-                  <Popover>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[13px] font-semibold tracking-wide">
+                      {newAppointment.isPackage ? "Package" : "Service"} <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Checkbox 
+                        id="isPackage" 
+                        checked={newAppointment.isPackage}
+                        onCheckedChange={(checked) => {
+                          setNewAppointment({
+                            ...newAppointment,
+                            isPackage: checked === true,
+                            services: [],
+                            packageName: ""
+                          })
+                          clearNewAppointmentError("services")
+                        }}
+                      />
+                      <Label htmlFor="isPackage" className="text-xs font-normal cursor-pointer">Book a Package</Label>
+                    </div>
+                  </div>
+                  {!newAppointment.isPackage ? (
+                    <Popover>
                     <PopoverTrigger asChild>
                       <button
                         type="button"
@@ -1017,6 +1063,29 @@ export default function AppointmentsPage() {
                       ))}
                     </PopoverContent>
                   </Popover>
+                  ) : (
+                    <Select
+                      value={newAppointment.packageName}
+                      onValueChange={(val) => {
+                        setNewAppointment({ ...newAppointment, packageName: val })
+                        if (val) clearNewAppointmentError("services")
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a package" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {packageOptions.map((p) => (
+                          <SelectItem key={p.name} value={p.name}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{p.name}</span>
+                              <span className="text-xs text-muted-foreground ml-2">${parseFloat(p.price.toString()).toFixed(2)}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   {newAppointmentErrors.services && (
                     <p className="text-xs text-destructive">{newAppointmentErrors.services}</p>
                   )}
@@ -1025,10 +1094,16 @@ export default function AppointmentsPage() {
                   <Label className="text-[13px] font-semibold tracking-wide">Total Price (incl. tax)</Label>
                   <Input
                     value={`Tk ${(() => {
-                      const subtotal = newAppointment.services.reduce((acc, serviceName) => {
-                        const service = serviceOptions.find((s) => s.name === serviceName)
-                        return acc + parseFloat((service?.price || 0).toString())
-                      }, 0)
+                      let subtotal = 0
+                      if (newAppointment.isPackage && newAppointment.packageName) {
+                        const pkg = packageOptions.find((p) => p.name === newAppointment.packageName)
+                        subtotal = parseFloat((pkg?.price || 0).toString())
+                      } else {
+                        subtotal = newAppointment.services.reduce((acc, serviceName) => {
+                          const service = serviceOptions.find((s) => s.name === serviceName)
+                          return acc + parseFloat((service?.price || 0).toString())
+                        }, 0)
+                      }
                       const tax = (subtotal * parseFloat(taxRate.toString())) / 100
                       return (subtotal + tax).toFixed(2)
                     })()}`}
@@ -1206,6 +1281,7 @@ export default function AppointmentsPage() {
                 <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Client</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Phone</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Service</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Package</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><CalendarIcon className="w-3.5 h-3.5 text-primary/60" />Date & Time</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Source</span></TableHead>
@@ -1216,13 +1292,13 @@ export default function AppointmentsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     Loading appointments...
                   </TableCell>
                 </TableRow>
               ) : filteredAppointments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No appointments found.
                   </TableCell>
                 </TableRow>
@@ -1231,7 +1307,31 @@ export default function AppointmentsPage() {
                   <TableRow key={appointment.id}>
                     <TableCell className="font-medium">{appointment.client}</TableCell>
                     <TableCell>{appointment.phone}</TableCell>
-                    <TableCell>{appointment.service}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const svcs = appointment.service ? appointment.service.split(",").map(s => s.trim()).filter(Boolean) : []
+                        if (svcs.length === 0) return <span className="text-muted-foreground">—</span>
+                        return (
+                          <div className="flex items-center gap-1.5 max-w-[200px]">
+                            <span className="text-sm truncate">
+                              {svcs.slice(0, 2).join(", ")}
+                            </span>
+                            {svcs.length > 2 && (
+                              <span className="shrink-0 text-[11px] font-medium text-primary whitespace-nowrap">
+                                +{svcs.length - 2} more
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })()}
+                    </TableCell>
+                    <TableCell>
+                      {appointment.isPackage && appointment.packageName ? (
+                        <span className="text-sm font-medium">{appointment.packageName}</span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>{appointment.employee}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -1373,9 +1473,31 @@ export default function AppointmentsPage() {
                   <Label className="text-muted-foreground">Phone</Label>
                   <p className="font-medium">{selectedAppointment.phone}</p>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Service</Label>
-                  <p className="font-medium">{selectedAppointment.service}</p>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground mb-1 block">
+                    {selectedAppointment.isPackage ? "Package" : "Services"}
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {selectedAppointment.isPackage && selectedAppointment.packageName && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 mr-1">
+                        <Zap className="w-3 h-3" />
+                        {selectedAppointment.packageName}
+                      </span>
+                    )}
+                    {(() => {
+                      const svcs = selectedAppointment.service ? selectedAppointment.service.split(",").map(s => s.trim()).filter(Boolean) : []
+                      if (svcs.length === 0 && !selectedAppointment.isPackage) return <span className="font-medium">—</span>
+                      return svcs.map((svc, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/10 text-secondary-foreground border border-secondary/20"
+                        >
+                          <Scissors className="w-3 h-3" />
+                          {svc}
+                        </span>
+                      ))
+                    })()}
+                  </div>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Employee</Label>
@@ -1438,7 +1560,27 @@ export default function AppointmentsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[13px] font-semibold tracking-wide">Service</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-[13px] font-semibold tracking-wide">
+                    {selectedAppointment.isPackage ? "Package" : "Service"}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="editIsPackage" 
+                      checked={selectedAppointment.isPackage}
+                      onCheckedChange={(checked) => {
+                        setSelectedAppointment({
+                          ...selectedAppointment,
+                          isPackage: checked === true,
+                          service: "",
+                          packageName: ""
+                        })
+                      }}
+                    />
+                    <Label htmlFor="editIsPackage" className="text-xs font-normal cursor-pointer">Book a Package</Label>
+                  </div>
+                </div>
+                {!selectedAppointment.isPackage ? (
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
@@ -1483,17 +1625,44 @@ export default function AppointmentsPage() {
                     })}
                   </PopoverContent>
                 </Popover>
+                ) : (
+                  <Select
+                    value={selectedAppointment.packageName}
+                    onValueChange={(val) => {
+                      setSelectedAppointment({ ...selectedAppointment, packageName: val })
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a package" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {packageOptions.map((p) => (
+                        <SelectItem key={p.name} value={p.name}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{p.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">${parseFloat(p.price.toString()).toFixed(2)}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-[13px] font-semibold tracking-wide">Total Price (incl. tax)</Label>
                 <Input
                   value={`$${(() => {
-                    // Split the service string if it contains multiple (though Select only supports one here)
-                    const services = selectedAppointment.service ? selectedAppointment.service.split(", ").map(s => s.trim()) : []
-                    const subtotal = services.reduce((acc, serviceName) => {
-                      const service = serviceOptions.find((s) => s.name === serviceName)
-                      return acc + parseFloat((service?.price || 0).toString())
-                    }, 0)
+                    let subtotal = 0
+                    if (selectedAppointment.isPackage && selectedAppointment.packageName) {
+                      const pkg = packageOptions.find((p) => p.name === selectedAppointment.packageName)
+                      subtotal = parseFloat((pkg?.price || 0).toString())
+                    } else {
+                      const services = selectedAppointment.service ? selectedAppointment.service.split(", ").map(s => s.trim()) : []
+                      subtotal = services.reduce((acc, serviceName) => {
+                        const service = serviceOptions.find((s) => s.name === serviceName)
+                        return acc + parseFloat((service?.price || 0).toString())
+                      }, 0)
+                    }
                     const tax = (subtotal * parseFloat(taxRate.toString())) / 100
                     return (subtotal + tax).toFixed(2)
                   })()}`}
