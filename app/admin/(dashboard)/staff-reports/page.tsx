@@ -58,18 +58,23 @@ const PAGE_SIZE = 10
 
 function getDateRange(filter: string): { from: string; to: string } {
   const now = new Date()
-  const today = now.toISOString().split("T")[0]
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const toStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const today = toStr(now)
+
   if (filter === "today") return { from: today, to: today }
   if (filter === "week") {
     const d = new Date(now); d.setDate(d.getDate() - 6)
-    return { from: d.toISOString().split("T")[0], to: today }
+    return { from: toStr(d), to: today }
   }
   if (filter === "month") {
-    return { from: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`, to: today }
+    const from = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    return { from, to: toStr(lastDay) }
   }
   if (filter === "6months") {
     const d = new Date(now); d.setMonth(d.getMonth() - 6)
-    return { from: d.toISOString().split("T")[0], to: today }
+    return { from: toStr(d), to: today }
   }
   if (filter === "year") return { from: `${now.getFullYear()}-01-01`, to: today }
   return { from: today, to: today }
