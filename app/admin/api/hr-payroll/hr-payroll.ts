@@ -42,8 +42,8 @@ export interface CreatePayrollDto {
   year: number;
 }
 
-function payrollCacheKey(month?: number, year?: number) {
-  return `${CACHE.PAYROLL}:${year ?? 'all'}:${month ?? 'all'}`;
+function payrollCacheKey(month?: number, year?: number, page = 1, limit = 10) {
+  return `${CACHE.PAYROLL}:${year ?? 'all'}:${month ?? 'all'}:${page}:${limit}`;
 }
 
 export async function getPayrollRecords(
@@ -52,7 +52,7 @@ export async function getPayrollRecords(
   page = 1,
   limit = 10,
 ): Promise<PayrollResponse> {
-  const key = payrollCacheKey(month, year);
+  const key = payrollCacheKey(month, year, page, limit);
   const isStale = consumeStale(key);
   const params: Record<string, any> = { page, limit };
   if (month) params.month = month;
