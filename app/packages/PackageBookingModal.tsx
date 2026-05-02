@@ -110,6 +110,8 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
         time,
         source: "online",
         staff: staff === "Any Expert" ? "" : staff,
+        isPackage: true,
+        packageName: pkg.title,
         ...(notes.trim() ? { notes: notes.trim() } : {}),
       })
       setSuccess(true)
