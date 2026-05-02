@@ -21,6 +21,7 @@ import {
   Fingerprint,
   LogOut,
   MessageSquare,
+  Network,
   Sparkles,
   UserLock,
   Quote,
@@ -64,6 +65,7 @@ const navigation = [
     items: [
       { name: "Attendance", href: "/admin/attendance", icon: ClipboardCheck, permission: "attendance" },
       { name: "Unlinked Users", href: "/admin/unlinked-users", icon: Fingerprint, permission: "employee" },
+      { name: "IP Configuration", href: "/admin/ip-config", icon: Network, permission: "employee" },
       { name: "Leave Requests", href: "/admin/leave-request", icon: Calendar, permission: "leave-request" },
       { name: "Manage Payrolls", href: "/admin/manage-payrolls", icon: Building2, permission: "hr-payroll" },
     ],
