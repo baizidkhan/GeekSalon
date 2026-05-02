@@ -4,7 +4,7 @@ import { getClients, createClient, updateClient, deleteClient } from "@admin/api
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt, History, LayoutList, LayoutGrid, Scissors } from "lucide-react"
+import { Plus, Search, Phone, Mail, MoreHorizontal, Upload, Download, Eye, Pencil, Trash2, User, Calendar, Zap, Receipt, History, LayoutList, LayoutGrid, Scissors, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -139,7 +139,6 @@ const isValidPhone = (phone: string) => {
 
 export default function ClientsPage() {
   const router = useRouter()
-  const { toast } = useToast()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -156,6 +155,9 @@ export default function ClientsPage() {
     email: "",
     phone: "",
   })
+  const [isAdding, setIsAdding] = useState(false)
+  const [clientErrors, setClientErrors] = useState<{ name?: string; phone?: string; email?: string }>({})
+  const [clientTouched, setClientTouched] = useState(false)
 
   const fetchClients = useCallback(async () => {
     try {
@@ -248,26 +250,44 @@ export default function ClientsPage() {
   const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE))
   const paginatedClients = filteredClients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-  const handleAddClient = async () => {
-    if (!newClient.name || !newClient.phone)
-      return
-    if (!isValidPhone(newClient.phone)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid Phone Number",
-        description: "Phone must be in format: 01712345678 or +8801712345678"
-      })
-      return
+  const validateNewClient = (data: typeof newClient) => {
+    const errors: { name?: string; phone?: string; email?: string } = {}
+    if (!data.name.trim()) {
+      errors.name = "Full name is required"
     }
-    await createClient(newClient)
-    const res = await getClients(1, 1000)
-    setClients(res.data ?? res)
-    setIsDialogOpen(false)
-    setNewClient({ name: "", email: "", phone: "" })
-    toast({
-      title: "Success",
-      description: "Client created successfully"
-    })
+    if (!data.phone.trim()) {
+      errors.phone = "Phone number is required"
+    } else if (!isValidPhone(data.phone)) {
+      errors.phone = "Must be in format: 01712345678 or +8801712345678"
+    }
+    if (data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+      errors.email = "Enter a valid email address"
+    }
+    return errors
+  }
+
+  const handleAddClient = async () => {
+    setClientTouched(true)
+    const errors = validateNewClient(newClient)
+    setClientErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
+    try {
+      setIsAdding(true)
+      await createClient(newClient)
+      const res = await getClients(1, 1000)
+      setClients(res.data ?? res)
+      setIsDialogOpen(false)
+      setNewClient({ name: "", email: "", phone: "" })
+      setClientErrors({})
+      setClientTouched(false)
+      toast.success("Client created successfully")
+    } catch (error) {
+      console.error("Error creating client:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to create client")
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   const handleEditSave = async () => {
@@ -275,20 +295,12 @@ export default function ClientsPage() {
 
     // Validate name and phone
     if (!editClient.name.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Client name is required"
-      })
+      toast.error("Client name is required")
       return
     }
 
     if (!isValidPhone(editClient.phone)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid Phone Number",
-        description: "Phone must be in format: 01712345678 or +8801712345678"
-      })
+      toast.error("Phone must be in format: 01712345678 or +8801712345678")
       return
     }
 
@@ -305,17 +317,10 @@ export default function ClientsPage() {
       setClients(res.data ?? res)
       setEditClient(null)
 
-      toast({
-        title: "Success",
-        description: "Client updated successfully. Changes will reflect across all pages."
-      })
+      toast.success("Client updated successfully. Changes will reflect across all pages.")
     } catch (error) {
       console.error("Error updating client:", error)
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: error instanceof Error ? error.message : "Failed to update client. Please try again."
-      })
+      toast.error(error instanceof Error ? error.message : "Failed to update client. Please try again.")
     }
   }
 
@@ -325,17 +330,10 @@ export default function ClientsPage() {
       await deleteClient(deleteClientState.id)
       setClients(clients.filter(c => c.id !== deleteClientState.id))
       setDeleteClientState(null)
-      toast({
-        title: "Success",
-        description: "Client deleted successfully"
-      })
+      toast.success("Client deleted successfully")
     } catch (error) {
       console.error("Error deleting client:", error)
-      toast({
-        variant: "destructive",
-        title: "Delete Failed",
-        description: "Failed to delete client. Please try again."
-      })
+      toast.error("Failed to delete client. Please try again.")
     }
   }
 
@@ -406,7 +404,14 @@ export default function ClientsPage() {
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open)
+              if (!open) {
+                setNewClient({ name: "", email: "", phone: "" })
+                setClientErrors({})
+                setClientTouched(false)
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="w-4 h-4 mr-2" />
@@ -419,38 +424,84 @@ export default function ClientsPage() {
                 </DialogHeader>
                 <div className="mt-2 space-y-5 pb-6">
                   <div className="space-y-2">
-                    <Label className="text-[13px] font-semibold tracking-wide">Full Name</Label>
+                    <Label className="text-[13px] font-semibold tracking-wide">
+                      Full Name <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       value={newClient.name}
-                      onChange={(e) =>
-                        setNewClient({ ...newClient, name: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setNewClient({ ...newClient, name: val })
+                        if (clientTouched) {
+                          setClientErrors((prev) => ({
+                            ...prev,
+                            name: val.trim() ? undefined : "Full name is required",
+                          }))
+                        }
+                      }}
                       placeholder="Enter full name"
+                      className={clientErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
+                    {clientErrors.name && (
+                      <p className="text-[12px] text-destructive flex items-center gap-1">
+                        <span>⚠</span> {clientErrors.name}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[13px] font-semibold tracking-wide">Email</Label>
+                    <Label className="text-[13px] font-semibold tracking-wide">
+                      Email <span className="text-muted-foreground text-[11px] font-normal">(optional)</span>
+                    </Label>
                     <Input
                       type="email"
                       value={newClient.email}
-                      onChange={(e) =>
-                        setNewClient({ ...newClient, email: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setNewClient({ ...newClient, email: val })
+                        if (clientTouched) {
+                          const emailError = val.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())
+                            ? "Enter a valid email address"
+                            : undefined
+                          setClientErrors((prev) => ({ ...prev, email: emailError }))
+                        }
+                      }}
                       placeholder="Enter email address"
+                      className={clientErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
+                    {clientErrors.email && (
+                      <p className="text-[12px] text-destructive flex items-center gap-1">
+                        <span>⚠</span> {clientErrors.email}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[13px] font-semibold tracking-wide">Phone Number</Label>
+                    <Label className="text-[13px] font-semibold tracking-wide">
+                      Phone Number <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       value={newClient.phone}
-                      onChange={(e) =>
-                        setNewClient({ ...newClient, phone: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setNewClient({ ...newClient, phone: val })
+                        if (clientTouched) {
+                          let phoneError: string | undefined
+                          if (!val.trim()) phoneError = "Phone number is required"
+                          else if (!isValidPhone(val)) phoneError = "Must be in format: 01712345678 or +8801712345678"
+                          setClientErrors((prev) => ({ ...prev, phone: phoneError }))
+                        }
+                      }}
                       placeholder="01712345678 or +8801712345678"
+                      className={clientErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
+                    {clientErrors.phone && (
+                      <p className="text-[12px] text-destructive flex items-center gap-1">
+                        <span>⚠</span> {clientErrors.phone}
+                      </p>
+                    )}
                   </div>
-                  <Button onClick={handleAddClient} className="mt-1 h-10 w-full">
-                    Add Client
+                  <Button onClick={handleAddClient} disabled={isAdding} className="mt-1 h-10 w-full">
+                    {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isAdding ? "Adding..." : "Add Client"}
                   </Button>
                 </div>
               </DialogContent>
