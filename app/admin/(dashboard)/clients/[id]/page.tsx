@@ -12,7 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ArrowLeft, Phone, Mail, Calendar, Clock, User, Receipt, Scissors } from "lucide-react"
+import { ArrowLeft, Phone, Mail, Calendar, Clock, User, Receipt, Scissors, Zap } from "lucide-react"
 
 interface Invoice {
   id: string
@@ -25,11 +25,13 @@ interface Invoice {
   createdAt: string
 }
 
-interface Appointment {
+interface ClientAppointment {
   id: string
   date: string
   time: string
   services: string[]
+  isPackage?: boolean
+  packageName?: string
   staff: string
   status: string
   source: string
@@ -42,7 +44,7 @@ interface ClientHistory {
   phone: string
   email: string
   address: string
-  appointments: Appointment[]
+  appointments: ClientAppointment[]
   invoices: Invoice[]
 }
 
@@ -75,6 +77,7 @@ export default function ClientHistoryPage() {
   const [client, setClient] = useState<ClientHistory | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
+  const [selectedAppointment, setSelectedAppointment] = useState<ClientAppointment | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -182,10 +185,25 @@ export default function ClientHistoryPage() {
                 [...client.appointments]
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                   .map((apt) => (
-                    <TableRow key={apt.id}>
+                    <TableRow
+                      key={apt.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setSelectedAppointment(apt)}
+                    >
                       <TableCell className="font-medium">{apt.date}</TableCell>
                       <TableCell>{formatTime(apt.time)}</TableCell>
-                      <TableCell>{Array.isArray(apt.services) ? apt.services.join(", ") : apt.services}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 max-w-[220px]">
+                          <span className="text-sm truncate">
+                            {Array.isArray(apt.services) ? apt.services.slice(0, 2).join(", ") : apt.services}
+                          </span>
+                          {Array.isArray(apt.services) && apt.services.length > 2 && (
+                            <span className="shrink-0 text-[11px] font-medium text-primary whitespace-nowrap">
+                              +{apt.services.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{apt.staff || "—"}</TableCell>
                       <TableCell>
                         <span className={`text-xs font-medium px-2 py-1 rounded-full border ${statusColors[apt.status] ?? "bg-gray-50 text-gray-700 border-gray-200"}`}>
@@ -193,7 +211,7 @@ export default function ClientHistoryPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{apt.source}</TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         {apt.invoices?.length > 0 ? (
                           <Button
                             size="sm"
@@ -214,6 +232,121 @@ export default function ClientHistoryPage() {
           </Table>
         </div>
       </div>
+
+      {/* Appointment Detail Modal */}
+      <Dialog open={!!selectedAppointment} onOpenChange={() => setSelectedAppointment(null)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Appointment Details</DialogTitle>
+          </DialogHeader>
+          {selectedAppointment && (
+            <div className="mt-2 space-y-4 pb-2">
+              {/* Date & Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Date</p>
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-primary/60" />
+                    <span className="font-medium">{selectedAppointment.date}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Time</p>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-primary/60" />
+                    <span className="font-medium">{formatTime(selectedAppointment.time) || "—"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Services */}
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                  {(selectedAppointment as any).isPackage ? "Package & Included Services" : "Services"}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(selectedAppointment as any).isPackage && (selectedAppointment as any).packageName && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 mr-1">
+                      <Zap className="w-3 h-3" />
+                      {(selectedAppointment as any).packageName}
+                    </span>
+                  )}
+                  {(Array.isArray(selectedAppointment.services) ? selectedAppointment.services : [selectedAppointment.services])
+                    .filter(Boolean)
+                    .map((svc, i) => (
+                      <span
+                        key={i}
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${
+                          (selectedAppointment as any).isPackage 
+                            ? "bg-secondary/10 text-secondary-foreground border border-secondary/20"
+                            : "bg-primary/10 text-primary border border-primary/20"
+                        }`}
+                      >
+                        <Scissors className="w-3 h-3" />
+                        {svc}
+                      </span>
+                    ))}
+                </div>
+              </div>
+
+              {/* Staff & Source */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Staff</p>
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-primary/60" />
+                    <span className="font-medium">{selectedAppointment.staff || "—"}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Source</p>
+                  <span className="font-medium">{selectedAppointment.source || "—"}</span>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Status</p>
+                <span className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full border ${statusColors[selectedAppointment.status] ?? "bg-gray-50 text-gray-700 border-gray-200"}`}>
+                  {selectedAppointment.status}
+                </span>
+              </div>
+
+              {/* Invoice (if any) */}
+              {selectedAppointment.invoices?.length > 0 && (() => {
+                const inv = selectedAppointment.invoices[0]
+                return (
+                  <div className="border-t border-border pt-4 space-y-3">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide flex items-center gap-1.5">
+                      <Receipt className="w-3.5 h-3.5" /> Invoice
+                    </p>
+                    <div className="bg-muted/40 rounded-lg p-3 space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Invoice No</span>
+                        <span className="font-mono font-medium">{inv.invoiceNumber}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Payment</span>
+                        <span className="font-medium">{inv.paymentMethod}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Total</span>
+                        <span className="font-bold text-base">৳{Number(inv.total).toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Status</span>
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${invoiceStatusColors[inv.status] ?? ""}`}>
+                          {inv.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Invoice Modal */}
       <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>

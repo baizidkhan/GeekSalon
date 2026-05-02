@@ -31,6 +31,8 @@ export async function createAppointment(payload: {
   services?: string[]
   notes?: string
   status?: string
+  isPackage?: boolean
+  packageName?: string
 }) {
   const { data } = await api.post('/appointments', payload)
   // Backend auto-creates the client inside the same transaction — invalidate clients cache so the page refreshes
