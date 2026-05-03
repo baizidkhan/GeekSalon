@@ -116,7 +116,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
         <StatCard
           title="Revenue This week"
-          value={loading || !stats ? "—" : `TK. ${(stats.weeklyRevenue ?? 0)}`}
+          value={loading || !stats ? "—" : `TK. ${parseFloat(String(stats.weeklyRevenue ?? 0)).toFixed(2)}`}
           icon={Wallet}
           iconWrapperClassName="bg-blue-50 text-blue-500"
           className="border-t-4 border-t-transparent hover:border-t-blue-500 transition-all"
