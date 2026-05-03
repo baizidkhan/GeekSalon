@@ -33,7 +33,7 @@ export function CtaSection() {
                             className="border border-white/40 bg-transparent px-10 py-4 text-[11px] font-medium uppercase tracking-[0.3em] text-white transition-all duration-300 hover:border-white hover:bg-white hover:text-black"
                             style={{ fontFamily: 'Inter, sans-serif' }}
                         >
-                            Explore Our Services
+                            Explore Our Packages
                         </button>
                     </Link>
                 </div>

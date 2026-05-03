@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useBooking } from "@/context/BookingContext"
 import { Service } from "@/lib/types"
+import { getMediaUrl } from "@/lib/utils"
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
     Hair: "from-rose-200 via-pink-200 to-fuchsia-200",
@@ -14,6 +15,8 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
     Spa: "from-teal-200 via-cyan-100 to-sky-200",
     Other: "from-stone-300 via-stone-400 to-stone-500",
 }
+
+
 
 export function SignatureExperiencesSection({ services }: { services: Service[] }) {
     const { openBooking } = useBooking()
@@ -51,7 +54,7 @@ export function SignatureExperiencesSection({ services }: { services: Service[] 
                                     <div className={`relative aspect-[4/3] overflow-hidden shrink-0 ${imageUrl ? '' : `bg-gradient-to-br ${gradient}`}`}>
                                         {imageUrl && (
                                             <Image
-                                                src={imageUrl}
+                                                src={getMediaUrl(imageUrl) || ""}
                                                 alt={item.name}
                                                 fill
                                                 className="object-cover transition-transform duration-500 group-hover:scale-110"

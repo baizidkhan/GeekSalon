@@ -54,6 +54,7 @@ import { unlinkDeviceUser } from "@admin/api/biometric/biometric"
 import { CACHE, removeFromCache } from "@admin/lib/cache"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { getMediaUrl } from "@/lib/utils"
 
 export enum EmployeeRole {
   STYLIST = 'Stylist',
@@ -99,6 +100,8 @@ interface Employee {
   image?: string | null
   about?: string | null
 }
+
+
 
 
 export default function EmployeesPage() {
@@ -232,10 +235,13 @@ export default function EmployeesPage() {
     if (newEmployee.name && newEmployee.role && newEmployee.phone && parseFloat(newEmployee.salary) > 0) {
       try {
         setIsAdding(true)
-        const cleanPhone = newEmployee.phone.replace(/[\s- ]/g, "").replace(/^\+88/, "88")
-        if (!cleanPhone.startsWith('88') && cleanPhone.startsWith('01')) {
-          // Keep as is, regex allows optional 88
+        const rawPhone = newEmployee.phone.replace(/[\s-]/g, "");
+        if (!/^(?:\+88|88)?01[3-9]\d{8}$/.test(rawPhone)) {
+          toast.error("Please enter a valid Bangladeshi phone number");
+          setIsAdding(false);
+          return;
         }
+        const cleanPhone = rawPhone;
 
         const payload: any = {
           name: newEmployee.name.trim(),
@@ -298,7 +304,13 @@ export default function EmployeesPage() {
     if (!editDraft) return
     try {
       setIsEditing(true)
-      const cleanPhone = editDraft.phone.replace(/[\s-]/g, "")
+      const rawPhone = editDraft.phone.replace(/[\s-]/g, "");
+      if (!/^(?:\+88|88)?01[3-9]\d{8}$/.test(rawPhone)) {
+        toast.error("Please enter a valid Bangladeshi phone number");
+        setIsEditing(false);
+        return;
+      }
+      const cleanPhone = rawPhone;
       const payload = {
         name: editDraft.name,
         role: editDraft.role,
@@ -642,7 +654,7 @@ export default function EmployeesPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarImage src={employee.image ?? undefined} alt={employee.name} className="object-cover" />
+                          <AvatarImage src={getMediaUrl(employee.image)} alt={employee.name} className="object-cover" />
                           <AvatarFallback className="bg-primary/10 text-primary">
                             {getInitials(employee.name)}
                           </AvatarFallback>
@@ -789,7 +801,7 @@ export default function EmployeesPage() {
                     <div className="flex items-center gap-4 mt-2">
                       <Avatar className="h-20 w-20">
                         <AvatarImage
-                          src={editImagePreview ?? editDraft.image ?? undefined}
+                          src={editImagePreview ?? getMediaUrl(editDraft.image)}
                           alt={editDraft.name}
                           className="object-cover"
                         />
@@ -1005,7 +1017,7 @@ export default function EmployeesPage() {
                 <div className="space-y-6 py-4 pb-2">
                   <div className="flex items-center gap-4 border-b pb-4">
                     <Avatar className="h-16 w-16 text-xl">
-                      <AvatarImage src={selectedEmployee.image ?? undefined} alt={selectedEmployee.name} className="object-cover" />
+                      <AvatarImage src={getMediaUrl(selectedEmployee.image)} alt={selectedEmployee.name} className="object-cover" />
                       <AvatarFallback>{getInitials(selectedEmployee.name)}</AvatarFallback>
                     </Avatar>
                     <div>

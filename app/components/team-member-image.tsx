@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { getMediaUrl } from "@/lib/utils"
 
 interface TeamMemberImageProps {
   name: string
@@ -21,6 +22,8 @@ function getInitials(name: string) {
     .slice(0, 2)
 }
 
+
+
 export function TeamMemberImage({
   name,
   image,
@@ -36,7 +39,7 @@ export function TeamMemberImage({
     <div className={`relative w-full h-full flex items-center justify-center bg-[#1a1a1a] ${className}`}>
       {hasImage && !imgFailed ? (
         <img
-          src={image}
+          src={getMediaUrl(image)}
           alt={name}
           onError={() => setImgFailed(true)}
           className={imgClassName}

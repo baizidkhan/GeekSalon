@@ -32,6 +32,7 @@ import {
 } from "@admin/api/settings/settings"
 import { toast } from "sonner"
 import { useBusiness } from "@/context/BusinessContext"
+import { getMediaUrl } from "@/lib/utils"
 
 export default function SettingsPage() {
   const { refresh: refreshBusinessName } = useBusiness()
@@ -64,11 +65,9 @@ export default function SettingsPage() {
   // Appreciate Excellence states
   const [savingAppreciation, setSavingAppreciation] = useState(false)
   const [appreciationForm, setAppreciationForm] = useState<{
-    title: string;
-    description: string;
     videoFile: File | null;
     videoUrl?: string;
-  }>({ title: '', description: '', videoFile: null })
+  }>({ videoFile: null })
 
   useEffect(() => {
     async function loadSettings() {
@@ -93,8 +92,6 @@ export default function SettingsPage() {
       }
       if (appreciationResult.status === 'fulfilled' && appreciationResult.value) {
         setAppreciationForm({
-          title: appreciationResult.value.title || '',
-          description: appreciationResult.value.description || '',
           videoFile: null,
           videoUrl: appreciationResult.value.videoUrl
         })
@@ -218,23 +215,19 @@ export default function SettingsPage() {
   }
 
   const handleSaveAppreciation = async () => {
-    if (!appreciationForm.title && !appreciationForm.videoFile && !appreciationForm.videoUrl) {
-       toast.error("Please fill in the title or upload a video")
+    if (!appreciationForm.videoFile && !appreciationForm.videoUrl) {
+       toast.error("Please upload a video")
        return
     }
 
     setSavingAppreciation(true)
     try {
       const formData = new FormData()
-      if (appreciationForm.title) formData.append('title', appreciationForm.title)
-      if (appreciationForm.description) formData.append('description', appreciationForm.description)
       if (appreciationForm.videoFile) formData.append('video', appreciationForm.videoFile)
 
       const response = await upsertAppreciateExcellence(formData)
       if (response) {
         setAppreciationForm({
-          title: response.title || '',
-          description: response.description || '',
           videoFile: null,
           videoUrl: response.videoUrl
         })
@@ -471,7 +464,7 @@ export default function SettingsPage() {
                   <div className="relative group aspect-[4/5] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center overflow-hidden transition-all hover:border-blue-400/50 hover:bg-blue-50/30">
                     {previews[index] ? (
                       <>
-                        <img src={previews[index]!} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                        <img src={getMediaUrl(previews[index]!)} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <label className="cursor-pointer bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-lg text-sm font-medium transition-all transform translate-y-2 group-hover:translate-y-0">
                             Change Image
@@ -522,23 +515,6 @@ export default function SettingsPage() {
                 <div className="p-6 bg-slate-50/50 rounded-xl border border-slate-200">
                   <div className="space-y-5">
                     <div>
-                      <Label>Award Title</Label>
-                      <Input 
-                        placeholder="e.g. Best Salon of the Year" 
-                        value={appreciationForm.title}
-                        onChange={(e) => setAppreciationForm({ ...appreciationForm, title: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Award Description</Label>
-                      <Textarea 
-                        placeholder="Describe the achievement..." 
-                        rows={4}
-                        value={appreciationForm.description}
-                        onChange={(e) => setAppreciationForm({ ...appreciationForm, description: e.target.value })}
-                      />
-                    </div>
-                    <div>
                       <Label>Showcase Video</Label>
                       <div className="mt-1 relative group aspect-video rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden hover:border-blue-400 transition-all">
                         {appreciationForm.videoFile ? (
@@ -576,7 +552,7 @@ export default function SettingsPage() {
                     <Button 
                       className="w-full h-11" 
                       onClick={handleSaveAppreciation} 
-                      disabled={savingAppreciation}
+                      disabled={savingAppreciation || (!appreciationForm.videoFile && !appreciationForm.videoUrl)}
                     >
                       {savingAppreciation && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Save Excellence Settings
@@ -593,7 +569,7 @@ export default function SettingsPage() {
                     {appreciationForm.videoUrl ? (
                       <video 
                         key={appreciationForm.videoUrl}
-                        src={appreciationForm.videoUrl} 
+                        src={getMediaUrl(appreciationForm.videoUrl)} 
                         className="w-full h-full object-cover"
                         controls
                       />
@@ -604,16 +580,8 @@ export default function SettingsPage() {
                       </div>
                     )}
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-start gap-3 mb-3">
-                      <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                      <h4 className="text-lg font-bold text-slate-900 leading-tight">
-                        {appreciationForm.title || "Excellence Title"}
-                      </h4>
-                    </div>
-                    <p className="text-sm text-slate-600 leading-relaxed italic">
-                      "{appreciationForm.description || "The achievement description will appear here..."}"
-                    </p>
+                  <div className="p-4 bg-slate-50 border-t border-border">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Home Page Showcase Video</p>
                   </div>
                 </div>
                 

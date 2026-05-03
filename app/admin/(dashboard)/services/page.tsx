@@ -5,6 +5,7 @@ import { useDebounce } from "@/hooks/use-debounce"
 import api from "@admin/api/base"
 import { getServices, createService, updateService, deleteService } from "@admin/api/services/services"
 import { toast } from "sonner"
+import { getMediaUrl } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -350,7 +351,7 @@ export default function ServicesPage() {
                   />
                   {(newService.previewUrl || newService.imageUrl) && (
                     <img
-                      src={newService.previewUrl || newService.imageUrl}
+                      src={getMediaUrl(newService.previewUrl || newService.imageUrl)}
                       alt="preview"
                       className="mt-2 h-24 w-full object-cover rounded"
                     />
@@ -456,7 +457,7 @@ export default function ServicesPage() {
                       <div className="flex items-center gap-3">
                         {service.imageUrl ? (
                           <img
-                            src={service.imageUrl}
+                            src={getMediaUrl(service.imageUrl)}
                             alt={service.name}
                             className="h-10 w-10 object-cover rounded-md border border-border"
                           />
@@ -615,7 +616,7 @@ export default function ServicesPage() {
                 />
                 {(serviceToEdit.previewUrl || serviceToEdit.imageUrl) && (
                   <img
-                    src={serviceToEdit.previewUrl || serviceToEdit.imageUrl}
+                    src={getMediaUrl(serviceToEdit.previewUrl || serviceToEdit.imageUrl)}
                     alt="preview"
                     className="mt-2 h-24 w-full object-cover rounded"
                   />
