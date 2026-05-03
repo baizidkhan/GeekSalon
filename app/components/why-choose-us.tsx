@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { getMediaUrl } from "@/lib/utils"
 
 const stats = [
     { value: "15+", label: "Years of Excellence" },
@@ -85,7 +86,7 @@ export function WhyChooseUsSection() {
                                 >
                                     {img ? (
                                         <img 
-                                            src={img} 
+                                            src={getMediaUrl(img)} 
                                             alt={`Privé Experience ${index + 1}`} 
                                             className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
                                         />
