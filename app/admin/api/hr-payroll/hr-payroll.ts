@@ -1,5 +1,8 @@
 import api from '../base';
-import { CACHE, consumeStale, markStale, clearCacheByPrefix } from '@admin/lib/cache';
+import { CACHE, consumeStale, clearCacheByPrefix } from '@admin/lib/cache';
+
+// Module-level dirty flag: set after any mutation so the very next fetch bypasses cache
+let payrollDirty = false;
 
 export type PayrollStatus = 'Paid' | 'Pending' | 'Processing';
 
@@ -55,7 +58,9 @@ export async function getPayrollRecords(
   status?: string,
 ): Promise<PayrollResponse> {
   const key = payrollCacheKey(month, year, page, limit, search, status);
-  const isStale = consumeStale(key);
+  const bypass = payrollDirty || consumeStale(key);
+  if (payrollDirty) payrollDirty = false;
+
   const params: Record<string, any> = { page, limit };
   if (month) params.month = month;
   if (year) params.year = year;
@@ -65,7 +70,7 @@ export async function getPayrollRecords(
   const { data } = await api.get('/payroll', {
     params,
     id: key,
-    cache: isStale ? false : { ttl: 5 * 60 * 1000 },
+    cache: bypass ? false : { ttl: 5 * 60 * 1000 },
   } as any);
   return data;
 }
@@ -73,16 +78,19 @@ export async function getPayrollRecords(
 export async function createPayrollRecord(dto: CreatePayrollDto): Promise<PayrollRecord> {
   const { data } = await api.post('/payroll', dto);
   clearCacheByPrefix(CACHE.PAYROLL);
+  payrollDirty = true;
   return data;
 }
 
 export async function updatePayrollRecord(id: string, dto: Partial<CreatePayrollDto>): Promise<PayrollRecord> {
   const { data } = await api.patch(`/payroll/${id}`, dto);
   clearCacheByPrefix(CACHE.PAYROLL);
+  payrollDirty = true;
   return data;
 }
 
 export async function deletePayrollRecord(id: string): Promise<void> {
   await api.delete(`/payroll/${id}`);
   clearCacheByPrefix(CACHE.PAYROLL);
+  payrollDirty = true;
 }
