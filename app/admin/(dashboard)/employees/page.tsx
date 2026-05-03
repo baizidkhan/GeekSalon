@@ -35,7 +35,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Search, Phone, MoreHorizontal, Pencil, Trash2, Eye, User, UserCheck, Scissors, Zap, ChevronDown, Fingerprint } from "lucide-react"
+import { Plus, Search, Phone, MoreHorizontal, Pencil, Trash2, Eye, User, UserCheck, Scissors, Zap, ChevronDown, Fingerprint, Receipt } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -621,6 +621,7 @@ export default function EmployeesPage() {
               <TableRow>
                 <TableHead><span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-primary/60" />Employee</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Role</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Base Salary</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Contact</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Specializations</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
@@ -629,9 +630,9 @@ export default function EmployeesPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-10">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-10">Loading...</TableCell></TableRow>
               ) : filteredEmployees.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No employees found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No employees found.</TableCell></TableRow>
               ) : (
                 paginatedEmployees.map((employee) => (
                   <TableRow
@@ -667,6 +668,7 @@ export default function EmployeesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{employee.role}</TableCell>
+                    <TableCell className="text-sm font-medium">৳{Number(employee.salary).toLocaleString()}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-xs">
                         <div className="flex items-center gap-2">
