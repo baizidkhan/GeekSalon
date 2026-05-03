@@ -58,7 +58,7 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                     </div>
 
                     <div className="flex items-baseline gap-1">
-                      <span className="text-5xl font-serif text-white">${pkg.price}</span>
+                      <span className="text-5xl font-serif text-white">৳{pkg.price}</span>
                       <span className="text-white/30 text-sm">/ {pkg.billingCycle || "session"}</span>
                     </div>
 
