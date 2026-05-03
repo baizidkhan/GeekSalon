@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getMediaUrl } from "@/lib/utils";
 
 interface ExcellenceData {
     title?: string;
@@ -46,7 +47,7 @@ export function TheExperienceSection({ excellence }: { excellence: ExcellenceDat
                     <div className="relative aspect-video overflow-hidden rounded-sm bg-gradient-to-br from-zinc-800 via-stone-900 to-black group">
                         {videoUrl ? (
                             <video
-                                src={videoUrl}
+                                src={getMediaUrl(videoUrl)}
                                 className="h-full w-full object-cover opacity-80 transition-opacity duration-700 group-hover:opacity-100"
                                 autoPlay
                                 muted
