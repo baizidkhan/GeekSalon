@@ -128,9 +128,9 @@ export default function HRPayrollPage() {
     setLoading(true)
     try {
       const res = await getPayrollRecords(
-        selectedMonth, 
-        selectedYear, 
-        page, 
+        selectedMonth,
+        selectedYear,
+        page,
         PAGE_SIZE,
         debouncedSearch || undefined,
         statusFilter === "all" ? undefined : statusFilter
@@ -177,10 +177,10 @@ export default function HRPayrollPage() {
 
     // virtual rows only apply to the current month — new employees have no past records
     const isCurrentPeriod = selectedMonth === currentMonth && selectedYear === currentYear
-    
+
     // Virtual rows should also respect search and status filters
     const statusMatchesPending = statusFilter === "all" || statusFilter === "Pending"
-    
+
     const missingRows = (isCurrentPeriod && statusMatchesPending)
       ? employees
         .filter((e) => {
@@ -219,7 +219,7 @@ export default function HRPayrollPage() {
     if ((form.bonus ?? 0) < 0) newErrors.bonus = "Bonus cannot be negative"
     if ((form.deductions ?? 0) < 0) newErrors.deductions = "Deductions cannot be negative"
     if (form.status === "Paid" && !form.payDate) newErrors.payDate = "Pay date is required when status is Paid"
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       toast.error("Please fix the errors in the form")
@@ -247,7 +247,7 @@ export default function HRPayrollPage() {
         })
         setErrors(newErrors)
       }
-      
+
       const errorMessage = Array.isArray(backendErrors) ? backendErrors[0] : backendErrors
       toast.error(typeof errorMessage === 'string' && errorMessage !== "Internal server error" ? errorMessage : "Failed to create payroll record")
     } finally {
@@ -275,12 +275,12 @@ export default function HRPayrollPage() {
 
   const handleEditSave = async () => {
     if (!editRecord) return
-    
+
     const newErrors: Record<string, string> = {}
     if ((editForm.bonus ?? 0) < 0) newErrors.bonus = "Bonus cannot be negative"
     if ((editForm.deductions ?? 0) < 0) newErrors.deductions = "Deductions cannot be negative"
     if (editForm.status === "Paid" && !editForm.payDate) newErrors.payDate = "Pay date is required when status is Paid"
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       toast.error("Please fix the errors in the form")
@@ -322,7 +322,7 @@ export default function HRPayrollPage() {
     // Dynamically import browser-compatible version of jsPDF to avoid SSR issues
     const { default: jsPDF } = await import("jspdf/dist/jspdf.es.min.js")
     const { default: autoTable } = await (import("jspdf-autotable") as any)
-    
+
     const doc = new (jsPDF as any)()
     const monthName = MONTHS.find((m) => m.value === record.month)?.label || "Month"
 
@@ -512,10 +512,10 @@ export default function HRPayrollPage() {
             <h3 className="font-medium mr-2">Payroll Records</h3>
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search employee..." 
-                value={search} 
-                onChange={(e) => setSearch(e.target.value)} 
+              <Input
+                placeholder="Search employee..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 h-9"
               />
             </div>
@@ -551,70 +551,70 @@ export default function HRPayrollPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className={errors.employeeId ? "text-destructive" : ""}>Employee ID <span className="text-destructive">*</span></Label>
-                    <Input 
+                    <Input
                       className={errors.employeeId ? "border-destructive" : ""}
-                      value={form.employeeId} 
+                      value={form.employeeId}
                       onChange={(e) => {
                         setForm({ ...form, employeeId: e.target.value })
                         if (errors.employeeId) setErrors(prev => ({ ...prev, employeeId: "" }))
-                      }} 
-                      placeholder="EMP001" 
+                      }}
+                      placeholder="EMP001"
                     />
                     {errors.employeeId && <p className="text-[10px] text-destructive mt-1">{errors.employeeId}</p>}
                   </div>
                   <div>
                     <Label className={errors.employeeName ? "text-destructive" : ""}>Employee Name <span className="text-destructive">*</span></Label>
-                    <Input 
+                    <Input
                       className={errors.employeeName ? "border-destructive" : ""}
-                      value={form.employeeName} 
+                      value={form.employeeName}
                       onChange={(e) => {
                         setForm({ ...form, employeeName: e.target.value })
                         if (errors.employeeName) setErrors(prev => ({ ...prev, employeeName: "" }))
-                      }} 
-                      placeholder="Full name" 
+                      }}
+                      placeholder="Full name"
                     />
                     {errors.employeeName && <p className="text-[10px] text-destructive mt-1">{errors.employeeName}</p>}
                   </div>
                 </div>
                 <div>
                   <Label className={errors.role ? "text-destructive" : ""}>Role <span className="text-destructive">*</span></Label>
-                  <Input 
+                  <Input
                     className={errors.role ? "border-destructive" : ""}
-                    value={form.role} 
+                    value={form.role}
                     onChange={(e) => {
                       setForm({ ...form, role: e.target.value })
                       if (errors.role) setErrors(prev => ({ ...prev, role: "" }))
-                    }} 
-                    placeholder="e.g. Senior Stylist" 
+                    }}
+                    placeholder="e.g. Senior Stylist"
                   />
                   {errors.role && <p className="text-[10px] text-destructive mt-1">{errors.role}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className={errors.baseSalary ? "text-destructive" : ""}>Base Salary <span className="text-destructive">*</span></Label>
-                    <Input 
+                    <Input
                       className={errors.baseSalary ? "border-destructive" : ""}
-                      type="number" 
-                      min={0} 
-                      value={form.baseSalary} 
+                      type="number"
+                      min={0}
+                      value={form.baseSalary}
                       onChange={(e) => {
                         setForm({ ...form, baseSalary: Number(e.target.value) })
                         if (errors.baseSalary) setErrors(prev => ({ ...prev, baseSalary: "" }))
-                      }} 
+                      }}
                     />
                     {errors.baseSalary && <p className="text-[10px] text-destructive mt-1">{errors.baseSalary}</p>}
                   </div>
                   <div>
                     <Label className={errors.bonus ? "text-destructive" : ""}>Bonus</Label>
-                    <Input 
+                    <Input
                       className={errors.bonus ? "border-destructive" : ""}
-                      type="number" 
-                      min={0} 
-                      value={form.bonus} 
+                      type="number"
+                      min={0}
+                      value={form.bonus}
                       onChange={(e) => {
                         setForm({ ...form, bonus: Number(e.target.value) })
                         if (errors.bonus) setErrors(prev => ({ ...prev, bonus: "" }))
-                      }} 
+                      }}
                     />
                     {errors.bonus && <p className="text-[10px] text-destructive mt-1">{errors.bonus}</p>}
                   </div>
@@ -622,25 +622,25 @@ export default function HRPayrollPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className={errors.deductions ? "text-destructive" : ""}>Deductions</Label>
-                    <Input 
+                    <Input
                       className={errors.deductions ? "border-destructive" : ""}
-                      type="number" 
-                      min={0} 
-                      value={form.deductions} 
+                      type="number"
+                      min={0}
+                      value={form.deductions}
                       onChange={(e) => {
                         setForm({ ...form, deductions: Number(e.target.value) })
                         if (errors.deductions) setErrors(prev => ({ ...prev, deductions: "" }))
-                      }} 
+                      }}
                     />
                     {errors.deductions && <p className="text-[10px] text-destructive mt-1">{errors.deductions}</p>}
                   </div>
                   <div>
                     <Label>Net Salary</Label>
-                    <Input 
-                      type="number" 
-                      min={0} 
-                      value={form.netSalary} 
-                      readOnly 
+                    <Input
+                      type="number"
+                      min={0}
+                      value={form.netSalary}
+                      readOnly
                       className="bg-muted cursor-not-allowed"
                     />
                   </div>
@@ -648,8 +648,8 @@ export default function HRPayrollPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Status</Label>
-                    <Select 
-                      value={form.status} 
+                    <Select
+                      value={form.status}
                       onValueChange={(v) => {
                         setForm({ ...form, status: v as PayrollStatus })
                         if (v !== "Paid" && errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
@@ -665,14 +665,14 @@ export default function HRPayrollPage() {
                   </div>
                   <div>
                     <Label className={errors.payDate ? "text-destructive" : ""}>Pay Date {form.status === "Paid" && <span className="text-destructive">*</span>}</Label>
-                    <Input 
+                    <Input
                       className={errors.payDate ? "border-destructive" : ""}
-                      type="date" 
-                      value={form.payDate} 
+                      type="date"
+                      value={form.payDate}
                       onChange={(e) => {
                         setForm({ ...form, payDate: e.target.value })
                         if (errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
-                      }} 
+                      }}
                     />
                     {errors.payDate && <p className="text-[10px] text-destructive mt-1">{errors.payDate}</p>}
                   </div>
@@ -850,7 +850,7 @@ export default function HRPayrollPage() {
                   <Pencil className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
-                <Button onClick={() => setViewRecord(null)} className="w-full">Close</Button>
+                {/* <Button onClick={() => setViewRecord(null)} className="w-full">Close</Button> */}
               </DialogFooter>
             </div>
           )}
@@ -918,8 +918,8 @@ export default function HRPayrollPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Status</Label>
-                <Select 
-                  value={editForm.status} 
+                <Select
+                  value={editForm.status}
                   onValueChange={(v) => {
                     setEditForm({ ...editForm, status: v as PayrollStatus })
                     if (v !== "Paid" && errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
