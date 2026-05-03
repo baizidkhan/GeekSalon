@@ -350,31 +350,7 @@ export default function ClientsPage() {
     a.click()
   }
 
-  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = async (event) => {
-      const text = event.target?.result as string
-      const lines = text.split("\n").slice(1).filter(l => l.trim())
-      for (const line of lines) {
-        const [name, email, phone] = line.split(",")
-        if (!name?.trim() || !phone?.trim()) continue
-        try {
-          await createClient({
-            name: name.trim(),
-            email: email?.trim() || undefined,
-            phone: phone.trim(),
-          })
-        } catch (err) {
-          console.error(`Failed to import client ${name}`, err)
-        }
-      }
-      fetchClients()
-    }
-    reader.readAsText(file)
-    e.target.value = ""
-  }
+
 
   const getInitials = (name: string) => {
     return name
@@ -394,12 +370,7 @@ export default function ClientsPage() {
             <p className="text-muted-foreground text-sm mt-0.5">Manage your client database</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="cursor-pointer">
-              <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
-              <Button variant="outline" asChild>
-                <span><Upload className="w-4 h-4 mr-2" />Import CSV</span>
-              </Button>
-            </label>
+
             <Button variant="outline" onClick={handleExportCSV}>
               <Download className="w-4 h-4 mr-2" />
               Export CSV
