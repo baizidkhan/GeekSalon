@@ -9,6 +9,7 @@ import { Service } from "@/lib/types"
 import { Star, MapPin, Clock, CheckCircle2 } from "lucide-react"
 import { useBooking } from "@/context/BookingContext"
 import { useBusiness } from "@/context/BusinessContext"
+import { getMediaUrl } from "@/lib/utils"
 
 export default function ServiceDetailPage() {
     const { businessInfo } = useBusiness()
@@ -71,7 +72,7 @@ export default function ServiceDetailPage() {
             <section className="relative h-[60vh] w-full overflow-hidden">
                 {service.imageUrl ? (
                     <img 
-                        src={service.imageUrl} 
+                        src={getMediaUrl(service.imageUrl)} 
                         alt={service.name} 
                         className="h-full w-full object-cover"
                     />
@@ -134,7 +135,7 @@ export default function ServiceDetailPage() {
                                         Starting From
                                     </p>
                                     <div className="mb-8 text-4xl font-light" style={{ fontFamily: 'Playfair Display, serif' }}>
-                                        ${service.price}
+                                        ৳{service.price}
                                     </div>
                                     <button 
                                         onClick={() => openBooking(service)}
