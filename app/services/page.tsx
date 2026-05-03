@@ -6,6 +6,7 @@ import { Footer } from "../components/footer"
 import { Service, ServiceCategory } from "@/lib/types"
 import Link from "next/link"
 import { useBooking } from "@/context/BookingContext"
+import { getMediaUrl } from "@/lib/utils"
 
 const categories = ["All", ...Object.values(ServiceCategory)]
 
@@ -99,7 +100,7 @@ export default function ServicesPage() {
                                         <div className={`relative aspect-[4/3] overflow-hidden bg-neutral-900 shrink-0`}>
                                             {item.imageUrl ? (
                                                 <img 
-                                                    src={item.imageUrl} 
+                                                    src={getMediaUrl(item.imageUrl)} 
                                                     alt={item.name} 
                                                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
                                                 />
@@ -138,7 +139,7 @@ export default function ServicesPage() {
                                                 <div className="my-5 border-t border-white/10" />
 
                                                 <p className="mb-5 text-[11px] uppercase tracking-[0.35em] text-white/45" style={{ fontFamily: 'Inter, sans-serif' }}>
-                                                    Starting from ${item.price}
+                                                    Starting from ৳{item.price}
                                                 </p>
 
                                                 <div className="flex gap-3">
