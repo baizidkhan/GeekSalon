@@ -548,14 +548,7 @@ export default function EmployeesPage() {
                       onChange={(e) => setNewEmployee({ ...newEmployee, experience: e.target.value })}
                     />
                   </div>
-                  <div className="col-span-2">
-                    <Label>Fingerprint Code</Label>
-                    <Input
-                      value={newEmployee.fingerprintCode}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, fingerprintCode: e.target.value })}
-                      placeholder="Enter device code if any"
-                    />
-                  </div>
+
                   <div className="col-span-2">
                     <Label>About Yourself</Label>
                     <Input
@@ -1110,7 +1103,7 @@ export default function EmployeesPage() {
 
           <DialogFooter>
             {modalEditMode ? (
-              <div className="flex w-full gap-2">
+              <div className="flex flex-col w-full gap-2">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -1134,7 +1127,7 @@ export default function EmployeesPage() {
                 </Button>
               </div>
             ) : (
-              <div className="flex w-full gap-2">
+              <div className="flex flex-col w-full gap-2">
                 <Button
                   variant="outline"
                   className="text-destructive hover:bg-destructive/10 hover:border-destructive/40"
