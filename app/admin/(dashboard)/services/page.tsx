@@ -546,15 +546,7 @@ export default function ServicesPage() {
       </div>
 
       {/* Loading Modal/Overlay */}
-      {isSubmitting && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-2xl flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-            <p className="text-lg font-medium">Processing Request...</p>
-            <p className="text-sm text-muted-foreground">Uploading data and images to Cloudinary</p>
-          </div>
-        </div>
-      )}
+
 
       {/* View Dialog */}
       <Dialog open={!!serviceToView} onOpenChange={() => setServiceToView(null)}>
