@@ -277,7 +277,6 @@ export default function HRPayrollPage() {
     if (!editRecord) return
     
     const newErrors: Record<string, string> = {}
-    if (editForm.baseSalary <= 0) newErrors.baseSalary = "Base salary must be greater than 0"
     if ((editForm.bonus ?? 0) < 0) newErrors.bonus = "Bonus cannot be negative"
     if ((editForm.deductions ?? 0) < 0) newErrors.deductions = "Deductions cannot be negative"
     if (editForm.status === "Paid" && !editForm.payDate) newErrors.payDate = "Pay date is required when status is Paid"
@@ -867,18 +866,13 @@ export default function HRPayrollPage() {
           <div className="space-y-4 mt-2 pb-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className={errors.baseSalary ? "text-destructive" : ""}>Base Salary <span className="text-destructive">*</span></Label>
+                <Label>Base Salary</Label>
                 <Input
-                  className={errors.baseSalary ? "border-destructive" : ""}
                   type="number"
-                  min={0}
                   value={editForm.baseSalary}
-                  onChange={(e) => {
-                    setEditForm({ ...editForm, baseSalary: Number(e.target.value) })
-                    if (errors.baseSalary) setErrors(prev => ({ ...prev, baseSalary: "" }))
-                  }}
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
                 />
-                {errors.baseSalary && <p className="text-[10px] text-destructive mt-1">{errors.baseSalary}</p>}
               </div>
               <div>
                 <Label className={errors.bonus ? "text-destructive" : ""}>Bonus</Label>
