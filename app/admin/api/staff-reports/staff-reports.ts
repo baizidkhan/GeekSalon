@@ -1,7 +1,7 @@
 import api from '../base'
 import { CACHE, consumeStale } from '@admin/lib/cache'
 
-const TTL = 15 * 60 * 1000 // 15 min — historical, immutable for a given date range
+const TTL = 1 * 60 * 1000 // 1 min — staff reports should update frequently
 
 export async function getStaffReports(from: string, to: string) {
   const override = consumeStale(CACHE.STAFF_REPORTS)

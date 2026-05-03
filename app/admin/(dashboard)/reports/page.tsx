@@ -29,7 +29,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { Download, TrendingUp, Users, Calendar, Wallet } from "lucide-react"
+import { Download, TrendingUp, Users, Calendar, Wallet, Wallet2Icon, Banknote } from "lucide-react"
 import { getReports } from "@admin/api/reports/reports"
 import { StatCard } from "@admin/components/stat-card"
 
@@ -60,25 +60,28 @@ const TIME_OPTIONS = [
 
 function getDateRange(filter: string): { from: string; to: string } {
   const now = new Date()
-  const today = now.toISOString().split("T")[0]
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const toStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const today = toStr(now)
 
   if (filter === "today") return { from: today, to: today }
 
   if (filter === "week") {
     const d = new Date(now)
     d.setDate(d.getDate() - 6)
-    return { from: d.toISOString().split("T")[0], to: today }
+    return { from: toStr(d), to: today }
   }
 
   if (filter === "month") {
-    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`
-    return { from, to: today }
+    const from = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    return { from, to: toStr(lastDay) }
   }
 
   if (filter === "6months") {
     const d = new Date(now)
     d.setMonth(d.getMonth() - 6)
-    return { from: d.toISOString().split("T")[0], to: today }
+    return { from: toStr(d), to: today }
   }
 
   if (filter === "year") {
@@ -159,14 +162,16 @@ export default function ReportsPage() {
     a.click()
   }
 
-  const paymentChartData = data ? [
-    { name: "Cash", revenue: Number(data.revenueByPaymentMethod.Cash) },
-    { name: "bKash", revenue: Number(data.revenueByPaymentMethod.bKash) },
-    { name: "Card", revenue: Number(data.revenueByPaymentMethod.Card) },
-  ] : []
+  const paymentChartData = data
+    ? Object.entries(data.revenueByPaymentMethod).map(([name, revenue]) => ({ name, revenue: Number(revenue) }))
+    : []
 
   const sourceChartData = data
     ? Object.entries(data.appointmentsBySource).map(([name, count]) => ({ name, count }))
+    : []
+
+  const statusChartData = data
+    ? Object.entries(data.appointmentsByStatus).map(([name, count]) => ({ name, count }))
     : []
 
   const avgTicket = data && data.totalInvoices > 0
@@ -250,9 +255,9 @@ export default function ReportsPage() {
               className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
             />
             <StatCard
-              title="Avg. Ticket Size"
+              title="Avg. Revenue"
               value={`৳${avgTicket.toLocaleString()}`}
-              icon={TrendingUp}
+              icon={Banknote}
               iconWrapperClassName="bg-rose-50 text-rose-500"
               className="border-t-4 border-t-transparent hover:border-t-rose-500 transition-all"
             />
@@ -323,7 +328,7 @@ export default function ReportsPage() {
               <h3 className="font-medium text-foreground mb-4">Appointments by Status</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={Object.entries(data.appointmentsByStatus).map(([name, count]) => ({ name, count }))}>
+                  <BarChart data={statusChartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7280" }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />

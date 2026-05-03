@@ -46,6 +46,10 @@ import {
 } from "@admin/api/hr-payroll/hr-payroll"
 import { getBasicEmployees } from "@admin/api/employees/employees"
 import { StatCard } from "@admin/components/stat-card"
+import { useBusiness } from "@/context/BusinessContext"
+import { useDebounce } from "@/hooks/use-debounce"
+import { Search, Filter } from "lucide-react"
+// jsPDF is imported dynamically to avoid SSR build errors
 
 const MONTHS = [
   { value: 1, label: "January" },
@@ -89,6 +93,9 @@ export default function HRPayrollPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 500)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<CreatePayrollDto>(EMPTY_FORM)
@@ -98,11 +105,36 @@ export default function HRPayrollPage() {
   const [editRecord, setEditRecord] = useState<MergedRecord | null>(null)
   const [editForm, setEditForm] = useState<CreatePayrollDto>(EMPTY_FORM)
   const [editSaving, setEditSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const { businessName } = useBusiness()
+
+  // Auto-calculate netSalary for Create Form
+  useEffect(() => {
+    setForm(prev => ({
+      ...prev,
+      netSalary: Number(prev.baseSalary || 0) + Number(prev.bonus || 0) - Number(prev.deductions || 0)
+    }))
+  }, [form.baseSalary, form.bonus, form.deductions])
+
+  // Auto-calculate netSalary for Edit Form
+  useEffect(() => {
+    setEditForm(prev => ({
+      ...prev,
+      netSalary: Number(prev.baseSalary || 0) + Number(prev.bonus || 0) - Number(prev.deductions || 0)
+    }))
+  }, [editForm.baseSalary, editForm.bonus, editForm.deductions])
 
   const fetchPayroll = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getPayrollRecords(selectedMonth, selectedYear, page, PAGE_SIZE)
+      const res = await getPayrollRecords(
+        selectedMonth, 
+        selectedYear, 
+        page, 
+        PAGE_SIZE,
+        debouncedSearch || undefined,
+        statusFilter === "all" ? undefined : statusFilter
+      )
       setRecords(res.data)
       setTotal(res.total)
       setTotalPages(res.totalPages)
@@ -111,11 +143,11 @@ export default function HRPayrollPage() {
     } finally {
       setLoading(false)
     }
-  }, [selectedMonth, selectedYear, page])
+  }, [selectedMonth, selectedYear, page, debouncedSearch, statusFilter])
 
   useEffect(() => {
     setPage(1)
-  }, [selectedMonth, selectedYear])
+  }, [selectedMonth, selectedYear, debouncedSearch, statusFilter])
 
   useEffect(() => {
     fetchPayroll()
@@ -145,9 +177,17 @@ export default function HRPayrollPage() {
 
     // virtual rows only apply to the current month — new employees have no past records
     const isCurrentPeriod = selectedMonth === currentMonth && selectedYear === currentYear
-    const missingRows = isCurrentPeriod
+    
+    // Virtual rows should also respect search and status filters
+    const statusMatchesPending = statusFilter === "all" || statusFilter === "Pending"
+    
+    const missingRows = (isCurrentPeriod && statusMatchesPending)
       ? employees
-        .filter((e) => !byName.has(e.name.toLowerCase()))
+        .filter((e) => {
+          const matchesSearch = !debouncedSearch || e.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+          const isNotCreated = !byName.has(e.name.toLowerCase())
+          return matchesSearch && isNotCreated
+        })
         .map((e) => ({
           id: `virtual-${e.id}`,
           employeeId: e.id,
@@ -168,22 +208,48 @@ export default function HRPayrollPage() {
       : []
 
     return [...records, ...missingRows]
-  }, [records, employees, selectedMonth, selectedYear])
+  }, [records, employees, selectedMonth, selectedYear, debouncedSearch, statusFilter])
 
   const handleCreate = async () => {
-    if (!form.employeeId || !form.employeeName || !form.role) {
-      toast.error("Employee ID, name, and role are required")
+    const newErrors: Record<string, string> = {}
+    if (!form.employeeId) newErrors.employeeId = "Employee ID is required"
+    if (!form.employeeName) newErrors.employeeName = "Employee name is required"
+    if (!form.role) newErrors.role = "Role is required"
+    if (form.baseSalary <= 0) newErrors.baseSalary = "Base salary must be greater than 0"
+    if ((form.bonus ?? 0) < 0) newErrors.bonus = "Bonus cannot be negative"
+    if ((form.deductions ?? 0) < 0) newErrors.deductions = "Deductions cannot be negative"
+    if (form.status === "Paid" && !form.payDate) newErrors.payDate = "Pay date is required when status is Paid"
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      toast.error("Please fix the errors in the form")
       return
     }
+
     setSaving(true)
     try {
       await createPayrollRecord({ ...form, month: selectedMonth, year: selectedYear })
       toast.success("Payroll record created")
       setIsCreateOpen(false)
       setForm(EMPTY_FORM)
+      setErrors({})
       fetchPayroll()
-    } catch {
-      toast.error("Failed to create payroll record")
+    } catch (error: any) {
+      const backendErrors = error.response?.data?.message
+      if (Array.isArray(backendErrors)) {
+        const newErrors: Record<string, string> = {}
+        backendErrors.forEach((msg: string) => {
+          if (msg.toLowerCase().includes("salary")) newErrors.baseSalary = msg
+          if (msg.toLowerCase().includes("date")) newErrors.payDate = msg
+          if (msg.toLowerCase().includes("id")) newErrors.employeeId = msg
+          if (msg.toLowerCase().includes("name")) newErrors.employeeName = msg
+          if (msg.toLowerCase().includes("role")) newErrors.role = msg
+        })
+        setErrors(newErrors)
+      }
+      
+      const errorMessage = Array.isArray(backendErrors) ? backendErrors[0] : backendErrors
+      toast.error(typeof errorMessage === 'string' && errorMessage !== "Internal server error" ? errorMessage : "Failed to create payroll record")
     } finally {
       setSaving(false)
     }
@@ -209,6 +275,19 @@ export default function HRPayrollPage() {
 
   const handleEditSave = async () => {
     if (!editRecord) return
+    
+    const newErrors: Record<string, string> = {}
+    if (editForm.baseSalary <= 0) newErrors.baseSalary = "Base salary must be greater than 0"
+    if ((editForm.bonus ?? 0) < 0) newErrors.bonus = "Bonus cannot be negative"
+    if ((editForm.deductions ?? 0) < 0) newErrors.deductions = "Deductions cannot be negative"
+    if (editForm.status === "Paid" && !editForm.payDate) newErrors.payDate = "Pay date is required when status is Paid"
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      toast.error("Please fix the errors in the form")
+      return
+    }
+
     setEditSaving(true)
     try {
       if (editRecord._virtual) {
@@ -219,12 +298,92 @@ export default function HRPayrollPage() {
         toast.success("Payroll record updated")
       }
       setEditRecord(null)
+      setErrors({})
       fetchPayroll()
-    } catch {
-      toast.error("Failed to save payroll record")
+    } catch (error: any) {
+      const backendErrors = error.response?.data?.message
+      if (Array.isArray(backendErrors)) {
+        const newErrors: Record<string, string> = {}
+        backendErrors.forEach((msg: string) => {
+          if (msg.toLowerCase().includes("salary")) newErrors.baseSalary = msg
+          if (msg.toLowerCase().includes("date")) newErrors.payDate = msg
+        })
+        setErrors(newErrors)
+      }
+
+      const errorMessage = Array.isArray(backendErrors) ? backendErrors[0] : backendErrors
+      toast.error(typeof errorMessage === 'string' && errorMessage !== "Internal server error" ? errorMessage : "Failed to save payroll record")
     } finally {
       setEditSaving(false)
     }
+  }
+
+  const downloadPayrollSlip = async (record: PayrollRecord) => {
+    if (typeof window === 'undefined') return
+    // Dynamically import browser-compatible version of jsPDF to avoid SSR issues
+    const { default: jsPDF } = await import("jspdf/dist/jspdf.es.min.js")
+    const { default: autoTable } = await (import("jspdf-autotable") as any)
+    
+    const doc = new (jsPDF as any)()
+    const monthName = MONTHS.find((m) => m.value === record.month)?.label || "Month"
+
+    // Set header
+    doc.setFontSize(20)
+    doc.setTextColor(40)
+    doc.text(`${businessName} Salary Slip`, 105, 20, { align: "center" })
+
+    doc.setFontSize(10)
+    doc.setTextColor(100)
+    doc.text(`Period: ${monthName} ${record.year}`, 105, 28, { align: "center" })
+
+    // Employee Details
+    const details = [
+      ["Employee Name", record.employeeName],
+      ["Employee ID", record.employeeId],
+      ["Role", record.role],
+      ["Status", record.status],
+      ["Pay Date", record.payDate || "N/A"],
+    ]
+
+    autoTable(doc, {
+      startY: 40,
+      head: [["Description", "Details"]],
+      body: details,
+      theme: "striped",
+      headStyles: { fillColor: [79, 70, 229] },
+    })
+
+    // Salary Breakdown
+    const salaryData = [
+      ["Base Salary", `BDT ${Number(record.baseSalary).toLocaleString()}`],
+      ["Bonus", `BDT ${Number(record.bonus).toLocaleString()}`],
+      ["Deductions", `BDT ${Number(record.deductions).toLocaleString()}`],
+      ["Net Salary", `BDT ${Number(record.netSalary).toLocaleString()}`],
+    ]
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 10,
+      head: [["Earnings/Deductions", "Amount"]],
+      body: salaryData,
+      theme: "grid",
+      headStyles: { fillColor: [16, 185, 129] },
+      columnStyles: { 1: { halign: "right" } },
+    })
+
+    // Footer
+    const finalY = (doc as any).lastAutoTable.finalY + 30
+    doc.setFontSize(10)
+    doc.setTextColor(100)
+    doc.text("________________________", 40, finalY)
+    doc.text("Employee Signature", 40, finalY + 5)
+
+    doc.text("________________________", 140, finalY)
+    doc.text("Authorized Signature", 140, finalY + 5)
+
+    doc.setFontSize(8)
+    doc.text("This is a computer generated document and does not require a physical signature.", 105, finalY + 20, { align: "center" })
+
+    doc.save(`SalarySlip_${businessName}_${record.employeeName}_${monthName}_${record.year}.pdf`)
   }
 
   const getInitials = (name: string) =>
@@ -349,9 +508,36 @@ export default function HRPayrollPage() {
 
       {/* Payroll Table */}
       <div className="bg-card rounded-xl border border-border">
-        <div className="p-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-medium">Payroll Records</h3>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <div className="p-4 border-b border-border flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[300px]">
+            <h3 className="font-medium mr-2">Payroll Records</h3>
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search employee..." 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+                className="pl-9 h-9"
+              />
+            </div>
+            <div className="w-40">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-9">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                    <SelectValue placeholder="All Status" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Paid">Paid</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Processing">Processing</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) setErrors({}) }}>
             {/* <DialogTrigger asChild>
               <Button size="sm" className="shrink-0" onClick={() => setForm({ ...EMPTY_FORM, month: selectedMonth, year: selectedYear })}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -365,42 +551,111 @@ export default function HRPayrollPage() {
               <div className="space-y-4 mt-4 pb-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Employee ID</Label>
-                    <Input value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })} placeholder="EMP001" />
+                    <Label className={errors.employeeId ? "text-destructive" : ""}>Employee ID <span className="text-destructive">*</span></Label>
+                    <Input 
+                      className={errors.employeeId ? "border-destructive" : ""}
+                      value={form.employeeId} 
+                      onChange={(e) => {
+                        setForm({ ...form, employeeId: e.target.value })
+                        if (errors.employeeId) setErrors(prev => ({ ...prev, employeeId: "" }))
+                      }} 
+                      placeholder="EMP001" 
+                    />
+                    {errors.employeeId && <p className="text-[10px] text-destructive mt-1">{errors.employeeId}</p>}
                   </div>
                   <div>
-                    <Label>Employee Name</Label>
-                    <Input value={form.employeeName} onChange={(e) => setForm({ ...form, employeeName: e.target.value })} placeholder="Full name" />
+                    <Label className={errors.employeeName ? "text-destructive" : ""}>Employee Name <span className="text-destructive">*</span></Label>
+                    <Input 
+                      className={errors.employeeName ? "border-destructive" : ""}
+                      value={form.employeeName} 
+                      onChange={(e) => {
+                        setForm({ ...form, employeeName: e.target.value })
+                        if (errors.employeeName) setErrors(prev => ({ ...prev, employeeName: "" }))
+                      }} 
+                      placeholder="Full name" 
+                    />
+                    {errors.employeeName && <p className="text-[10px] text-destructive mt-1">{errors.employeeName}</p>}
                   </div>
                 </div>
                 <div>
-                  <Label>Role</Label>
-                  <Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="e.g. Senior Stylist" />
+                  <Label className={errors.role ? "text-destructive" : ""}>Role <span className="text-destructive">*</span></Label>
+                  <Input 
+                    className={errors.role ? "border-destructive" : ""}
+                    value={form.role} 
+                    onChange={(e) => {
+                      setForm({ ...form, role: e.target.value })
+                      if (errors.role) setErrors(prev => ({ ...prev, role: "" }))
+                    }} 
+                    placeholder="e.g. Senior Stylist" 
+                  />
+                  {errors.role && <p className="text-[10px] text-destructive mt-1">{errors.role}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Base Salary</Label>
-                    <Input type="number" min={0} value={form.baseSalary} onChange={(e) => setForm({ ...form, baseSalary: Number(e.target.value) })} />
+                    <Label className={errors.baseSalary ? "text-destructive" : ""}>Base Salary <span className="text-destructive">*</span></Label>
+                    <Input 
+                      className={errors.baseSalary ? "border-destructive" : ""}
+                      type="number" 
+                      min={0} 
+                      value={form.baseSalary} 
+                      onChange={(e) => {
+                        setForm({ ...form, baseSalary: Number(e.target.value) })
+                        if (errors.baseSalary) setErrors(prev => ({ ...prev, baseSalary: "" }))
+                      }} 
+                    />
+                    {errors.baseSalary && <p className="text-[10px] text-destructive mt-1">{errors.baseSalary}</p>}
                   </div>
                   <div>
-                    <Label>Bonus</Label>
-                    <Input type="number" min={0} value={form.bonus} onChange={(e) => setForm({ ...form, bonus: Number(e.target.value) })} />
+                    <Label className={errors.bonus ? "text-destructive" : ""}>Bonus</Label>
+                    <Input 
+                      className={errors.bonus ? "border-destructive" : ""}
+                      type="number" 
+                      min={0} 
+                      value={form.bonus} 
+                      onChange={(e) => {
+                        setForm({ ...form, bonus: Number(e.target.value) })
+                        if (errors.bonus) setErrors(prev => ({ ...prev, bonus: "" }))
+                      }} 
+                    />
+                    {errors.bonus && <p className="text-[10px] text-destructive mt-1">{errors.bonus}</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Deductions</Label>
-                    <Input type="number" min={0} value={form.deductions} onChange={(e) => setForm({ ...form, deductions: Number(e.target.value) })} />
+                    <Label className={errors.deductions ? "text-destructive" : ""}>Deductions</Label>
+                    <Input 
+                      className={errors.deductions ? "border-destructive" : ""}
+                      type="number" 
+                      min={0} 
+                      value={form.deductions} 
+                      onChange={(e) => {
+                        setForm({ ...form, deductions: Number(e.target.value) })
+                        if (errors.deductions) setErrors(prev => ({ ...prev, deductions: "" }))
+                      }} 
+                    />
+                    {errors.deductions && <p className="text-[10px] text-destructive mt-1">{errors.deductions}</p>}
                   </div>
                   <div>
                     <Label>Net Salary</Label>
-                    <Input type="number" min={0} value={form.netSalary} onChange={(e) => setForm({ ...form, netSalary: Number(e.target.value) })} />
+                    <Input 
+                      type="number" 
+                      min={0} 
+                      value={form.netSalary} 
+                      readOnly 
+                      className="bg-muted cursor-not-allowed"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Status</Label>
-                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as PayrollStatus })}>
+                    <Select 
+                      value={form.status} 
+                      onValueChange={(v) => {
+                        setForm({ ...form, status: v as PayrollStatus })
+                        if (v !== "Paid" && errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
+                      }}
+                    >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Pending">Pending</SelectItem>
@@ -410,15 +665,29 @@ export default function HRPayrollPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Pay Date</Label>
-                    <Input type="date" value={form.payDate} onChange={(e) => setForm({ ...form, payDate: e.target.value })} />
+                    <Label className={errors.payDate ? "text-destructive" : ""}>Pay Date {form.status === "Paid" && <span className="text-destructive">*</span>}</Label>
+                    <Input 
+                      className={errors.payDate ? "border-destructive" : ""}
+                      type="date" 
+                      value={form.payDate} 
+                      onChange={(e) => {
+                        setForm({ ...form, payDate: e.target.value })
+                        if (errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
+                      }} 
+                    />
+                    {errors.payDate && <p className="text-[10px] text-destructive mt-1">{errors.payDate}</p>}
                   </div>
                 </div>
-                <Button className="w-full" onClick={handleCreate} disabled={saving}>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setIsCreateOpen(false); setErrors({}) }} className="w-full">
+                  Cancel
+                </Button>
+                <Button onClick={handleCreate} disabled={saving} className="w-full">
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Save Record
                 </Button>
-              </div>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -489,7 +758,7 @@ export default function HRPayrollPage() {
                             <Pencil className="w-4 h-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem>Download Slip</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => downloadPayrollSlip(record)}>Download Slip</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -573,12 +842,16 @@ export default function HRPayrollPage() {
                   <p className="font-medium">{viewRecord.payDate || "—"}</p>
                 </div>
               </div>
-              <DialogFooter className="pt-2">
-                <Button variant="outline" onClick={() => { setViewRecord(null); openEdit(viewRecord, { stopPropagation: () => { } } as any) }}>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => downloadPayrollSlip(viewRecord)} className="w-full">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Slip
+                </Button>
+                <Button variant="outline" onClick={() => { setViewRecord(null); openEdit(viewRecord, { stopPropagation: () => { } } as any) }} className="w-full">
                   <Pencil className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
-                <Button onClick={() => setViewRecord(null)}>Close</Button>
+                <Button onClick={() => setViewRecord(null)} className="w-full">Close</Button>
               </DialogFooter>
             </div>
           )}
@@ -586,7 +859,7 @@ export default function HRPayrollPage() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editRecord} onOpenChange={(open) => !open && setEditRecord(null)}>
+      <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) { setEditRecord(null); setErrors({}); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Payroll — {editRecord?.employeeName}</DialogTitle>
@@ -594,33 +867,48 @@ export default function HRPayrollPage() {
           <div className="space-y-4 mt-2 pb-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Base Salary</Label>
+                <Label className={errors.baseSalary ? "text-destructive" : ""}>Base Salary <span className="text-destructive">*</span></Label>
                 <Input
+                  className={errors.baseSalary ? "border-destructive" : ""}
                   type="number"
                   min={0}
                   value={editForm.baseSalary}
-                  onChange={(e) => setEditForm({ ...editForm, baseSalary: Number(e.target.value) })}
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, baseSalary: Number(e.target.value) })
+                    if (errors.baseSalary) setErrors(prev => ({ ...prev, baseSalary: "" }))
+                  }}
                 />
+                {errors.baseSalary && <p className="text-[10px] text-destructive mt-1">{errors.baseSalary}</p>}
               </div>
               <div>
-                <Label>Bonus</Label>
+                <Label className={errors.bonus ? "text-destructive" : ""}>Bonus</Label>
                 <Input
+                  className={errors.bonus ? "border-destructive" : ""}
                   type="number"
                   min={0}
                   value={editForm.bonus}
-                  onChange={(e) => setEditForm({ ...editForm, bonus: Number(e.target.value) })}
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, bonus: Number(e.target.value) })
+                    if (errors.bonus) setErrors(prev => ({ ...prev, bonus: "" }))
+                  }}
                 />
+                {errors.bonus && <p className="text-[10px] text-destructive mt-1">{errors.bonus}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Deductions</Label>
+                <Label className={errors.deductions ? "text-destructive" : ""}>Deductions</Label>
                 <Input
+                  className={errors.deductions ? "border-destructive" : ""}
                   type="number"
                   min={0}
                   value={editForm.deductions}
-                  onChange={(e) => setEditForm({ ...editForm, deductions: Number(e.target.value) })}
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, deductions: Number(e.target.value) })
+                    if (errors.deductions) setErrors(prev => ({ ...prev, deductions: "" }))
+                  }}
                 />
+                {errors.deductions && <p className="text-[10px] text-destructive mt-1">{errors.deductions}</p>}
               </div>
               <div>
                 <Label>Net Salary</Label>
@@ -628,14 +916,21 @@ export default function HRPayrollPage() {
                   type="number"
                   min={0}
                   value={editForm.netSalary}
-                  onChange={(e) => setEditForm({ ...editForm, netSalary: Number(e.target.value) })}
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Status</Label>
-                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v as PayrollStatus })}>
+                <Select 
+                  value={editForm.status} 
+                  onValueChange={(v) => {
+                    setEditForm({ ...editForm, status: v as PayrollStatus })
+                    if (v !== "Paid" && errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Pending">Pending</SelectItem>
@@ -645,18 +940,25 @@ export default function HRPayrollPage() {
                 </Select>
               </div>
               <div>
-                <Label>Pay Date</Label>
+                <Label className={errors.payDate ? "text-destructive" : ""}>Pay Date {editForm.status === "Paid" && <span className="text-destructive">*</span>}</Label>
                 <Input
+                  className={errors.payDate ? "border-destructive" : ""}
                   type="date"
                   value={editForm.payDate}
-                  onChange={(e) => setEditForm({ ...editForm, payDate: e.target.value })}
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, payDate: e.target.value })
+                    if (errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
+                  }}
                 />
+                {errors.payDate && <p className="text-[10px] text-destructive mt-1">{errors.payDate}</p>}
               </div>
             </div>
           </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setEditRecord(null)}>Cancel</Button>
-            <Button onClick={handleEditSave} disabled={editSaving}>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditRecord(null); setErrors({}) }} className="w-full">
+              Cancel
+            </Button>
+            <Button onClick={handleEditSave} disabled={editSaving} className="w-full">
               {editSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Save Changes
             </Button>

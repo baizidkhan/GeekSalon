@@ -1,5 +1,5 @@
 import api from '../base';
-import { CACHE, consumeStale, markStale } from '@admin/lib/cache';
+import { CACHE, consumeStale, markStale, clearCacheByPrefix } from '@admin/lib/cache';
 
 export type PayrollStatus = 'Paid' | 'Pending' | 'Processing';
 
@@ -42,8 +42,8 @@ export interface CreatePayrollDto {
   year: number;
 }
 
-function payrollCacheKey(month?: number, year?: number, page = 1, limit = 10) {
-  return `${CACHE.PAYROLL}:${year ?? 'all'}:${month ?? 'all'}:${page}:${limit}`;
+function payrollCacheKey(month?: number, year?: number, page = 1, limit = 10, search?: string, status?: string) {
+  return `${CACHE.PAYROLL}:${year ?? 'all'}:${month ?? 'all'}:${page}:${limit}:${search ?? ""}:${status ?? ""}`;
 }
 
 export async function getPayrollRecords(
@@ -51,12 +51,16 @@ export async function getPayrollRecords(
   year?: number,
   page = 1,
   limit = 10,
+  search?: string,
+  status?: string,
 ): Promise<PayrollResponse> {
-  const key = payrollCacheKey(month, year, page, limit);
+  const key = payrollCacheKey(month, year, page, limit, search, status);
   const isStale = consumeStale(key);
   const params: Record<string, any> = { page, limit };
   if (month) params.month = month;
   if (year) params.year = year;
+  if (search) params.search = search;
+  if (status) params.status = status;
 
   const { data } = await api.get('/payroll', {
     params,
@@ -68,17 +72,17 @@ export async function getPayrollRecords(
 
 export async function createPayrollRecord(dto: CreatePayrollDto): Promise<PayrollRecord> {
   const { data } = await api.post('/payroll', dto);
-  markStale(payrollCacheKey(dto.month, dto.year), payrollCacheKey());
+  clearCacheByPrefix(CACHE.PAYROLL);
   return data;
 }
 
 export async function updatePayrollRecord(id: string, dto: Partial<CreatePayrollDto>): Promise<PayrollRecord> {
   const { data } = await api.patch(`/payroll/${id}`, dto);
-  markStale(payrollCacheKey(), CACHE.PAYROLL);
+  clearCacheByPrefix(CACHE.PAYROLL);
   return data;
 }
 
 export async function deletePayrollRecord(id: string): Promise<void> {
   await api.delete(`/payroll/${id}`);
-  markStale(payrollCacheKey(), CACHE.PAYROLL);
+  clearCacheByPrefix(CACHE.PAYROLL);
 }

@@ -36,7 +36,13 @@ export async function getEmployeeById(id: string) {
 }
 
 export async function createEmployee(employeeData: any) {
-  const { data } = await api.post('/employee/quick-create', employeeData)
+  let payload = employeeData
+  if (!(employeeData instanceof FormData)) {
+    payload = new FormData()
+    payload.append('data', JSON.stringify(employeeData))
+  }
+
+  const { data } = await api.post('/employee', payload)
   markStale(
     CACHE.EMPLOYEES,
     CACHE.EMPLOYEES_BASIC,
@@ -49,7 +55,13 @@ export async function createEmployee(employeeData: any) {
 }
 
 export async function updateEmployee(id: string, employeeData: any) {
-  const { data } = await api.patch(`/employee/${id}`, employeeData)
+  let payload = employeeData
+  if (!(employeeData instanceof FormData)) {
+    payload = new FormData()
+    payload.append('data', JSON.stringify(employeeData))
+  }
+
+  const { data } = await api.patch(`/employee/${id}`, payload)
   markStale(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS, CACHE.STAFF_REPORTS, CACHE.PAYROLL)
   return data
 }

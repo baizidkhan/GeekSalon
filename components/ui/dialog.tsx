@@ -116,12 +116,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        // bleed border full-width and flush to bottom
-        '-mx-6 sm:-mx-7 px-6 sm:px-7',
-        'pt-4 pb-4 sm:pb-6',
-        'mt-2',
-        'flex flex-col-reverse gap-3 sm:flex-row sm:justify-end',
-        'border-t border-border/60 bg-muted/30',
+        'flex flex-col-reverse gap-2',
         className,
       )}
       {...props}
