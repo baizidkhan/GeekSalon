@@ -32,47 +32,40 @@ export const StatCard = memo(function StatCard({
 }: StatCardProps) {
   return (
     <div className={cn(
-      "bg-white rounded-xl p-5 border border-slate-200 flex flex-col justify-between",
+      "bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col h-full",
       className
     )}>
-      <div className="flex items-start justify-between ">
-        <h3 className="text-[17px] font-medium text-slate-700">{title}</h3>
-        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center  mr-2 shrink-0", iconWrapperClassName)}>
-          <Icon className={cn("w-8 h-8", iconClassName)} />
+      <div className="flex items-start justify-between mb-4">
+        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-tight">{title}</h3>
+        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", iconWrapperClassName)}>
+          <Icon className={cn("w-5 h-5", iconClassName)} />
         </div>
       </div>
 
-      <div className="mb-2">
-        <div className="text-3xl font-bold mb-4 text-slate-800 tracking-tight">
+      <div className="mb-4">
+        <div className="text-3xl font-bold text-slate-800 tracking-tight leading-none mb-2">
           {value}
         </div>
         {subtitle && (
-          <div className="text-[13px] text-slate-500 mt-1 font-medium">
+          <div className="text-[12px] font-medium">
             {subtitle}
           </div>
         )}
       </div>
 
-      <div className="mt-auto">
+      <div className="mt-auto pt-2">
         {trend && (
-          <div className="flex items-center gap-1.5 text-[13px] font-medium">
+          <div className="flex items-center gap-1 text-[12px] font-bold">
             <span className={cn(
-              "flex items-center",
               trendUp ? "text-emerald-500" : "text-rose-500"
             )}>
-              {trend} {trendUp ? "Increase" : "lower"}
+              {trend} {trendUp ? "increase" : "lower"} from {trendLabel.split('from ')[1] || trendLabel}
             </span>
-            <span className="text-slate-500">{trendLabel}</span>
             {trendUp ? (
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-500 ml-auto" />
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
             ) : (
-              <TrendingDown className="w-3.5 h-3.5 text-rose-500 ml-auto" />
+              <TrendingDown className="w-4 h-4 text-rose-500 rotate-[135deg]" />
             )}
-          </div>
-        )}
-        {bottomContent && (
-          <div className="mt-1">
-            {bottomContent}
           </div>
         )}
       </div>
