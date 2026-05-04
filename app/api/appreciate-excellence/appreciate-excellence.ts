@@ -12,7 +12,8 @@ export async function getAppreciateExcellence() {
             console.error(`Failed to fetch appreciate excellence: ${res.status} ${res.statusText}`)
             return null
         }
-        return res.json();
+        const text = await res.text();
+        return text ? JSON.parse(text) : null;
     } catch (error) {
         console.error("Error fetching appreciate excellence:", error)
         return null
