@@ -440,36 +440,7 @@ function escapeCsvValue(value: string | null | undefined): string {
   return escapedValue
 }
 
-function parseCsvLine(line: string): string[] {
-  const values: string[] = []
-  let current = ""
-  let inQuotes = false
 
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i]
-
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"'
-        i++
-      } else {
-        inQuotes = !inQuotes
-      }
-      continue
-    }
-
-    if (char === "," && !inQuotes) {
-      values.push(current)
-      current = ""
-      continue
-    }
-
-    current += char
-  }
-
-  values.push(current)
-  return values
-}
 
 function toUIAppointment(r: AppointmentRecord): Appointment {
   return {
@@ -857,35 +828,7 @@ export default function AppointmentsPage() {
     window.URL.revokeObjectURL(url)
   }
 
-  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const text = e.target?.result as string
-        const lines = text.split("\n").slice(1)
-        const promises = lines
-          .filter((line) => line.trim())
-          .map((line) => {
-            const [client, phone, service, employee, date, time, , source] = parseCsvLine(line.trim())
-            return createAppointment({
-              clientName: client?.trim() ?? "",
-              phoneNumber: phone?.trim() ?? "",
-              services: service?.trim()
-                ? service.split(",").map((svc) => svc.trim()).filter(Boolean)
-                : undefined,
-              staff: employee?.trim() || undefined,
-              date: date?.trim() ?? "",
-              time: time?.trim() ?? "",
-              source: source?.trim() || "Online",
-            })
-          })
-        Promise.allSettled(promises).then(() => fetchAppointments())
-      }
-      reader.readAsText(file)
-    }
-    event.target.value = ""
-  }
+
 
   const getStatusButtonStyle = (status: AppointmentStatus) => {
     switch (status) {
@@ -923,21 +866,7 @@ export default function AppointmentsPage() {
           <p className="text-muted-foreground text-sm mt-0.5">Manage your salon appointments</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="import-csv">
-            <input
-              id="import-csv"
-              type="file"
-              accept=".csv"
-              onChange={handleImportCSV}
-              className="hidden"
-            />
-            <Button variant="outline" asChild>
-              <span className="cursor-pointer">
-                <Upload className="w-4 h-4 mr-2" />
-                Import CSV
-              </span>
-            </Button>
-          </label>
+
           <Button variant="outline" onClick={exportToCSV}>
             <Download className="w-4 h-4 mr-2" />
             Export CSV

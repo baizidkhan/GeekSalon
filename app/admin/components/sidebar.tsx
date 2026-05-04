@@ -126,7 +126,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col bg-white border-r border-slate-200 transition-all duration-300 z-50 font-sans",
+        "flex flex-col bg-white border-r border-slate-200 transition-all duration-300 z-50",
         "fixed top-0 left-0 h-full md:sticky md:top-0 md:min-h-screen md:max-h-screen",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         collapsed ? "md:w-16 w-64" : "w-[260px]"

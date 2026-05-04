@@ -6,7 +6,7 @@ import { SiteHeader } from "../../components/site-header"
 import { Footer } from "../../components/footer"
 import { TestimonialsSection } from "../../components/testimonials"
 import { Service } from "@/lib/types"
-import { Star, MapPin, Clock, CheckCircle2 } from "lucide-react"
+import { Clock, CheckCircle2 } from "lucide-react"
 import { useBooking } from "@/context/BookingContext"
 import { useBusiness } from "@/context/BusinessContext"
 import { getMediaUrl } from "@/lib/utils"
@@ -99,14 +99,7 @@ export default function ServiceDetailPage() {
 
                                 {/* Stats/Info */}
                                 <div className="mb-8 flex flex-wrap gap-6 text-[11px] uppercase tracking-widest text-white/60">
-                                    <div className="flex items-center gap-2">
-                                        <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
-                                        <span>4.9 (156 reviews)</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="h-3 w-3" />
-                                        <span>{businessInfo?.address?.split(',')[1]?.trim() || "Beverly Hills"}</span>
-                                    </div>
+
                                     <div className="flex items-center gap-2">
                                         <Clock className="h-3 w-3" />
                                         <span>{service.duration} mins</span>

@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getMediaUrl(image?: string | null) {
   if (!image) return undefined;
-  if (image.startsWith('http') || image.startsWith('data:')) return image;
+  if (image.startsWith('http') || image.startsWith('data:') || image.startsWith('blob:')) return image;
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
   return `${baseUrl}/uploads/${image}`;
 }

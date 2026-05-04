@@ -26,8 +26,8 @@ export async function getEmployeesFiltered(name?: string) {
 
 export async function getStylists() {
   const override = consumeStale(CACHE.EMPLOYEES_STYLISTS)
-  const { data } = await api.get('/employee/stylists', { id: CACHE.EMPLOYEES_STYLISTS, cache: { ttl: TTL, override } })
-  return data
+  const { data } = await api.get('/employee/basic', { id: CACHE.EMPLOYEES_STYLISTS, cache: { ttl: TTL, override } })
+  return data.filter((e: any) => e.role === 'Stylist')
 }
 
 export async function getEmployeeById(id: string) {

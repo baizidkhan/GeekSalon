@@ -138,7 +138,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-sidebar-primary">
               <Sparkles className="w-3.5 h-3.5 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
             </div>
-            <span className="font-semibold text-sidebar-foreground text-sm tracking-wide" style={{ fontFamily: 'var(--font-serif, Georgia, serif)' }}>
+            <span className="font-semibold text-sidebar-foreground text-sm tracking-wide">
               {businessName}
             </span>
           </div>

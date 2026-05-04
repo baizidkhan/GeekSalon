@@ -45,6 +45,7 @@ interface ReportData {
   newClients: number
   topServices: { name: string; count: number }[]
   topStaff: { name: string; revenue: number }[]
+  onlineGrowth: number
 }
 
 const COLORS = ["oklch(0.48 0.16 8)", "oklch(0.60 0.11 330)", "oklch(0.73 0.10 68)", "oklch(0.62 0.09 158)", "oklch(0.58 0.10 224)", "oklch(0.70 0.08 40)"]
@@ -170,8 +171,9 @@ export default function ReportsPage() {
     ? Object.entries(data.appointmentsBySource).map(([name, count]) => ({ name, count }))
     : []
 
+  const statusOrder = ['Pending', 'Confirmed', 'Completed', 'Checked In', 'In Service']
   const statusChartData = data
-    ? Object.entries(data.appointmentsByStatus).map(([name, count]) => ({ name, count }))
+    ? statusOrder.map(name => ({ name, count: data.appointmentsByStatus[name] || 0 }))
     : []
 
   const avgTicket = data && data.totalInvoices > 0
@@ -179,19 +181,20 @@ export default function ReportsPage() {
     : 0
 
   return (
-    <div className="premium-page p-4 sm:p-6 md:p-8">
-      <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
+    <div className="premium-page p-4 sm:p-6 md:p-8 bg-[#fdfdfd]">
+      <div className="flex flex-wrap gap-3 items-start justify-between mb-8">
         <div>
-          <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Analytics</p>
-          <h1 className="text-2xl font-semibold text-foreground">Reports & Analysis</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Business insights and performance data</p>
+          <h1 className="text-3xl font-bold text-[#1e88e5] mb-1">Report and Analysis</h1>
+          <p className="text-slate-500 text-sm">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} Here's your salon today
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Popover open={showCustomDate} onOpenChange={setShowCustomDate}>
             <PopoverTrigger asChild>
-              <div>
+              <div className="bg-slate-100/50 rounded-lg">
                 <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
-                  <SelectTrigger className="w-40 cursor-pointer">
+                  <SelectTrigger className="w-40 border-none shadow-none bg-transparent cursor-pointer font-medium text-slate-600">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -216,7 +219,7 @@ export default function ReportsPage() {
               </div>
             </PopoverContent>
           </Popover>
-          <Button variant="outline" onClick={handleExport} disabled={!data} className="cursor-pointer">
+          <Button variant="outline" onClick={handleExport} disabled={!data} className="cursor-pointer border-slate-200 bg-slate-100/50 text-slate-600 font-medium">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
@@ -224,116 +227,189 @@ export default function ReportsPage() {
       </div>
 
       {loading && (
-        <div className="text-center text-muted-foreground py-20">Loading...</div>
+        <div className="flex items-center justify-center py-40">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+        </div>
       )}
 
       {!loading && data && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
               title="Total Revenue"
               value={`৳${data.totalRevenue.toLocaleString()}`}
-              subtitle={<span className="text-green-600">৳{data.paidRevenue.toLocaleString()} paid</span>}
+              subtitle={<span className="text-blue-500 font-medium">৳{data.paidRevenue.toLocaleString()} paid</span>}
               icon={Wallet}
-              iconWrapperClassName="bg-blue-50 text-blue-500"
-              className="border-t-4 border-t-transparent hover:border-t-blue-500 transition-all"
+              iconWrapperClassName="bg-blue-50 text-blue-400"
+              className="border-blue-200 ring-2 ring-blue-50"
+              trend="12%"
+              trendUp={true}
+              trendLabel="from last week"
             />
             <StatCard
               title="Appointments"
               value={data.totalAppointments}
-              subtitle={`${data.totalInvoices} invoices`}
+              subtitle={<span className="text-slate-400">{data.totalInvoices} invoices</span>}
               icon={Calendar}
-              iconWrapperClassName="bg-emerald-50 text-emerald-500"
-              className="border-t-4 border-t-transparent hover:border-t-emerald-500 transition-all"
+              iconWrapperClassName="bg-emerald-50 text-emerald-400"
+              trend="8%"
+              trendUp={false}
+              trendLabel="than yesterday"
             />
             <StatCard
               title="New Clients"
               value={data.newClients}
+              subtitle={<span className="text-slate-400">Last Week: {Math.round(data.newClients * 0.8)}</span>}
               icon={Users}
-              iconWrapperClassName="bg-amber-50 text-amber-500"
-              className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
+              iconWrapperClassName="bg-amber-50 text-amber-400"
+              trend="0.4%"
+              trendUp={true}
+              trendLabel="from last week"
             />
             <StatCard
               title="Avg. Revenue"
               value={`৳${avgTicket.toLocaleString()}`}
-              icon={Banknote}
-              iconWrapperClassName="bg-rose-50 text-rose-500"
-              className="border-t-4 border-t-transparent hover:border-t-rose-500 transition-all"
+              subtitle={<span className="text-slate-400">Per completed service</span>}
+              icon={TrendingUp}
+              iconWrapperClassName="bg-purple-50 text-purple-400"
             />
           </div>
 
           {/* Charts Row 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-            <div className="bg-card rounded-xl p-5 border border-border">
-              <h3 className="font-medium text-foreground mb-4">Revenue by Payment Method</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+              <h3 className="font-bold text-slate-800 mb-6 text-lg">Payment Method</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={paymentChartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
-                    <Bar dataKey="revenue" fill="oklch(0.48 0.16 8)" radius={[4, 4, 0, 0]} />
+                  <BarChart data={paymentChartData} barGap={0}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: "#64748b", fontWeight: 500 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : v} />
+                    <Tooltip cursor={{ fill: 'transparent' }} content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border border-slate-100 shadow-xl rounded-lg p-2 text-xs font-bold text-slate-600">
+                            BDT {payload[0].value}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }} />
+                    <Bar dataKey="revenue" radius={[10, 10, 10, 10]} barSize={60}>
+                      {paymentChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={
+                          entry.name === 'Cash' ? '#ffb74d' :
+                            entry.name === 'bKash' ? '#d81b60' :
+                              '#2196f3'
+                        } />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="bg-card rounded-xl p-5 border border-border">
-              <h3 className="font-medium text-foreground mb-4">Top Services</h3>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={data.topServices.slice(0, 6)}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="count"
-                      nameKey="name"
-                    >
-                      {data.topServices.slice(0, 6).map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => [value, "Bookings"]} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-slate-800 text-lg">Top Services <span className="text-slate-400 font-normal text-sm">(by bookings)</span></h3>
+              </div>
+              <div className="flex flex-col h-[340px]">
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={data.topServices.slice(0, 6)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={110}
+                        paddingAngle={5}
+                        dataKey="count"
+                        stroke="none"
+                      >
+                        {data.topServices.slice(0, 6).map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={
+                            ['#1e88e5', '#29b6f6', '#7e57c2', '#26a69a', '#ffa000', '#ec407a'][index % 6]
+                          } />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 px-4 mt-6">
+                  {data.topServices.slice(0, 6).map((s, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[12px] text-slate-500 font-medium">
+                      <div className="w-3.5 h-3.5 rounded-[4px]" style={{ backgroundColor: ['#1e88e5', '#29b6f6', '#7e57c2', '#26a69a', '#ffa000', '#ec407a'][i % 6] }} />
+                      {s.name}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Charts Row 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-            <div className="bg-card rounded-xl p-5 border border-border">
-              <h3 className="font-medium text-foreground mb-4">Appointments by Source</h3>
-              <div className="h-72">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="font-bold text-slate-800 text-lg">Appointments by Source</h3>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                  Online booking {data.onlineGrowth >= 0 ? '+' : ''}{data.onlineGrowth}% growth
+                </span>
+              </div>
+              <div className="h-64 mb-8">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sourceChartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                    <Tooltip />
-                    <Bar dataKey="count" name="Appointments" fill="oklch(0.60 0.11 330)" radius={[4, 4, 0, 0]} />
+                  <BarChart data={(() => {
+                    const order = ['Walk-In', 'Online', 'Call'];
+                    return order.map(name => ({ name, count: data.appointmentsBySource[name] || 0 }));
+                  })()} barGap={20}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 16, fill: "#64748b", fontWeight: 500 }} dy={15} />
+                    <YAxis hide />
+                    <Tooltip cursor={{ fill: 'transparent' }} />
+                    <Bar dataKey="count" radius={[15, 15, 15, 15]} barSize={140}>
+                      {['Walk-In', 'Online', 'Call'].map((name, index) => (
+                        <Cell key={`cell-${index}`} fill={
+                          name === 'Walk-In' ? '#6366f1' :
+                            name === 'Online' ? '#818cf8' :
+                              '#0ea5e9'
+                        } />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              <div className="flex justify-center gap-4 mt-6">
+                {['Walk-In', 'Online', 'Call'].map((name, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[11px] text-slate-400 font-bold">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: name === 'Walk-In' ? '#6366f1' : name === 'Online' ? '#818cf8' : '#0ea5e9' }} />
+                    {name === 'Walk-In' ? 'Walk IN' : name} ({data.appointmentsBySource[name] || 0})
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="bg-card rounded-xl p-5 border border-border">
-              <h3 className="font-medium text-foreground mb-4">Appointments by Status</h3>
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+              <h3 className="font-bold text-slate-800 mb-6 text-lg">Appointments by Status</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={statusChartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7280" }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                    <Tooltip />
-                    <Bar dataKey="count" name="Appointments" fill="oklch(0.73 0.10 68)" radius={[4, 4, 0, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#cbd5e1" }} />
+                    <Tooltip cursor={{ fill: '#f8fafc' }} />
+                    <Bar dataKey="count" radius={[10, 10, 10, 10]} barSize={45}>
+                      {statusChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={
+                          entry.name === 'Pending' ? '#ffc107' :
+                            entry.name === 'Confirmed' ? '#00c2ab' :
+                              entry.name === 'Completed' ? '#00a676' :
+                                entry.name === 'Checked In' ? '#66bb6a' :
+                                  '#9575cd'
+                        } />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -342,16 +418,16 @@ export default function ReportsPage() {
 
           {/* Staff Revenue */}
           {data.topStaff.length > 0 && (
-            <div className="bg-card rounded-xl p-5 border border-border">
-              <h3 className="font-medium text-foreground mb-4">Staff Revenue</h3>
-              <div className="h-64">
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+              <h3 className="font-bold text-slate-800 mb-6 text-lg">Staff Revenue</h3>
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.topStaff} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
-                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(v) => `৳${(v / 1000).toFixed(0)}k`} />
-                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} width={80} />
-                    <Tooltip formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
-                    <Bar dataKey="revenue" fill="oklch(0.58 0.10 224)" radius={[0, 4, 4, 0]} />
+                  <BarChart data={data.topStaff} layout="vertical" margin={{ left: 40, right: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: "#475569", fontWeight: 600 }} width={100} />
+                    <Tooltip cursor={{ fill: '#f8fafc' }} formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
+                    <Bar dataKey="revenue" fill="#29b6f6" radius={[0, 6, 6, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

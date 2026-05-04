@@ -42,6 +42,27 @@ export function AuthGuard({
   const router = useRouter()
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
+  const permission = pathPermissionMap[pathname]
+
+  useEffect(() => {
+    if (mounted && !loading && user && permission && !hasPermission(user, permission)) {
+      if (pathname === "/admin" || pathname === "/admin/dashboard") {
+        const allowedModules = [
+          { path: "/admin/appointments", perm: "appointments" },
+          { path: "/admin/clients", perm: "clients" },
+          { path: "/admin/billing", perm: "invoice" },
+          { path: "/admin/services", perm: "service" },
+          { path: "/admin/employees", perm: "employee" },
+          { path: "/admin/inventory", perm: "inventory" },
+          { path: "/admin/attendance", perm: "attendance" },
+        ]
+        const firstAllowed = allowedModules.find(m => hasPermission(user, m.perm))
+        if (firstAllowed) {
+          router.replace(firstAllowed.path)
+        }
+      }
+    }
+  }, [user, loading, pathname, router, mounted, permission])
 
   useEffect(() => {
     setMounted(true)
@@ -104,8 +125,14 @@ export function AuthGuard({
   // If on login page, just show children
   if (pathname === "/admin/login") return children
 
-  const permission = pathPermissionMap[pathname]
-  if (permission && pathname !== "/admin" && pathname !== "/admin/dashboard" && !hasPermission(user, permission)) {
+
+
+  if (permission && !hasPermission(user, permission)) {
+    // If landing on dashboard but no permission, return null while useEffect handles redirect
+    if (pathname === "/admin" || pathname === "/admin/dashboard") {
+      return null
+    }
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center bg-background text-foreground">
         <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6">

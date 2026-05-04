@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, AlertTriangle, Package, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2, Calendar, Globe, Zap, UserCheck, Receipt } from "lucide-react"
+import { Plus, Search, AlertTriangle, Package, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2, Calendar, Globe, Zap, UserCheck, Receipt, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +62,7 @@ export default function InventoryPage() {
   const debouncedSearch = useDebounce(search, 500)
   const [stockSort, setStockSort] = useState("none")
   const [currentPage, setCurrentPage] = useState(1)
+  const [submitting, setSubmitting] = useState(false)
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newItem, setNewItem] = useState(emptyForm)
@@ -104,6 +105,7 @@ export default function InventoryPage() {
       return
     }
     try {
+      setSubmitting(true)
       await createInventoryItem({
         name: newItem.name,
         category: newItem.category,
@@ -120,12 +122,15 @@ export default function InventoryPage() {
     } catch (err) {
       console.error("Failed to create inventory item", err)
       toast.error("Failed to add item")
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleEditSave = async () => {
     if (!editItem) return
     try {
+      setSubmitting(true)
       await updateInventoryItem(editItem.id, {
         name: editItem.name,
         category: editItem.category,
@@ -141,12 +146,15 @@ export default function InventoryPage() {
     } catch (err) {
       console.error("Failed to update inventory item", err)
       toast.error("Failed to update item")
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleDelete = async () => {
     if (!deleteItem) return
     try {
+      setSubmitting(true)
       await deleteInventoryItem(deleteItem.id)
       setDeleteItem(null)
       fetchInventory()
@@ -154,6 +162,8 @@ export default function InventoryPage() {
     } catch (err) {
       console.error("Failed to delete inventory item", err)
       toast.error("Failed to delete item")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -208,7 +218,14 @@ export default function InventoryPage() {
                   <div><Label>Min Stock Level</Label><Input type="number" value={newItem.minStockLevel} onChange={(e) => setNewItem({ ...newItem, minStockLevel: e.target.value })} placeholder="5" /></div>
                 </div>
                 <div><Label>Supplier</Label><Input value={newItem.supplier} onChange={(e) => setNewItem({ ...newItem, supplier: e.target.value })} placeholder="Enter supplier name" /></div>
-                <Button onClick={handleAddItem} className="w-full">Add Item</Button>
+                <Button onClick={handleAddItem} className="w-full" disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : "Add Item"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -401,7 +418,14 @@ export default function InventoryPage() {
                 <div><Label>Expiry Date</Label><Input type="date" value={editItem.expiryDate?.toString().split('T')[0] ?? ""} onChange={(e) => setEditItem({ ...editItem, expiryDate: e.target.value })} /></div>
               </div>
               <div><Label>Supplier</Label><Input value={editItem.supplier} onChange={(e) => setEditItem({ ...editItem, supplier: e.target.value })} /></div>
-              <Button className="w-full" onClick={handleEditSave}>Save Changes</Button>
+              <Button className="w-full" onClick={handleEditSave} disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : "Save Changes"}
+              </Button>
             </div>
           )}
         </DialogContent>
@@ -414,7 +438,14 @@ export default function InventoryPage() {
           <p className="text-muted-foreground">Are you sure you want to delete <strong>{deleteItem?.name}</strong>?</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteItem(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : "Delete"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
