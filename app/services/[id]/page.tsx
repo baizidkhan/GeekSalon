@@ -22,7 +22,7 @@ export default function ServiceDetailPage() {
         const fetchService = async () => {
             try {
                 // Assuming there's an endpoint to get service by id
-                const response = await fetch(`http://localhost:4000/service/${id}`)
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/service/${id}`)
                 const data = await response.json()
                 setService(data)
             } catch (error) {

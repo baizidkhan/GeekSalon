@@ -23,8 +23,8 @@ export default function ServicesPage() {
                 // Use the endpoint http://localhost:4000/service/active?category=hair
                 // If active is "All", we omit the category parameter
                 const url = active === "All" 
-                    ? "http://localhost:4000/service/active" 
-                    : `http://localhost:4000/service/active?category=${active.toLowerCase()}`
+                    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/service/active` 
+                    : `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/service/active?category=${active.toLowerCase()}`
                 
                 const response = await fetch(url)
                 const data = await response.json()
