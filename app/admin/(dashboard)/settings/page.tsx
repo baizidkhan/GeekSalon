@@ -15,20 +15,20 @@ import {
 } from "@/components/ui/select"
 import { Building2, Clock, CreditCard, Loader2, Image as ImageIcon, Plus, X, Upload, Video, Trash2, Pencil, Sparkles } from "lucide-react"
 import { ClockPickerField } from "@/components/ui/clock-picker"
-import { 
-  getBusinessInfo, 
-  updateBusinessInfo, 
-  getAppointmentSettings, 
-  updateAppointmentSettings, 
-  getInvoiceSettings, 
-  updateInvoiceSettings, 
-  getWhyChooseUsImages, 
-  updateWhyChooseUsImages, 
+import {
+  getBusinessInfo,
+  updateBusinessInfo,
+  getAppointmentSettings,
+  updateAppointmentSettings,
+  getInvoiceSettings,
+  updateInvoiceSettings,
+  getWhyChooseUsImages,
+  updateWhyChooseUsImages,
   getAppreciateExcellence,
   upsertAppreciateExcellence,
-  type BusinessInfo, 
-  type AppointmentSetting, 
-  type InvoiceSetting 
+  type BusinessInfo,
+  type AppointmentSetting,
+  type InvoiceSetting
 } from "@admin/api/settings/settings"
 import { toast } from "sonner"
 import { useBusiness } from "@/context/BusinessContext"
@@ -193,7 +193,7 @@ export default function SettingsPage() {
           formData.append(`image${index + 1}`, file)
         }
       })
-      
+
       const response = await updateWhyChooseUsImages(formData)
       if (response) {
         setWhyChooseUsData(response)
@@ -216,8 +216,8 @@ export default function SettingsPage() {
 
   const handleSaveAppreciation = async () => {
     if (!appreciationForm.videoFile && !appreciationForm.videoUrl) {
-       toast.error("Please upload a video")
-       return
+      toast.error("Please upload a video")
+      return
     }
 
     setSavingAppreciation(true)
@@ -460,7 +460,7 @@ export default function SettingsPage() {
                       </button>
                     )}
                   </div>
-                  
+
                   <div className="relative group aspect-[4/5] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center overflow-hidden transition-all hover:border-blue-400/50 hover:bg-blue-50/30">
                     {previews[index] ? (
                       <>
@@ -491,7 +491,7 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-8 p-4 bg-amber-50 border border-amber-100 rounded-lg flex gap-3">
               <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">!</div>
               <div className="text-sm text-amber-800">
@@ -522,7 +522,7 @@ export default function SettingsPage() {
                             <Video className="w-10 h-10 text-blue-500 mx-auto mb-2" />
                             <p className="text-sm font-medium truncate max-w-[250px]">{appreciationForm.videoFile.name}</p>
                             <p className="text-[10px] text-muted-foreground mt-1">Ready to upload</p>
-                            <button 
+                            <button
                               onClick={() => setAppreciationForm({ ...appreciationForm, videoFile: null })}
                               className="text-xs text-destructive hover:underline mt-2 font-medium"
                             >
@@ -536,10 +536,10 @@ export default function SettingsPage() {
                             </div>
                             <span className="text-sm font-medium text-slate-600">Click to upload video</span>
                             <span className="text-xs text-slate-400">MP4, WebM or MOV (Max 50MB)</span>
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              accept="video/*" 
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="video/*"
                               onChange={(e) => {
                                 const file = e.target.files?.[0]
                                 if (file) setAppreciationForm({ ...appreciationForm, videoFile: file })
@@ -549,9 +549,9 @@ export default function SettingsPage() {
                         )}
                       </div>
                     </div>
-                    <Button 
-                      className="w-full h-11" 
-                      onClick={handleSaveAppreciation} 
+                    <Button
+                      className="w-full h-11"
+                      onClick={handleSaveAppreciation}
                       disabled={savingAppreciation || (!appreciationForm.videoFile && !appreciationForm.videoUrl)}
                     >
                       {savingAppreciation && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -567,9 +567,9 @@ export default function SettingsPage() {
                 <div className="rounded-xl border border-border overflow-hidden bg-white shadow-sm">
                   <div className="aspect-video bg-slate-900 flex items-center justify-center relative">
                     {appreciationForm.videoUrl ? (
-                      <video 
+                      <video
                         key={appreciationForm.videoUrl}
-                        src={getMediaUrl(appreciationForm.videoUrl)} 
+                        src={getMediaUrl(appreciationForm.videoUrl)}
                         className="w-full h-full object-cover"
                         controls
                       />
@@ -584,11 +584,11 @@ export default function SettingsPage() {
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Home Page Showcase Video</p>
                   </div>
                 </div>
-                
+
                 <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex gap-3 mt-4">
                   <div className="w-5 h-5 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">i</div>
                   <p className="text-xs text-blue-800 leading-relaxed">
-                    This section highlights your salon's major achievements. The video and text will be displayed prominently on your public home page.
+                    This section highlights your salon's major achievements. The video will be displayed prominently on your public home page.
                   </p>
                 </div>
               </div>
