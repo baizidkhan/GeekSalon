@@ -12,7 +12,8 @@ export async function getActiveServices() {
             console.error(`Failed to fetch active services: ${res.status} ${res.statusText}`)
             return []
         }
-        return res.json();
+        const text = await res.text();
+        return text ? JSON.parse(text) : [];
     } catch (error) {
         console.error("Error fetching active services:", error)
         return []
