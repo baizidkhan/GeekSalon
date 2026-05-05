@@ -6,10 +6,19 @@ import ContactSpecialistsModal from "./ContactSpecialistsModal"
 import { SiteHeader } from "@/app/components/site-header"
 import { Footer } from "@/app/components/footer"
 
+export const dynamic = 'force-dynamic'
+
 export default async function PackagesPage() {
   let packages: any[] = []
   try {
-    packages = await getPackages()
+    const data = await getPackages(true)
+    packages = Array.isArray(data) ? data : (data?.data || [])
+    // Robust sorting by position
+    packages.sort((a, b) => {
+      const posA = Number(a.position) || 0
+      const posB = Number(b.position) || 0
+      return posA - posB
+    })
   } catch (error) {
     console.log(error)
     console.error("Failed to fetch packages:", error)
