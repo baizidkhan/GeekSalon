@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
+const API_BASE_URL = process.env.INTERNAL_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
 
 export async function getActiveServices() {
     try {
@@ -12,7 +12,8 @@ export async function getActiveServices() {
             console.error(`Failed to fetch active services: ${res.status} ${res.statusText}`)
             return []
         }
-        return res.json();
+        const text = await res.text();
+        return text ? JSON.parse(text) : [];
     } catch (error) {
         console.error("Error fetching active services:", error)
         return []
