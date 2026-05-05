@@ -263,7 +263,10 @@ export default function ServicesPage() {
 
   const toggleServiceActive = async (id: string, currentStatus: boolean) => {
     try {
-      await updateService(id, { status: !currentStatus ? 'active' : 'hidden' })
+      const formData = new FormData()
+      formData.append('data', JSON.stringify({ status: !currentStatus ? 'active' : 'hidden' }))
+      
+      await updateService(id, formData)
       toast.success(`Service ${!currentStatus ? 'activated' : 'deactivated'}`)
       fetchServices()
     } catch (error) {
