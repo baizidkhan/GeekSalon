@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -49,6 +50,7 @@ import {
   bookPackage,
 } from "@admin/api/packages/packages"
 import { toast } from "sonner"
+import { getClientByPhone } from "@admin/api/clients/clients"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface Package {
@@ -70,6 +72,7 @@ export default function ManagePackagesPage() {
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isClientFound, setIsClientFound] = useState(false)
   
   const [newPackage, setNewPackage] = useState({
     category: "SPECIAL",
@@ -252,11 +255,33 @@ export default function ManagePackagesPage() {
           source: "online",
           notes: "",
         })
+        setIsClientFound(false)
       } catch (error) {
         toast.error("Failed to book package")
       } finally {
         setSubmitting(false)
       }
+    }
+  }
+
+  const handlePhoneChange = async (phone: string) => {
+    setBookingData(prev => ({ ...prev, phoneNumber: phone }))
+    if (errors.phoneNumber) setErrors(prev => ({ ...prev, phoneNumber: "" }))
+
+    if (phone.length === 11) {
+      try {
+        const client = await getClientByPhone(phone)
+        if (client) {
+          setBookingData(prev => ({ ...prev, clientName: client.name }))
+          setIsClientFound(true)
+        } else {
+          setIsClientFound(false)
+        }
+      } catch (error) {
+        setIsClientFound(false)
+      }
+    } else {
+      setIsClientFound(false)
     }
   }
 
@@ -488,6 +513,16 @@ export default function ManagePackagesPage() {
           <div className="space-y-4 py-4 pb-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
+                <Label className={errors.phoneNumber ? "text-destructive" : ""}>Phone Number <span className="text-destructive">*</span></Label>
+                <Input 
+                  placeholder="e.g. 01712345678"
+                  value={bookingData.phoneNumber}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  className={errors.phoneNumber ? "border-destructive" : ""}
+                />
+                {errors.phoneNumber && <p className="text-[10px] text-destructive mt-1">{errors.phoneNumber}</p>}
+              </div>
+              <div className="col-span-2">
                 <Label className={errors.clientName ? "text-destructive" : ""}>Client Name <span className="text-destructive">*</span></Label>
                 <Input 
                   value={bookingData.clientName}
@@ -495,21 +530,13 @@ export default function ManagePackagesPage() {
                     setBookingData({...bookingData, clientName: e.target.value})
                     if (errors.clientName) setErrors(prev => ({ ...prev, clientName: "" }))
                   }}
-                  className={errors.clientName ? "border-destructive" : ""}
+                  readOnly={isClientFound}
+                  className={cn(
+                    errors.clientName ? "border-destructive" : "",
+                    isClientFound && "bg-muted cursor-not-allowed"
+                  )}
                 />
                 {errors.clientName && <p className="text-[10px] text-destructive mt-1">{errors.clientName}</p>}
-              </div>
-              <div className="col-span-2">
-                <Label className={errors.phoneNumber ? "text-destructive" : ""}>Phone Number <span className="text-destructive">*</span></Label>
-                <Input 
-                  value={bookingData.phoneNumber}
-                  onChange={(e) => {
-                    setBookingData({...bookingData, phoneNumber: e.target.value})
-                    if (errors.phoneNumber) setErrors(prev => ({ ...prev, phoneNumber: "" }))
-                  }}
-                  className={errors.phoneNumber ? "border-destructive" : ""}
-                />
-                {errors.phoneNumber && <p className="text-[10px] text-destructive mt-1">{errors.phoneNumber}</p>}
               </div>
               <div>
                 <Label className={errors.date ? "text-destructive" : ""}>Date <span className="text-destructive">*</span></Label>
