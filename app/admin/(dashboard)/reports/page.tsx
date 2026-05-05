@@ -46,6 +46,12 @@ interface ReportData {
   topServices: { name: string; count: number }[]
   topStaff: { name: string; revenue: number }[]
   onlineGrowth: number
+  revenueTrend: { value: string; up: boolean; label: string }
+  appointmentsTrend: { value: string; up: boolean; label: string }
+  clientsTrend: { value: string; up: boolean; label: string }
+  previousRevenue: number
+  previousAppointments: number
+  previousClients: number
 }
 
 const COLORS = ["oklch(0.48 0.16 8)", "oklch(0.60 0.11 330)", "oklch(0.73 0.10 68)", "oklch(0.62 0.09 158)", "oklch(0.58 0.10 224)", "oklch(0.70 0.08 40)"]
@@ -243,29 +249,29 @@ export default function ReportsPage() {
               icon={Wallet}
               iconWrapperClassName="bg-blue-50 text-blue-400"
               className="border-blue-200 ring-2 ring-blue-50"
-              trend="12%"
-              trendUp={true}
-              trendLabel="from last week"
+              trend={data.revenueTrend.value}
+              trendUp={data.revenueTrend.up}
+              trendLabel={data.revenueTrend.label}
             />
             <StatCard
               title="Appointments"
               value={data.totalAppointments}
-              subtitle={<span className="text-slate-400">{data.totalInvoices} invoices</span>}
+              subtitle={<span className="text-slate-400">{data.totalInvoices} invoices (Prev: {data.previousAppointments})</span>}
               icon={Calendar}
               iconWrapperClassName="bg-emerald-50 text-emerald-400"
-              trend="8%"
-              trendUp={false}
-              trendLabel="than yesterday"
+              trend={data.appointmentsTrend.value}
+              trendUp={data.appointmentsTrend.up}
+              trendLabel={data.appointmentsTrend.label}
             />
             <StatCard
               title="New Clients"
               value={data.newClients}
-              subtitle={<span className="text-slate-400">Last Week: {Math.round(data.newClients * 0.8)}</span>}
+              subtitle={<span className="text-slate-400">Prev Period: {data.previousClients}</span>}
               icon={Users}
               iconWrapperClassName="bg-amber-50 text-amber-400"
-              trend="0.4%"
-              trendUp={true}
-              trendLabel="from last week"
+              trend={data.clientsTrend.value}
+              trendUp={data.clientsTrend.up}
+              trendLabel={data.clientsTrend.label}
             />
             <StatCard
               title="Avg. Revenue"

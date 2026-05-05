@@ -3,11 +3,11 @@ import { CACHE, consumeStale, markStale } from '@admin/lib/cache'
 
 const TTL = 5 * 60 * 1000 // 5 min
 
-export async function getPackages() {
-  const override = consumeStale(CACHE.PACKAGES)
+export async function getPackages(noCache = false) {
+  const override = noCache || consumeStale(CACHE.PACKAGES)
   const { data } = await api.get('/makeover-packages', { 
     id: CACHE.PACKAGES, 
-    cache: { ttl: TTL, override } 
+    cache: noCache ? false : { ttl: TTL, override } 
   })
   return data
 }

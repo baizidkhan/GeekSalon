@@ -59,7 +59,7 @@ export const StatCard = memo(function StatCard({
             <span className={cn(
               trendUp ? "text-emerald-500" : "text-rose-500"
             )}>
-              {trend} {trendUp ? "increase" : "lower"} from {trendLabel?.split('from ')[1] || trendLabel || ""}
+              {trend} {trendUp ? "increase" : "lower"} {trendLabel}
             </span>
             {trendUp ? (
               <TrendingUp className="w-4 h-4 text-emerald-500" />

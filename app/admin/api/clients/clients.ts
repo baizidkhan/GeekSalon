@@ -12,6 +12,11 @@ export async function getClients(page = 1, limit = 20) {
   return data
 }
 
+export async function getClientByPhone(phone: string) {
+  const { data } = await api.get(`/clients/${phone}`)
+  return data
+}
+
 export async function createClient(payload: {
   name: string
   phone: string

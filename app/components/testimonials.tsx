@@ -8,7 +8,7 @@ export function TestimonialsSection() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetch("http://localhost:4000/testimonial", { cache: 'no-store' })
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/testimonial`, { cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {

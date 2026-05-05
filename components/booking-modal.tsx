@@ -70,7 +70,7 @@ export function BookingModal() {
 
     const fetchTaxRate = async () => {
         try {
-            const res = await fetch("http://localhost:4000/invoice-setting", { cache: "no-store" })
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/invoice-setting`, { cache: "no-store" })
             const data = await res.json()
             if (data?.taxRate) setTaxRate(Number(data.taxRate))
         } catch {}
@@ -78,14 +78,14 @@ export function BookingModal() {
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch("http://localhost:4000/appointment-setting", { cache: "no-store" })
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/appointment-setting`, { cache: "no-store" })
             setSettings(await res.json())
         } catch {}
     }
 
     const fetchStylists = async () => {
         try {
-            const res = await fetch("http://localhost:4000/employee/basic", { cache: "no-store" })
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/employee/basic`, { cache: "no-store" })
             const data = await res.json()
             setStaffList(Array.isArray(data) ? data.filter((e: any) => e.role === "Stylist") : [])
         } catch { setStaffList([]) }
@@ -93,7 +93,7 @@ export function BookingModal() {
 
     const fetchServices = async () => {
         try {
-            const res = await fetch("http://localhost:4000/service/active", { cache: "no-store" })
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/service/active`, { cache: "no-store" })
             setAvailableServices(await res.json())
         } catch {}
     }
@@ -166,7 +166,7 @@ export function BookingModal() {
                 staff: formData.staff === "Any Expert" ? "" : formData.staff,
                 source: "Online",
             }
-            const res = await fetch("http://localhost:4000/appointments", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/appointments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
