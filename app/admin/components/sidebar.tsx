@@ -58,6 +58,7 @@ const navigation = [
       { name: "Report and Analysis", href: "/admin/reports", icon: BarChart3, permission: "reports" },
       { name: "Staff Reports", href: "/admin/staff-reports", icon: UserCog, permission: "reports" },
       { name: "Manage Packages", href: "/admin/manage-packages", icon: Sparkles, permission: "makeover-packages" },
+      { name: "Testimonials", href: "/admin/testimonials", icon: Quote, permission: "testimonial" },
     ],
   },
   {
@@ -74,6 +75,7 @@ const navigation = [
     title: "SYSTEM",
     items: [
       { name: "Settings", href: "/admin/settings", icon: Settings, permission: "settings" },
+      { name: "Update Password", href: "/admin/update-password", icon: UserLock, permission: "update-password" },
     ],
   },
 ]
