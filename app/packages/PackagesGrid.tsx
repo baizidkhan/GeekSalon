@@ -12,6 +12,7 @@ interface Package {
   billingCycle: string
   description: string
   features: string[]
+  position?: number | string
 }
 
 export default function PackagesGrid({ initialPackages }: { initialPackages: Package[] }) {
