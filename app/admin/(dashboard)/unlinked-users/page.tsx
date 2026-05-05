@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect, useTransition, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -51,6 +51,7 @@ import {
   type DeviceUser,
 } from "@admin/api/biometric/biometric"
 import { getBasicEmployees, createEmployee } from "@admin/api/employees/employees"
+import { useBiometricSocket } from "@/hooks/use-biometric-socket"
 import { StatCard } from "@admin/components/stat-card"
 
 interface BasicEmployee {
@@ -106,6 +107,18 @@ export default function DeviceUsersPage() {
       .then(setEmployees)
       .catch(() => toast.error("Failed to load employees"))
   }, [])
+
+  // Real-time: when a new fingerprint is pushed from the device via cloud, refresh the list
+  const handleNewDeviceUser = useCallback(() => {
+    getUnlinkedDeviceUsers()
+      .then(setDeviceUsers)
+      .catch(() => { })
+    getDeviceStatus()
+      .then((s) => setDeviceConnected(s.connected))
+      .catch(() => { })
+  }, [])
+
+  useBiometricSocket({ onNewDeviceUser: handleNewDeviceUser })
 
   // ── Link ──────────────────────────────────────────────────────────────────
 
