@@ -61,6 +61,7 @@ interface Package {
   billingCycle: string
   description: string
   features: string[]
+  position: number
 }
 
 export default function ManagePackagesPage() {
@@ -73,7 +74,7 @@ export default function ManagePackagesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isClientFound, setIsClientFound] = useState(false)
-  
+
   const [newPackage, setNewPackage] = useState({
     category: "SPECIAL",
     title: "",
@@ -82,6 +83,7 @@ export default function ManagePackagesPage() {
     description: "",
     features: [] as string[],
     newFeature: "",
+    position: "0",
   })
 
   const [bookingData, setBookingData] = useState({
@@ -101,8 +103,9 @@ export default function ManagePackagesPage() {
   const fetchPackages = async () => {
     try {
       setLoading(true)
-      const data = await getPackages()
-      setPackages(data)
+      const data = await getPackages(true)
+      const packageList = Array.isArray(data) ? data : (data?.data || [])
+      setPackages(packageList.sort((a: any, b: any) => (Number(a.position) || 0) - (Number(b.position) || 0)))
     } catch (error) {
       console.error("Failed to fetch packages:", error)
       toast.error("Failed to load packages")
@@ -149,6 +152,7 @@ export default function ManagePackagesPage() {
         billingCycle: newPackage.billingCycle,
         description: newPackage.description,
         features: newPackage.features,
+        position: parseInt(newPackage.position) || 0,
       })
       toast.success("Package created successfully")
       setNewPackage({
@@ -159,6 +163,7 @@ export default function ManagePackagesPage() {
         description: "",
         features: [],
         newFeature: "",
+        position: "0",
       })
       setErrors({})
       setIsAddDialogOpen(false)
@@ -197,13 +202,24 @@ export default function ManagePackagesPage() {
 
     try {
       setSubmitting(true)
-      const { id, createdAt, updatedAt, ...payload } = packageToEdit as any
-      await updatePackage(id, payload)
+      // Explicitly construct payload with only whitelisted fields for the backend
+      const payload = {
+        title: packageToEdit.title,
+        category: packageToEdit.category,
+        price: Number(packageToEdit.price),
+        billingCycle: packageToEdit.billingCycle,
+        description: packageToEdit.description,
+        features: packageToEdit.features,
+        position: Number(packageToEdit.position) || 0,
+      }
+
+      await updatePackage(packageToEdit.id, payload)
       toast.success("Package updated successfully")
       setErrors({})
       setPackageToEdit(null)
       fetchPackages()
     } catch (error: any) {
+      console.log("error", error)
       toast.error("Failed to update package")
     } finally {
       setSubmitting(false)
@@ -327,11 +343,11 @@ export default function ManagePackagesPage() {
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="col-span-2">
                   <Label className={errors.title ? "text-destructive" : ""}>Title <span className="text-destructive">*</span></Label>
-                  <Input 
-                    placeholder="e.g. Bridal Glow" 
+                  <Input
+                    placeholder="e.g. Bridal Glow"
                     value={newPackage.title}
                     onChange={(e) => {
-                      setNewPackage({...newPackage, title: e.target.value})
+                      setNewPackage({ ...newPackage, title: e.target.value })
                       if (errors.title) setErrors(prev => ({ ...prev, title: "" }))
                     }}
                     className={errors.title ? "border-destructive" : ""}
@@ -340,11 +356,11 @@ export default function ManagePackagesPage() {
                 </div>
                 <div>
                   <Label className={errors.category ? "text-destructive" : ""}>Category <span className="text-destructive">*</span></Label>
-                  <Input 
-                    placeholder="e.g. SPECIAL" 
+                  <Input
+                    placeholder="e.g. SPECIAL"
                     value={newPackage.category}
                     onChange={(e) => {
-                      setNewPackage({...newPackage, category: e.target.value})
+                      setNewPackage({ ...newPackage, category: e.target.value })
                       if (errors.category) setErrors(prev => ({ ...prev, category: "" }))
                     }}
                     className={errors.category ? "border-destructive" : ""}
@@ -353,12 +369,12 @@ export default function ManagePackagesPage() {
                 </div>
                 <div>
                   <Label className={errors.price ? "text-destructive" : ""}>Price (৳) <span className="text-destructive">*</span></Label>
-                  <Input 
-                    type="number" 
-                    placeholder="799" 
+                  <Input
+                    type="number"
+                    placeholder="799"
                     value={newPackage.price}
                     onChange={(e) => {
-                      setNewPackage({...newPackage, price: e.target.value})
+                      setNewPackage({ ...newPackage, price: e.target.value })
                       if (errors.price) setErrors(prev => ({ ...prev, price: "" }))
                     }}
                     className={errors.price ? "border-destructive" : ""}
@@ -367,32 +383,42 @@ export default function ManagePackagesPage() {
                 </div>
                 <div className="col-span-2">
                   <Label className={errors.billingCycle ? "text-destructive" : ""}>Billing Cycle <span className="text-destructive">*</span></Label>
-                  <Input 
-                    placeholder="e.g. package, session" 
+                  <Input
+                    placeholder="e.g. package, session"
                     value={newPackage.billingCycle}
                     onChange={(e) => {
-                      setNewPackage({...newPackage, billingCycle: e.target.value})
+                      setNewPackage({ ...newPackage, billingCycle: e.target.value })
                       if (errors.billingCycle) setErrors(prev => ({ ...prev, billingCycle: "" }))
                     }}
                     className={errors.billingCycle ? "border-destructive" : ""}
                   />
                   {errors.billingCycle && <p className="text-[10px] text-destructive mt-1">{errors.billingCycle}</p>}
                 </div>
+                <div>
+                  <Label>Position (Sort Order)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={newPackage.position}
+                    onChange={(e) => setNewPackage({ ...newPackage, position: e.target.value })}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Lower numbers appear first</p>
+                </div>
                 <div className="col-span-2">
                   <Label>Description</Label>
-                  <Textarea 
-                    placeholder="Describe the package benefits..." 
+                  <Textarea
+                    placeholder="Describe the package benefits..."
                     value={newPackage.description}
-                    onChange={(e) => setNewPackage({...newPackage, description: e.target.value})}
+                    onChange={(e) => setNewPackage({ ...newPackage, description: e.target.value })}
                   />
                 </div>
                 <div className="col-span-2 space-y-4">
                   <Label>Features</Label>
                   <div className="flex gap-2">
-                    <Input 
-                      placeholder="Add a feature..." 
+                    <Input
+                      placeholder="Add a feature..."
                       value={newPackage.newFeature}
-                      onChange={(e) => setNewPackage({...newPackage, newFeature: e.target.value})}
+                      onChange={(e) => setNewPackage({ ...newPackage, newFeature: e.target.value })}
                       onKeyPress={(e) => e.key === 'Enter' && addFeature()}
                     />
                     <Button type="button" variant="secondary" onClick={addFeature}>Add</Button>
@@ -436,6 +462,7 @@ export default function ManagePackagesPage() {
               <TableHead>Package Info</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
+              <TableHead>Pos</TableHead>
               <TableHead>Features</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
@@ -462,6 +489,9 @@ export default function ManagePackagesPage() {
                     <div className="text-[10px] text-muted-foreground uppercase">{pkg.billingCycle}</div>
                   </TableCell>
                   <TableCell>
+                    <div className="font-medium text-primary">{pkg.position}</div>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {pkg.features.slice(0, 2).map((f, idx) => (
                         <span key={idx} className="px-2 py-0.5 bg-secondary rounded text-[10px] whitespace-nowrap">{f}</span>
@@ -485,7 +515,7 @@ export default function ManagePackagesPage() {
                         <DropdownMenuItem onClick={() => setPackageToView(pkg)}>
                           <Eye className="w-4 h-4 mr-2" />View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setPackageToEdit({...pkg})}>
+                        <DropdownMenuItem onClick={() => setPackageToEdit({ ...pkg })}>
                           <Pencil className="w-4 h-4 mr-2" />Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => setPackageToDelete(pkg)}>
@@ -514,7 +544,7 @@ export default function ManagePackagesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Label className={errors.phoneNumber ? "text-destructive" : ""}>Phone Number <span className="text-destructive">*</span></Label>
-                <Input 
+                <Input
                   placeholder="e.g. 01712345678"
                   value={bookingData.phoneNumber}
                   onChange={(e) => handlePhoneChange(e.target.value)}
@@ -524,10 +554,10 @@ export default function ManagePackagesPage() {
               </div>
               <div className="col-span-2">
                 <Label className={errors.clientName ? "text-destructive" : ""}>Client Name <span className="text-destructive">*</span></Label>
-                <Input 
+                <Input
                   value={bookingData.clientName}
                   onChange={(e) => {
-                    setBookingData({...bookingData, clientName: e.target.value})
+                    setBookingData({ ...bookingData, clientName: e.target.value })
                     if (errors.clientName) setErrors(prev => ({ ...prev, clientName: "" }))
                   }}
                   readOnly={isClientFound}
@@ -540,11 +570,11 @@ export default function ManagePackagesPage() {
               </div>
               <div>
                 <Label className={errors.date ? "text-destructive" : ""}>Date <span className="text-destructive">*</span></Label>
-                <Input 
+                <Input
                   type="date"
                   value={bookingData.date}
                   onChange={(e) => {
-                    setBookingData({...bookingData, date: e.target.value})
+                    setBookingData({ ...bookingData, date: e.target.value })
                     if (errors.date) setErrors(prev => ({ ...prev, date: "" }))
                   }}
                   className={errors.date ? "border-destructive" : ""}
@@ -553,11 +583,11 @@ export default function ManagePackagesPage() {
               </div>
               <div>
                 <Label className={errors.time ? "text-destructive" : ""}>Time <span className="text-destructive">*</span></Label>
-                <Input 
+                <Input
                   type="time"
                   value={bookingData.time}
                   onChange={(e) => {
-                    setBookingData({...bookingData, time: e.target.value})
+                    setBookingData({ ...bookingData, time: e.target.value })
                     if (errors.time) setErrors(prev => ({ ...prev, time: "" }))
                   }}
                   className={errors.time ? "border-destructive" : ""}
@@ -566,16 +596,16 @@ export default function ManagePackagesPage() {
               </div>
               <div className="col-span-2">
                 <Label>Source</Label>
-                <Input 
+                <Input
                   value={bookingData.source}
-                  onChange={(e) => setBookingData({...bookingData, source: e.target.value})}
+                  onChange={(e) => setBookingData({ ...bookingData, source: e.target.value })}
                 />
               </div>
               <div className="col-span-2">
                 <Label>Notes</Label>
-                <Textarea 
+                <Textarea
                   value={bookingData.notes}
-                  onChange={(e) => setBookingData({...bookingData, notes: e.target.value})}
+                  onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
                   placeholder="e.g. Please prepare the champagne."
                 />
               </div>
@@ -633,10 +663,10 @@ export default function ManagePackagesPage() {
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="col-span-2">
                   <Label className={errors.title ? "text-destructive" : ""}>Title <span className="text-destructive">*</span></Label>
-                  <Input 
+                  <Input
                     value={packageToEdit.title}
                     onChange={(e) => {
-                      setPackageToEdit({...packageToEdit, title: e.target.value})
+                      setPackageToEdit({ ...packageToEdit, title: e.target.value })
                       if (errors.title) setErrors(prev => ({ ...prev, title: "" }))
                     }}
                     className={errors.title ? "border-destructive" : ""}
@@ -645,10 +675,10 @@ export default function ManagePackagesPage() {
                 </div>
                 <div>
                   <Label className={errors.category ? "text-destructive" : ""}>Category <span className="text-destructive">*</span></Label>
-                  <Input 
+                  <Input
                     value={packageToEdit.category}
                     onChange={(e) => {
-                      setPackageToEdit({...packageToEdit, category: e.target.value})
+                      setPackageToEdit({ ...packageToEdit, category: e.target.value })
                       if (errors.category) setErrors(prev => ({ ...prev, category: "" }))
                     }}
                     className={errors.category ? "border-destructive" : ""}
@@ -657,29 +687,37 @@ export default function ManagePackagesPage() {
                 </div>
                 <div>
                   <Label className={errors.price ? "text-destructive" : ""}>Price (৳) <span className="text-destructive">*</span></Label>
-                  <Input 
+                  <Input
                     type="number"
                     value={packageToEdit.price}
                     onChange={(e) => {
-                      setPackageToEdit({...packageToEdit, price: parseFloat(e.target.value)})
+                      setPackageToEdit({ ...packageToEdit, price: parseFloat(e.target.value) })
                       if (errors.price) setErrors(prev => ({ ...prev, price: "" }))
                     }}
                     className={errors.price ? "border-destructive" : ""}
                   />
                   {errors.price && <p className="text-[10px] text-destructive mt-1">{errors.price}</p>}
                 </div>
+                <div>
+                  <Label>Position</Label>
+                  <Input
+                    type="number"
+                    value={packageToEdit.position}
+                    onChange={(e) => setPackageToEdit({ ...packageToEdit, position: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
                 <div className="col-span-2">
                   <Label>Description</Label>
-                  <Textarea 
+                  <Textarea
                     value={packageToEdit.description}
-                    onChange={(e) => setPackageToEdit({...packageToEdit, description: e.target.value})}
+                    onChange={(e) => setPackageToEdit({ ...packageToEdit, description: e.target.value })}
                   />
                 </div>
                 <div className="col-span-2 space-y-4">
                   <Label>Features (Comma separated)</Label>
-                  <Textarea 
+                  <Textarea
                     value={packageToEdit.features.join(', ')}
-                    onChange={(e) => setPackageToEdit({...packageToEdit, features: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')})}
+                    onChange={(e) => setPackageToEdit({ ...packageToEdit, features: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '') })}
                   />
                 </div>
               </div>
