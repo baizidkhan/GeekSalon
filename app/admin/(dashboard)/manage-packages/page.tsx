@@ -69,6 +69,7 @@ export default function ManagePackagesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   
   const [newPackage, setNewPackage] = useState({
     category: "SPECIAL",
@@ -120,51 +121,89 @@ export default function ManagePackagesPage() {
   }, [packages, debouncedSearch])
 
   const handleAddPackage = async () => {
-    if (newPackage.title && newPackage.price) {
-      try {
-        setSubmitting(true)
-        await createPackage({
-          category: newPackage.category,
-          title: newPackage.title,
-          price: parseFloat(newPackage.price),
-          billingCycle: newPackage.billingCycle,
-          description: newPackage.description,
-          features: newPackage.features,
+    const newErrors: Record<string, string> = {}
+    if (!newPackage.title) newErrors.title = "Title is required"
+    if (!newPackage.category) newErrors.category = "Category is required"
+    if (!newPackage.price) {
+      newErrors.price = "Price is required"
+    } else if (isNaN(parseFloat(newPackage.price)) || parseFloat(newPackage.price) <= 0) {
+      newErrors.price = "Price must be a positive number"
+    }
+    if (!newPackage.billingCycle) newErrors.billingCycle = "Billing cycle is required"
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      toast.error("Please fix the errors in the form")
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      await createPackage({
+        category: newPackage.category,
+        title: newPackage.title,
+        price: parseFloat(newPackage.price),
+        billingCycle: newPackage.billingCycle,
+        description: newPackage.description,
+        features: newPackage.features,
+      })
+      toast.success("Package created successfully")
+      setNewPackage({
+        category: "SPECIAL",
+        title: "",
+        price: "",
+        billingCycle: "package",
+        description: "",
+        features: [],
+        newFeature: "",
+      })
+      setErrors({})
+      setIsAddDialogOpen(false)
+      fetchPackages()
+    } catch (error: any) {
+      const backendErrors = error.response?.data?.message
+      if (Array.isArray(backendErrors)) {
+        const newErrors: Record<string, string> = {}
+        backendErrors.forEach((msg: string) => {
+          if (msg.toLowerCase().includes("title")) newErrors.title = msg
+          if (msg.toLowerCase().includes("category")) newErrors.category = msg
+          if (msg.toLowerCase().includes("price")) newErrors.price = msg
+          if (msg.toLowerCase().includes("billing")) newErrors.billingCycle = msg
         })
-        toast.success("Package created successfully")
-        setNewPackage({
-          category: "SPECIAL",
-          title: "",
-          price: "",
-          billingCycle: "package",
-          description: "",
-          features: [],
-          newFeature: "",
-        })
-        setIsAddDialogOpen(false)
-        fetchPackages()
-      } catch (error) {
-        toast.error("Failed to create package")
-      } finally {
-        setSubmitting(false)
+        setErrors(newErrors)
       }
+      toast.error("Failed to create package")
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleUpdatePackage = async () => {
-    if (packageToEdit) {
-      try {
-        setSubmitting(true)
-        const { id, createdAt, updatedAt, ...payload } = packageToEdit as any
-        await updatePackage(id, payload)
-        toast.success("Package updated successfully")
-        setPackageToEdit(null)
-        fetchPackages()
-      } catch (error) {
-        toast.error("Failed to update package")
-      } finally {
-        setSubmitting(false)
-      }
+    if (!packageToEdit) return
+
+    const newErrors: Record<string, string> = {}
+    if (!packageToEdit.title) newErrors.title = "Title is required"
+    if (!packageToEdit.category) newErrors.category = "Category is required"
+    if (!packageToEdit.price || packageToEdit.price <= 0) newErrors.price = "Price must be a positive number"
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      toast.error("Please fix the errors in the form")
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const { id, createdAt, updatedAt, ...payload } = packageToEdit as any
+      await updatePackage(id, payload)
+      toast.success("Package updated successfully")
+      setErrors({})
+      setPackageToEdit(null)
+      fetchPackages()
+    } catch (error: any) {
+      toast.error("Failed to update package")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -185,11 +224,24 @@ export default function ManagePackagesPage() {
   }
 
   const handleBookPackage = async () => {
-    if (packageToBook && bookingData.clientName && bookingData.phoneNumber) {
+    const newErrors: Record<string, string> = {}
+    if (!bookingData.clientName) newErrors.clientName = "Client name is required"
+    if (!bookingData.phoneNumber) newErrors.phoneNumber = "Phone number is required"
+    if (!bookingData.date) newErrors.date = "Date is required"
+    if (!bookingData.time) newErrors.time = "Time is required"
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    if (packageToBook) {
       try {
         setSubmitting(true)
         await bookPackage(packageToBook.id, bookingData)
         toast.success("Package booked successfully")
+        setErrors({})
         setIsBookingDialogOpen(false)
         setPackageToBook(null)
         setBookingData({
@@ -235,7 +287,7 @@ export default function ManagePackagesPage() {
           </h1>
           <p className="text-muted-foreground">Create and manage bundled service packages</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={(open) => { setIsAddDialogOpen(open); if (!open) setErrors({}) }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -249,37 +301,57 @@ export default function ManagePackagesPage() {
             <ScrollArea className="max-h-[70vh] pr-4">
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="col-span-2">
-                  <Label>Title</Label>
+                  <Label className={errors.title ? "text-destructive" : ""}>Title <span className="text-destructive">*</span></Label>
                   <Input 
                     placeholder="e.g. Bridal Glow" 
                     value={newPackage.title}
-                    onChange={(e) => setNewPackage({...newPackage, title: e.target.value})}
+                    onChange={(e) => {
+                      setNewPackage({...newPackage, title: e.target.value})
+                      if (errors.title) setErrors(prev => ({ ...prev, title: "" }))
+                    }}
+                    className={errors.title ? "border-destructive" : ""}
                   />
+                  {errors.title && <p className="text-[10px] text-destructive mt-1">{errors.title}</p>}
                 </div>
                 <div>
-                  <Label>Category</Label>
+                  <Label className={errors.category ? "text-destructive" : ""}>Category <span className="text-destructive">*</span></Label>
                   <Input 
                     placeholder="e.g. SPECIAL" 
                     value={newPackage.category}
-                    onChange={(e) => setNewPackage({...newPackage, category: e.target.value})}
+                    onChange={(e) => {
+                      setNewPackage({...newPackage, category: e.target.value})
+                      if (errors.category) setErrors(prev => ({ ...prev, category: "" }))
+                    }}
+                    className={errors.category ? "border-destructive" : ""}
                   />
+                  {errors.category && <p className="text-[10px] text-destructive mt-1">{errors.category}</p>}
                 </div>
                 <div>
-                  <Label>Price (৳)</Label>
+                  <Label className={errors.price ? "text-destructive" : ""}>Price (৳) <span className="text-destructive">*</span></Label>
                   <Input 
                     type="number" 
                     placeholder="799" 
                     value={newPackage.price}
-                    onChange={(e) => setNewPackage({...newPackage, price: e.target.value})}
+                    onChange={(e) => {
+                      setNewPackage({...newPackage, price: e.target.value})
+                      if (errors.price) setErrors(prev => ({ ...prev, price: "" }))
+                    }}
+                    className={errors.price ? "border-destructive" : ""}
                   />
+                  {errors.price && <p className="text-[10px] text-destructive mt-1">{errors.price}</p>}
                 </div>
                 <div className="col-span-2">
-                  <Label>Billing Cycle</Label>
+                  <Label className={errors.billingCycle ? "text-destructive" : ""}>Billing Cycle <span className="text-destructive">*</span></Label>
                   <Input 
                     placeholder="e.g. package, session" 
                     value={newPackage.billingCycle}
-                    onChange={(e) => setNewPackage({...newPackage, billingCycle: e.target.value})}
+                    onChange={(e) => {
+                      setNewPackage({...newPackage, billingCycle: e.target.value})
+                      if (errors.billingCycle) setErrors(prev => ({ ...prev, billingCycle: "" }))
+                    }}
+                    className={errors.billingCycle ? "border-destructive" : ""}
                   />
+                  {errors.billingCycle && <p className="text-[10px] text-destructive mt-1">{errors.billingCycle}</p>}
                 </div>
                 <div className="col-span-2">
                   <Label>Description</Label>
@@ -405,7 +477,7 @@ export default function ManagePackagesPage() {
       </div>
 
       {/* Booking Modal */}
-      <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
+      <Dialog open={isBookingDialogOpen} onOpenChange={(open) => { setIsBookingDialogOpen(open); if (!open) setErrors({}) }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -416,34 +488,54 @@ export default function ManagePackagesPage() {
           <div className="space-y-4 py-4 pb-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Label>Client Name</Label>
+                <Label className={errors.clientName ? "text-destructive" : ""}>Client Name <span className="text-destructive">*</span></Label>
                 <Input 
                   value={bookingData.clientName}
-                  onChange={(e) => setBookingData({...bookingData, clientName: e.target.value})}
+                  onChange={(e) => {
+                    setBookingData({...bookingData, clientName: e.target.value})
+                    if (errors.clientName) setErrors(prev => ({ ...prev, clientName: "" }))
+                  }}
+                  className={errors.clientName ? "border-destructive" : ""}
                 />
+                {errors.clientName && <p className="text-[10px] text-destructive mt-1">{errors.clientName}</p>}
               </div>
               <div className="col-span-2">
-                <Label>Phone Number</Label>
+                <Label className={errors.phoneNumber ? "text-destructive" : ""}>Phone Number <span className="text-destructive">*</span></Label>
                 <Input 
                   value={bookingData.phoneNumber}
-                  onChange={(e) => setBookingData({...bookingData, phoneNumber: e.target.value})}
+                  onChange={(e) => {
+                    setBookingData({...bookingData, phoneNumber: e.target.value})
+                    if (errors.phoneNumber) setErrors(prev => ({ ...prev, phoneNumber: "" }))
+                  }}
+                  className={errors.phoneNumber ? "border-destructive" : ""}
                 />
+                {errors.phoneNumber && <p className="text-[10px] text-destructive mt-1">{errors.phoneNumber}</p>}
               </div>
               <div>
-                <Label>Date</Label>
+                <Label className={errors.date ? "text-destructive" : ""}>Date <span className="text-destructive">*</span></Label>
                 <Input 
                   type="date"
                   value={bookingData.date}
-                  onChange={(e) => setBookingData({...bookingData, date: e.target.value})}
+                  onChange={(e) => {
+                    setBookingData({...bookingData, date: e.target.value})
+                    if (errors.date) setErrors(prev => ({ ...prev, date: "" }))
+                  }}
+                  className={errors.date ? "border-destructive" : ""}
                 />
+                {errors.date && <p className="text-[10px] text-destructive mt-1">{errors.date}</p>}
               </div>
               <div>
-                <Label>Time</Label>
+                <Label className={errors.time ? "text-destructive" : ""}>Time <span className="text-destructive">*</span></Label>
                 <Input 
                   type="time"
                   value={bookingData.time}
-                  onChange={(e) => setBookingData({...bookingData, time: e.target.value})}
+                  onChange={(e) => {
+                    setBookingData({...bookingData, time: e.target.value})
+                    if (errors.time) setErrors(prev => ({ ...prev, time: "" }))
+                  }}
+                  className={errors.time ? "border-destructive" : ""}
                 />
+                {errors.time && <p className="text-[10px] text-destructive mt-1">{errors.time}</p>}
               </div>
               <div className="col-span-2">
                 <Label>Source</Label>
@@ -506,33 +598,48 @@ export default function ManagePackagesPage() {
       </Dialog>
 
       {/* Edit Modal */}
-      <Dialog open={!!packageToEdit} onOpenChange={() => setPackageToEdit(null)}>
+      <Dialog open={!!packageToEdit} onOpenChange={(open) => { if (!open) { setPackageToEdit(null); setErrors({}); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Edit Package</DialogTitle></DialogHeader>
           <ScrollArea className="max-h-[70vh] pr-4">
             {packageToEdit && (
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="col-span-2">
-                  <Label>Title</Label>
+                  <Label className={errors.title ? "text-destructive" : ""}>Title <span className="text-destructive">*</span></Label>
                   <Input 
                     value={packageToEdit.title}
-                    onChange={(e) => setPackageToEdit({...packageToEdit, title: e.target.value})}
+                    onChange={(e) => {
+                      setPackageToEdit({...packageToEdit, title: e.target.value})
+                      if (errors.title) setErrors(prev => ({ ...prev, title: "" }))
+                    }}
+                    className={errors.title ? "border-destructive" : ""}
                   />
+                  {errors.title && <p className="text-[10px] text-destructive mt-1">{errors.title}</p>}
                 </div>
                 <div>
-                  <Label>Category</Label>
+                  <Label className={errors.category ? "text-destructive" : ""}>Category <span className="text-destructive">*</span></Label>
                   <Input 
                     value={packageToEdit.category}
-                    onChange={(e) => setPackageToEdit({...packageToEdit, category: e.target.value})}
+                    onChange={(e) => {
+                      setPackageToEdit({...packageToEdit, category: e.target.value})
+                      if (errors.category) setErrors(prev => ({ ...prev, category: "" }))
+                    }}
+                    className={errors.category ? "border-destructive" : ""}
                   />
+                  {errors.category && <p className="text-[10px] text-destructive mt-1">{errors.category}</p>}
                 </div>
                 <div>
-                  <Label>Price (৳)</Label>
+                  <Label className={errors.price ? "text-destructive" : ""}>Price (৳) <span className="text-destructive">*</span></Label>
                   <Input 
                     type="number"
                     value={packageToEdit.price}
-                    onChange={(e) => setPackageToEdit({...packageToEdit, price: parseFloat(e.target.value)})}
+                    onChange={(e) => {
+                      setPackageToEdit({...packageToEdit, price: parseFloat(e.target.value)})
+                      if (errors.price) setErrors(prev => ({ ...prev, price: "" }))
+                    }}
+                    className={errors.price ? "border-destructive" : ""}
                   />
+                  {errors.price && <p className="text-[10px] text-destructive mt-1">{errors.price}</p>}
                 </div>
                 <div className="col-span-2">
                   <Label>Description</Label>
