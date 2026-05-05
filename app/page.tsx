@@ -10,10 +10,12 @@ import { getActiveServices } from "./api/services/services"
 import { getAppreciateExcellence } from "./api/appreciate-excellence/appreciate-excellence"
 
 export default async function Home() {
-    const [services, excellence] = await Promise.all([
+    const [servicesResult, excellenceResult] = await Promise.allSettled([
         getActiveServices(),
         getAppreciateExcellence()
     ]);
+    const services = servicesResult.status === 'fulfilled' ? servicesResult.value : [];
+    const excellence = excellenceResult.status === 'fulfilled' ? excellenceResult.value : null;
     return (
         <div className="min-h-screen bg-[#f7f1eb] text-slate-900">
             <div
