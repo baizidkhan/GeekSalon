@@ -343,10 +343,10 @@ export default function AttendancePage() {
       if (r.status && r.status in tc) tc[r.status as keyof typeof tc]++
     }
     const pie = [
-      { name: "Present",  value: tc.present,  fill: "#22c55e" },
-      { name: "Late",     value: tc.late,      fill: "#f59e0b" },
-      { name: "Half Day", value: tc.half_day,  fill: "#f97316" },
-      { name: "Absent",   value: tc.absent,    fill: "#ef4444" },
+      { name: "Present", value: tc.present, fill: "#22c55e" },
+      { name: "Late", value: tc.late, fill: "#f59e0b" },
+      { name: "Half Day", value: tc.half_day, fill: "#f97316" },
+      { name: "Absent", value: tc.absent, fill: "#ef4444" },
     ].filter(d => d.value > 0)
 
     return { barData: bar, pieData: pie }
@@ -484,8 +484,8 @@ export default function AttendancePage() {
             {viewMode === "today"
               ? today.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
               : viewMode === "date" && pickerDate
-              ? new Date(pickerDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-              : `${MONTH_NAMES[Number(month)]} ${year}`}
+                ? new Date(pickerDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+                : `${MONTH_NAMES[Number(month)]} ${year}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -529,10 +529,10 @@ export default function AttendancePage() {
             {/* colour legend */}
             <div className="flex items-center gap-3 flex-wrap justify-end">
               {[
-                { label: "Present",  color: "#22c55e" },
-                { label: "Late",     color: "#f59e0b" },
+                { label: "Present", color: "#22c55e" },
+                { label: "Late", color: "#f59e0b" },
                 { label: "Half Day", color: "#f97316" },
-                { label: "Absent",   color: "#ef4444" },
+                { label: "Absent", color: "#ef4444" },
               ].map(({ label, color }) => (
                 <div key={label} className="flex items-center gap-1 text-xs text-muted-foreground">
                   <span className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: color }} />
@@ -567,10 +567,10 @@ export default function AttendancePage() {
                   cursor={{ fill: "hsl(var(--muted))", radius: 4 }}
                   contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", color: "hsl(var(--foreground))" }}
                 />
-                <Bar dataKey="present"  stackId="a" fill="#22c55e" name="Present"  radius={[0, 0, 0, 0]} />
-                <Bar dataKey="late"     stackId="a" fill="#f59e0b" name="Late" />
+                <Bar dataKey="present" stackId="a" fill="#22c55e" name="Present" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="late" stackId="a" fill="#f59e0b" name="Late" />
                 <Bar dataKey="half_day" stackId="a" fill="#f97316" name="Half Day" />
-                <Bar dataKey="absent"   stackId="a" fill="#ef4444" name="Absent"   radius={[4, 4, 0, 0]} />
+                <Bar dataKey="absent" stackId="a" fill="#ef4444" name="Absent" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -915,8 +915,8 @@ export default function AttendancePage() {
             {viewMode === "today"
               ? `${todayFiltered.length} record(s) today`
               : viewMode === "date"
-              ? `${pickerDateFiltered.length} record(s)`
-              : `${calendarRows.length} employee(s)`}
+                ? `${pickerDateFiltered.length} record(s)`
+                : `${calendarRows.length} employee(s)`}
           </span>
           <div className="flex items-center gap-1">
             {[
