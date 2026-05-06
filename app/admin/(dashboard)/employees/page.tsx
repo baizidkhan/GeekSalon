@@ -51,7 +51,7 @@ import {
 } from "@admin/api/employees/employees"
 import { getServices } from "@admin/api/services/services"
 import { unlinkDeviceUser } from "@admin/api/biometric/biometric"
-import { CACHE, removeFromCache } from "@admin/lib/cache"
+import { CACHE, markStale } from "@admin/lib/cache"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getMediaUrl } from "@/lib/utils"
@@ -367,9 +367,9 @@ export default function EmployeesPage() {
       setShowUnlinkConfirm(false)
       toast.success("Fingerprint unlinked. The user is now listed in Unlinked Users.")
 
-      // Purge cache so any future fetch (edit-save, navigation back) gets server truth.
+      // Mark stale so the next getEmployeesFiltered() call bypasses the cache (override=true).
       // Then silently refresh the employees list in the background — no loading spinner.
-      removeFromCache(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS)
+      markStale(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS)
       fetchEmployees(true)
     } catch (error: any) {
       console.error("Failed to unlink fingerprint:", error)
