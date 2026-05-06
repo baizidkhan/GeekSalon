@@ -355,7 +355,6 @@ export default function AttendancePage() {
   function toTimeInput(iso: string | null): string {
     if (!iso) return ""
     return new Date(iso).toLocaleTimeString("en-CA", {
-      timeZone: "Asia/Dhaka",
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
