@@ -51,6 +51,7 @@ import {
   type DeviceUser,
 } from "@admin/api/biometric/biometric"
 import { getBasicEmployees, createEmployee } from "@admin/api/employees/employees"
+import { CACHE, markStale } from "@admin/lib/cache"
 import { useBiometricSocket } from "@/hooks/use-biometric-socket"
 import { StatCard } from "@admin/components/stat-card"
 
@@ -155,6 +156,7 @@ export default function DeviceUsersPage() {
         }
 
         await linkDeviceUser(linkTarget.deviceUid, employeeId)
+        markStale(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS)
         toast.success(`Linked to ${employeeName ?? "employee"} successfully`)
         setLinkTarget(null)
         setDeviceUsers((prev) => prev.filter((u) => u.deviceUid !== linkTarget.deviceUid))
