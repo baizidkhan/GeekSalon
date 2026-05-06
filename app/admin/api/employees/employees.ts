@@ -1,5 +1,5 @@
 import api from '../base'
-import { CACHE, consumeStale, markStale } from '@admin/lib/cache'
+import { CACHE, clearCacheByPrefix, consumeStale, markStale } from '@admin/lib/cache'
 
 const TTL = 10 * 60 * 1000 // 10 min — employees rarely change
 
@@ -62,6 +62,7 @@ export async function updateEmployee(id: string, employeeData: any) {
   }
 
   const { data } = await api.patch(`/employee/${id}`, payload)
+  clearCacheByPrefix(CACHE.PAYROLL)
   markStale(CACHE.EMPLOYEES, CACHE.EMPLOYEES_BASIC, CACHE.EMPLOYEES_STYLISTS, CACHE.STAFF_REPORTS, CACHE.PAYROLL)
   return data
 }

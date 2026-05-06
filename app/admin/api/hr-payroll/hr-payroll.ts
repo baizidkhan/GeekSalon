@@ -58,8 +58,12 @@ export async function getPayrollRecords(
   status?: string,
 ): Promise<PayrollResponse> {
   const key = payrollCacheKey(month, year, page, limit, search, status);
-  const bypass = payrollDirty || consumeStale(key);
+  const bypass = payrollDirty || consumeStale(CACHE.PAYROLL) || consumeStale(key);
   if (payrollDirty) payrollDirty = false;
+
+  if (bypass) {
+    clearCacheByPrefix(CACHE.PAYROLL);
+  }
 
   const params: Record<string, any> = { page, limit };
   if (month) params.month = month;
