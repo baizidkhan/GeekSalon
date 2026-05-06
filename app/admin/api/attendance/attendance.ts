@@ -82,9 +82,14 @@ export function formatWorkingTime(minutes: number | null): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
+function shiftAttendanceTime(iso: string): Date {
+  const date = new Date(iso)
+  return new Date(date.getTime() - 2 * 60 * 60 * 1000)
+}
+
 export function formatTime(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleTimeString('en-US', {
+  return shiftAttendanceTime(iso).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
