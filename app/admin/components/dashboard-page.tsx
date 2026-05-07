@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { StatCard } from "@admin/components/stat-card"
 import { RevenueChart, AppointmentChart } from "@admin/components/dashboard-charts"
 import {
@@ -15,10 +15,12 @@ import {
   AlertTriangle,
   Plus
 } from "lucide-react"
-import { formatTime } from "@admin/api/attendance/attendance"
+import { formatTime, getTodayAttendance, type AttendanceRecord } from "@admin/api/attendance/attendance"
 import { getDashboardStats } from "@admin/api/dashboard/dashboard"
 import { useAuth } from "@admin/hooks/use-auth"
+import { CACHE, markStale } from "@admin/lib/cache"
 import { formatMoney } from "@/lib/utils"
+import { useBiometricSocket, type AttendanceUpdatedPayload } from "@/hooks/use-biometric-socket"
 import Link from "next/link"
 
 export function DashboardPage() {
@@ -26,6 +28,29 @@ export function DashboardPage() {
   const [stats, setStats] = useState<Record<string, any> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
+  const [attendanceLoading, setAttendanceLoading] = useState(true)
+
+  const todayDate = new Date().toISOString().split("T")[0]
+
+  const loadAttendance = useCallback(async () => {
+    try {
+      const recs = await getTodayAttendance()
+      setAttendanceRecords(recs)
+    } catch {
+      // silently ignore — the count cards fall back to 0
+    } finally {
+      setAttendanceLoading(false)
+    }
+  }, [])
+
+  const handleAttendanceUpdated = useCallback((payload: AttendanceUpdatedPayload) => {
+    if (payload.attendanceDates.includes(todayDate)) {
+      void loadAttendance()
+    }
+  }, [loadAttendance, todayDate])
+
+  useBiometricSocket({ onAttendanceUpdated: handleAttendanceUpdated })
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -34,22 +59,37 @@ export function DashboardPage() {
     year: "numeric",
   })
 
+  const loadStats = useCallback(async (bypassCache = false) => {
+    if (bypassCache) markStale(CACHE.DASHBOARD)
+    try {
+      const data = await getDashboardStats()
+      setStats(data)
+    } catch (err: any) {
+      if (err?.response?.status !== 401) {
+        setError(err.message || 'Failed to load dashboard data')
+      } else {
+        setError('Authentication failed')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Initial load
   useEffect(() => {
     if (!authLoading && user) {
-      getDashboardStats()
-        .then((data) => {
-          setStats(data)
-        })
-        .catch((err: any) => {
-          if (err?.response?.status !== 401) {
-            setError(err.message || 'Failed to load dashboard data')
-          } else {
-            setError('Authentication failed')
-          }
-        })
-        .finally(() => setLoading(false))
+      void loadStats()
+      void loadAttendance()
     }
-  }, [authLoading, user])
+  }, [authLoading, user, loadStats, loadAttendance])
+
+  // Auto-refresh all stat cards every 60 s so revenue, appointments,
+  // clients, stock alerts, charts, and widgets stay current without a reload.
+  useEffect(() => {
+    if (!user) return
+    const id = setInterval(() => void loadStats(true), 60_000)
+    return () => clearInterval(id)
+  }, [user, loadStats])
 
   const getTrend = (current: any, previous: any) => {
     const cur = parseFloat(String(current || 0))
@@ -212,13 +252,13 @@ export function DashboardPage() {
           <div className="flex justify-between items-center mb-5">
             <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500 shrink-0" />
-              Employee On Duty ({stats?.todaysAttendanceCount ?? 0})
+              Employee On Duty ({attendanceLoading ? "…" : attendanceRecords.length})
             </h3>
             <Link href="/admin/attendance" className="text-[12px] text-blue-500 hover:underline">View all</Link>
           </div>
           <div className="flex items-center gap-4 mb-4 text-[12px] text-slate-500">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-500 rounded-sm"></span> {stats?.todaysAttendanceCount ?? 0} Attend</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-rose-500 rounded-sm"></span> {(stats?.activeEmployeesCount ?? 0) - (stats?.todaysAttendanceCount ?? 0)} Absent</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-500 rounded-sm"></span> {attendanceLoading ? "…" : attendanceRecords.length} Attend</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-rose-500 rounded-sm"></span> {attendanceLoading ? "…" : (stats?.activeEmployeesCount ?? 0) - attendanceRecords.length} Absent</span>
           </div>
 
           <div className="mt-4 border-t border-slate-100 pt-2">
@@ -231,17 +271,17 @@ export function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {loading || !stats ? (
+                {attendanceLoading ? (
                   <tr>
                     <td colSpan={3} className="py-6 text-center text-slate-400">Loading…</td>
                   </tr>
-                ) : (stats.todaysAttendance ?? []).length === 0 ? (
+                ) : attendanceRecords.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="py-6 text-center text-slate-400">No attendance recorded today</td>
                   </tr>
                 ) : (
-                  (stats.todaysAttendance as any[]).map((rec, i) => (
-                    <tr key={i} className="border-b border-slate-50">
+                  attendanceRecords.map((rec, i) => (
+                    <tr key={rec.id ?? i} className="border-b border-slate-50">
                       <td className="py-2.5 text-slate-700 font-medium">{rec.employeeName}</td>
                       <td className="py-2.5 text-slate-500">
                         {formatTime(rec.checkInTime)}
