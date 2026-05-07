@@ -55,7 +55,7 @@ export function TodaysAppointments({ appointments }: TodaysAppointmentsProps) {
         </h3>
         <span className="text-[12px] text-slate-500 cursor-pointer hover:underline">View All</span>
       </div>
-      
+
       {appointments.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-48 text-slate-400 text-sm gap-2">
           <span>No appointments today</span>
