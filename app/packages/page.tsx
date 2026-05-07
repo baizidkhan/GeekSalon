@@ -20,7 +20,6 @@ export default async function PackagesPage() {
       return posA - posB
     })
   } catch (error) {
-    console.log(error)
     console.error("Failed to fetch packages:", error)
   }
 

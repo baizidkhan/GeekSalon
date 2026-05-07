@@ -111,7 +111,6 @@ export default function SettingsPage() {
       await refreshBusinessName()
       toast.success("Business settings updated successfully")
     } catch (error) {
-      console.log(error)
       toast.error("Failed to update business settings")
     } finally {
       setSavingBusiness(false)
@@ -127,7 +126,6 @@ export default function SettingsPage() {
       }
       toast.success("Booking settings updated successfully")
     } catch (error) {
-      console.log(error)
       toast.error("Failed to update booking settings")
     } finally {
       setSavingBooking(false)
@@ -143,7 +141,6 @@ export default function SettingsPage() {
       }
       toast.success("Billing settings updated successfully")
     } catch (error) {
-      console.log(error)
       toast.error("Failed to update billing settings")
     } finally {
       setSavingInvoice(false)
@@ -207,7 +204,6 @@ export default function SettingsPage() {
       }
       toast.success("Images updated successfully")
     } catch (error) {
-      console.log(error)
       toast.error("Failed to update images")
     } finally {
       setSavingWhyChooseUs(false)

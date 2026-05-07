@@ -219,7 +219,6 @@ export default function ManagePackagesPage() {
       setPackageToEdit(null)
       fetchPackages()
     } catch (error: any) {
-      console.log("error", error)
       toast.error("Failed to update package")
     } finally {
       setSubmitting(false)

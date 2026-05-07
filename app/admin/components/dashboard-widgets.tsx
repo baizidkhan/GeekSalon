@@ -1,4 +1,5 @@
 import { Calendar, AlertTriangle, Sparkles } from "lucide-react"
+import Link from "next/link"
 interface DashboardAppointment {
   id: string
   clientName: string
@@ -54,7 +55,7 @@ export function TodaysAppointments({ appointments }: TodaysAppointmentsProps) {
         </h3>
         <span className="text-[12px] text-slate-500 cursor-pointer hover:underline">View All</span>
       </div>
-      
+
       {appointments.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-48 text-slate-400 text-sm gap-2">
           <span>No appointments today</span>
@@ -88,7 +89,38 @@ export function TodaysAppointments({ appointments }: TodaysAppointmentsProps) {
 }
 
 export function LowStockAlerts({ items }: LowStockAlertsProps) {
-  return null // Rendered inside StatCard directly now based on the new design
+  return (
+    <div className="bg-white rounded-xl p-5 border border-slate-200">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-bold text-slate-800 text-[15px] flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+          Low Stock Alerts
+        </h3>
+        <Link href="/admin/inventory" className="text-[12px] text-blue-500 hover:underline">View all</Link>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-48 text-slate-400 text-sm gap-2">
+          <span>All items in stock</span>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {items.slice(0, 5).map((item) => (
+            <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50/50 border border-slate-100 hover:border-rose-200 transition-colors group">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-slate-700 truncate group-hover:text-rose-600 transition-colors">{item.name}</p>
+                <p className="text-[11px] text-slate-500">{item.category}</p>
+              </div>
+              <div className="text-right ml-4">
+                <p className="text-[13px] font-bold text-rose-600">{item.stockQty}</p>
+                <p className="text-[10px] text-slate-400 font-medium">Left</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function TopServices({ services }: TopServicesProps) {

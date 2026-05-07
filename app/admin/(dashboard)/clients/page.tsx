@@ -157,6 +157,8 @@ export default function ClientsPage() {
     phone: "",
   })
   const [isAdding, setIsAdding] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [clientErrors, setClientErrors] = useState<{ name?: string; phone?: string; email?: string }>({})
   const [clientTouched, setClientTouched] = useState(false)
 
@@ -259,7 +261,7 @@ export default function ClientsPage() {
     if (!data.phone.trim()) {
       errors.phone = "Phone number is required"
     } else if (!isValidPhone(data.phone)) {
-      errors.phone = "Must be in format: 01712345678 or +8801712345678"
+      errors.phone = "Please enter a valid Bangladeshi Phone Number"
     }
     if (data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
       errors.email = "Enter a valid email address"
@@ -275,7 +277,12 @@ export default function ClientsPage() {
 
     try {
       setIsAdding(true)
-      await createClient(newClient)
+      const payload = {
+        name: newClient.name.trim(),
+        phone: normalizePhone(newClient.phone),
+        email: newClient.email.trim() || undefined,
+      }
+      await createClient(payload)
       const res = await getClients(1, 1000)
       setClients(res.data ?? res)
       setIsDialogOpen(false)
@@ -283,9 +290,11 @@ export default function ClientsPage() {
       setClientErrors({})
       setClientTouched(false)
       toast.success("Client created successfully")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating client:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to create client")
+      const msg = error?.response?.data?.message
+      const finalMsg = Array.isArray(msg) ? msg[0] : msg || error.message || "Failed to create client"
+      toast.error(finalMsg)
     } finally {
       setIsAdding(false)
     }
@@ -301,16 +310,17 @@ export default function ClientsPage() {
     }
 
     if (!isValidPhone(editClient.phone)) {
-      toast.error("Phone must be in format: 01712345678 or +8801712345678")
+      toast.error("Please enter a valid Bangladeshi Phone Number")
       return
     }
 
     try {
+      setIsSaving(true)
       // Send only the necessary fields to the server (not computed fields like visits, totalSpent)
       await updateClient(editClient.id, {
-        name: editClient.name,
-        phone: editClient.phone,
-        email: editClient.email || null,
+        name: editClient.name.trim(),
+        phone: normalizePhone(editClient.phone),
+        email: editClient.email?.trim() || null,
       })
 
       // Refresh the client list to show updated data
@@ -319,22 +329,31 @@ export default function ClientsPage() {
       setEditClient(null)
 
       toast.success("Client updated successfully. Changes will reflect across all pages.")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating client:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to update client. Please try again.")
+      const msg = error?.response?.data?.message
+      const finalMsg = Array.isArray(msg) ? msg[0] : msg || error.message || "Failed to update client"
+      toast.error(finalMsg)
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const handleDelete = async () => {
     if (!deleteClientState) return
     try {
+      setIsDeleting(true)
       await deleteClient(deleteClientState.id)
       setClients(clients.filter(c => c.id !== deleteClientState.id))
       setDeleteClientState(null)
       toast.success("Client deleted successfully")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting client:", error)
-      toast.error("Failed to delete client. Please try again.")
+      const msg = error?.response?.data?.message
+      const finalMsg = Array.isArray(msg) ? msg[0] : msg || error.message || "Failed to delete client"
+      toast.error(finalMsg)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -462,7 +481,7 @@ export default function ClientsPage() {
                           setClientErrors((prev) => ({ ...prev, phone: phoneError }))
                         }
                       }}
-                      placeholder="01712345678 or +8801712345678"
+                      placeholder="e.g. 01712345678"
                       className={clientErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
                     {clientErrors.phone && (
@@ -811,10 +830,15 @@ export default function ClientsPage() {
                   placeholder="01712345678 or +8801712345678"
                 />
                 {editClient.phone && !isValidPhone(editClient.phone) && (
-                  <p className="text-sm text-destructive mt-1">Invalid phone number format</p>
+                  <p className="text-[12px] text-destructive mt-1 flex items-center gap-1">
+                    <span>⚠</span> Please enter a valid Bangladeshi Phone Number
+                  </p>
                 )}
               </div>
-              <Button className="mt-1 h-10 w-full" onClick={handleEditSave}>Save Changes</Button>
+              <Button className="mt-1 h-10 w-full" onClick={handleEditSave} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving ? "Saving Changes..." : "Save Changes"}
+              </Button>
             </div>
           )}
         </DialogContent>
@@ -828,8 +852,11 @@ export default function ClientsPage() {
           </DialogHeader>
           <p className="mt-1 text-muted-foreground leading-relaxed">Are you sure you want to delete <strong>{deleteClientState?.name}</strong>? This action cannot be undone.</p>
           <DialogFooter className="pb-2">
-            <Button variant="outline" onClick={() => setDeleteClientState(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            <Button variant="outline" onClick={() => setDeleteClientState(null)} disabled={isDeleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

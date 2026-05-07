@@ -2,9 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
-import { getInvoices, createInvoice, updateInvoice, deleteInvoice } from "@admin/api/billing/billing"
+import { getInvoices, updateInvoice, deleteInvoice } from "@admin/api/billing/billing"
 import { useBusiness } from "@/context/BusinessContext"
-import { getClients } from "@admin/api/clients/clients"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -94,7 +93,6 @@ function getStatusLabel(status: Invoice["status"]) {
 export default function BillingPage() {
   const { businessName } = useBusiness()
   const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [clientOptions, setClientOptions] = useState<Array<{ id: string; name: string; phone: string }>>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 500)
@@ -105,15 +103,6 @@ export default function BillingPage() {
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [newInvoice, setNewInvoice] = useState({
-    clientId: "",
-    printBy: "",
-    services: "",
-    total: "",
-    paidAmount: "",
-    paymentMethod: "Cash" as "Cash" | "bKash" | "Card",
-    status: "Unpaid" as "Paid" | "Unpaid" | "Partial",
-  })
 
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
   const [viewEditStatus, setViewEditStatus] = useState<Invoice["status"]>("Unpaid")
@@ -137,12 +126,6 @@ export default function BillingPage() {
 
   useEffect(() => {
     fetchInvoices()
-    getClients(1, 1000)
-      .then((res) => {
-        const list = res?.data ?? res ?? []
-        setClientOptions(list.map((c: any) => ({ id: c.id, name: c.name, phone: c.phone })))
-      })
-      .catch(console.error)
   }, [])
 
   const filterByDate = (date: string) => {
@@ -182,24 +165,6 @@ export default function BillingPage() {
   const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / PAGE_SIZE))
   const paginatedInvoices = filteredInvoices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-  const handleAddInvoice = async () => {
-    try {
-      await createInvoice({
-        clientId: newInvoice.clientId || undefined,
-        printBy: newInvoice.status === "Paid" ? newInvoice.printBy || undefined : undefined,
-        services: newInvoice.services ? newInvoice.services.split(",").map(s => s.trim()) : [],
-        total: newInvoice.total ? parseFloat(newInvoice.total) : undefined,
-        paidAmount: newInvoice.status === "Partial" && newInvoice.paidAmount ? parseFloat(newInvoice.paidAmount) : undefined,
-        paymentMethod: newInvoice.paymentMethod,
-        status: newInvoice.status,
-      })
-      setNewInvoice({ clientId: "", printBy: "", services: "", total: "", paidAmount: "", paymentMethod: "Cash", status: "Unpaid" })
-      setIsDialogOpen(false)
-      fetchInvoices()
-    } catch (err) {
-      console.error(err)
-    }
-  }
 
   const handleEditSave = async () => {
     if (!editInvoiceState) return
@@ -361,76 +326,25 @@ export default function BillingPage() {
             <Button variant="outline" onClick={handleExportCSV}><Download className="w-4 h-4 mr-2" />Export CSV</Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />New Invoice</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Create New Invoice</DialogTitle></DialogHeader>
-                <div className="space-y-4 mt-4 pb-2">
-                  <div>
-                    <Label>Client</Label>
-                    <Select value={newInvoice.clientId} onValueChange={(v) => setNewInvoice({ ...newInvoice, clientId: v })}>
-                      <SelectTrigger><SelectValue placeholder="Select client (optional)" /></SelectTrigger>
-                      <SelectContent>
-                        {clientOptions.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>{c.name} ({c.phone})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Services (comma separated)</Label>
-                    <Input value={newInvoice.services} onChange={(e) => setNewInvoice({ ...newInvoice, services: e.target.value })} placeholder="e.g., Haircut, Hair Spa" />
-                  </div>
-                  <div>
-                    <Label>Amount (৳)</Label>
-                    <Input type="number" value={newInvoice.total} onChange={(e) => setNewInvoice({ ...newInvoice, total: e.target.value })} placeholder="Leave empty to auto-calculate" />
-                  </div>
-                  <div>
-                    <Label>Payment Method</Label>
-                    <Select value={newInvoice.paymentMethod} onValueChange={(v: "Cash" | "bKash" | "Card") => setNewInvoice({ ...newInvoice, paymentMethod: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Cash">Cash</SelectItem>
-                        <SelectItem value="bKash">bKash</SelectItem>
-                        <SelectItem value="Card">Card</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Status</Label>
-                    <Select value={newInvoice.status} onValueChange={(v: "Paid" | "Unpaid" | "Partial") => setNewInvoice({ ...newInvoice, status: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Paid">Paid</SelectItem>
-                        <SelectItem value="Unpaid">Unpaid</SelectItem>
-                        <SelectItem value="Partial">Partial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newInvoice.status === "Paid" && (
-                    <div>
-                      <Label>Printed By</Label>
-                      <Input value={newInvoice.printBy} onChange={(e) => setNewInvoice({ ...newInvoice, printBy: e.target.value })} placeholder="Employee name who printed" />
-                    </div>
-                  )}
-                  {newInvoice.status === "Partial" && (
-                    <div>
-                      <Label>Amount Paid (৳)</Label>
-                      <Input type="number" value={newInvoice.paidAmount} onChange={(e) => setNewInvoice({ ...newInvoice, paidAmount: e.target.value })} placeholder="Enter amount paid so far" />
-                      {newInvoice.paidAmount && newInvoice.total && (
-                        <p className="text-xs text-muted-foreground mt-1">Due: {formatCurrency(Math.max(0, parseFloat(newInvoice.total) - parseFloat(newInvoice.paidAmount)))}</p>
-                      )}
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground bg-muted/40 rounded-md p-3">
-                    <div>
-                      <p className="font-medium text-foreground/70">Invoice No</p>
-                      <p>Auto-generated</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground/70">Date</p>
-                      <p>Auto-set on save</p>
+              <DialogContent className="sm:max-w-[420px]">
+                <DialogHeader>
+                  <DialogTitle>Automatic Invoice Generation</DialogTitle>
+                </DialogHeader>
+                <div className="py-6 text-center space-y-4">
+                  <div className="flex justify-center">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Receipt className="h-6 w-6 text-primary" />
                     </div>
                   </div>
-                  <Button onClick={handleAddInvoice} className="w-full">Create Invoice</Button>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Important Information</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed px-2">
+                      For invoice you must have to add an appointment then confirm it, the invoice will auto genarate.
+                    </p>
+                  </div>
+                  <Button onClick={() => setIsDialogOpen(false)} className="w-full mt-2">
+                    Understood
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>

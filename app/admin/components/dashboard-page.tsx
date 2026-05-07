@@ -13,7 +13,6 @@ import {
   Wallet,
   Users,
   AlertTriangle,
-  Bell,
   Plus
 } from "lucide-react"
 import { formatTime } from "@admin/api/attendance/attendance"
@@ -55,6 +54,7 @@ export function DashboardPage() {
   const getTrend = (current: any, previous: any) => {
     const cur = parseFloat(String(current || 0))
     const prev = parseFloat(String(previous || 0))
+
 
     if (!prev || prev === 0) {
       return cur > 0 ? { trend: "100%", trendUp: true } : { trend: "0%", trendUp: true }
@@ -101,10 +101,6 @@ export function DashboardPage() {
             <Plus className="w-4 h-4" />
             New Appointment
           </Link>
-          <button className="w-10 h-10 bg-white rounded-full flex items-center justify-center relative border border-slate-200">
-            <Bell className="w-4 h-4 text-slate-600" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
-          </button>
         </div>
       </div>
 
@@ -172,7 +168,7 @@ export function DashboardPage() {
           icon={AlertTriangle}
           iconWrapperClassName="bg-purple-50 text-purple-500"
           className="border-t-4 border-t-transparent hover:border-t-purple-500 transition-all"
-          subtitle="Items Need"
+          subtitle={stats?.lowStockItemsCount ? `${stats.lowStockItemsCount} items low in stock` : "Inventory is healthy"}
           bottomContent={
             <div className="flex flex-wrap gap-2 mt-2">
               {(stats?.lowStockItems || []).slice(0, 2).map((item: any, i: number) => (
@@ -205,9 +201,13 @@ export function DashboardPage() {
       </div>
 
       {/* Bottom Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr] gap-5">
-        <TodaysAppointments appointments={stats?.todaysAppointments ?? []} />
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] xl:grid-cols-[1.5fr_1fr_1fr_1fr] gap-5 mb-6">
+        <div className="xl:col-span-1">
+          <TodaysAppointments appointments={stats?.todaysAppointments ?? []} />
+        </div>
         <TopServices services={stats?.topServices ?? []} />
+        <LowStockAlerts items={stats?.lowStockItems ?? []} />
+
         <div className="bg-white rounded-xl p-5 border border-slate-200">
           <div className="flex justify-between items-center mb-5">
             <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">

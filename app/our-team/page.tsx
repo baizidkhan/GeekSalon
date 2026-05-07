@@ -4,6 +4,7 @@ import api from "@admin/api/base"
 import { SiteHeader } from "@/app/components/site-header"
 import { Footer } from "@/app/components/footer"
 import { TeamMemberImage } from "@/app/components/team-member-image"
+import { BookingTriggerButton } from "@/app/components/booking-trigger-button"
 
 async function fetchTeam() {
   const { data } = await api.get('/employee/basic', { cache: false as any })
@@ -126,13 +127,12 @@ export default async function OurTeamPage() {
         {/* Call to Action */}
         <div className="mt-40 text-center border-t border-white/5 pt-24 pb-12 animate-fade-up">
           <h2 className="text-3xl md:text-5xl font-serif mb-8">Ready to be transformed?</h2>
-          <Link
-            href="/appointments"
+          <BookingTriggerButton
             className="inline-flex items-center gap-3 px-8 py-4 bg-[#c4a484] text-black font-semibold rounded-full hover:bg-white transition-all duration-300 group"
           >
             Book Your Session
             <ChevronLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
-          </Link>
+          </BookingTriggerButton>
         </div>
       </main>
 
