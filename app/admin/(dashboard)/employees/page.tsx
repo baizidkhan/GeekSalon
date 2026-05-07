@@ -291,8 +291,6 @@ export default function EmployeesPage() {
         setImagePreview(null)
         fetchEmployees()
       } catch (error: any) {
-        console.log(error)
-        console.error("Failed to add employee:", error)
         toast.error(error?.response?.data?.message || "Failed to add employee")
       } finally {
         setIsAdding(false)
