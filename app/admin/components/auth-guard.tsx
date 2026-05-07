@@ -76,9 +76,7 @@ export function AuthGuard({
 
   useEffect(() => {
     if (mounted && !loading) {
-      console.log(`AuthGuard [${pathname}]: User:`, user ? user.useremail : 'None')
       if (!user && pathname !== "/admin/login") {
-        console.log('No user found, redirecting to login...')
         router.replace("/admin/login")
       }
     }
