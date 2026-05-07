@@ -13,7 +13,6 @@ import {
   Wallet,
   Users,
   AlertTriangle,
-  Bell,
   Plus
 } from "lucide-react"
 import { getDashboardStats } from "@admin/api/dashboard/dashboard"
@@ -99,10 +98,6 @@ export function DashboardPage() {
             <Plus className="w-4 h-4" />
             New Appointment
           </Link>
-          <button className="w-10 h-10 bg-white rounded-full flex items-center justify-center relative border border-slate-200">
-            <Bell className="w-4 h-4 text-slate-600" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
-          </button>
         </div>
       </div>
 
