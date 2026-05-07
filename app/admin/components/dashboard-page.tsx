@@ -53,11 +53,11 @@ export function DashboardPage() {
   const getTrend = (current: any, previous: any) => {
     const cur = parseFloat(String(current || 0))
     const prev = parseFloat(String(previous || 0))
-    
+
     if (!prev || prev === 0) {
       return cur > 0 ? { trend: "100%", trendUp: true } : { trend: "0%", trendUp: true }
     }
-    
+
     const diff = cur - prev
     const percent = Math.abs((diff / prev) * 100).toFixed(0)
     return {
@@ -129,7 +129,7 @@ export function DashboardPage() {
           trendLabel="from last week"
           trendUp={revenueTrend.trendUp}
         />
-        
+
         <StatCard
           title="Today's Appointments"
           value={loading || !stats ? "—" : (stats.todaysAppointmentsCount ?? 0)}
@@ -170,7 +170,7 @@ export function DashboardPage() {
           icon={AlertTriangle}
           iconWrapperClassName="bg-purple-50 text-purple-500"
           className="border-t-4 border-t-transparent hover:border-t-purple-500 transition-all"
-          subtitle="Items Need"
+          subtitle={stats?.lowStockItemsCount ? `${stats.lowStockItemsCount} items low in stock` : "Inventory is healthy"}
           bottomContent={
             <div className="flex flex-wrap gap-2 mt-2">
               {(stats?.lowStockItems || []).slice(0, 2).map((item: any, i: number) => (
@@ -195,30 +195,34 @@ export function DashboardPage() {
           sixMonthData={stats?.revenueTrendSixMonths ?? []}
           yearlyData={stats?.revenueTrendYearly ?? []}
         />
-        
-        <AppointmentChart 
-          weeklyData={stats?.appointmentTrendWeekly ?? []} 
-          monthlyData={stats?.appointmentTrendMonthly ?? []} 
+
+        <AppointmentChart
+          weeklyData={stats?.appointmentTrendWeekly ?? []}
+          monthlyData={stats?.appointmentTrendMonthly ?? []}
         />
       </div>
 
       {/* Bottom Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr] gap-5">
-        <TodaysAppointments appointments={stats?.todaysAppointments ?? []} />
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] xl:grid-cols-[1.5fr_1fr_1fr_1fr] gap-5 mb-6">
+        <div className="xl:col-span-1">
+          <TodaysAppointments appointments={stats?.todaysAppointments ?? []} />
+        </div>
         <TopServices services={stats?.topServices ?? []} />
+        <LowStockAlerts items={stats?.lowStockItems ?? []} />
+
         <div className="bg-white rounded-xl p-5 border border-slate-200">
           <div className="flex justify-between items-center mb-5">
             <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-500 shrink-0" />
-                Employee On Duty ({stats?.todaysAttendanceCount ?? 0})
-              </h3>
+              <Users className="w-4 h-4 text-blue-500 shrink-0" />
+              Employees ({stats?.todaysAttendanceCount ?? 0})
+            </h3>
             <Link href="/admin/attendance" className="text-[12px] text-blue-500 hover:underline">View all</Link>
           </div>
           <div className="flex items-center gap-4 mb-4 text-[12px] text-slate-500">
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-500 rounded-sm"></span> {stats?.todaysAttendanceCount ?? 0} Attend</span>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-rose-500 rounded-sm"></span> {(stats?.activeEmployeesCount ?? 0) - (stats?.todaysAttendanceCount ?? 0)} Absent</span>
           </div>
-          
+
           <div className="mt-4 border-t border-slate-100 pt-2">
             <table className="w-full text-left text-[12px]">
               <thead>
