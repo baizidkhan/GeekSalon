@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getInventory, createInventoryItem, updateInventoryItem, deleteInventoryItem, type InventoryItem } from "@admin/api/inventory/inventory"
+import { formatCurrency } from "@/lib/utils"
 import { toast } from "sonner"
 
 const emptyForm = {
@@ -261,7 +262,7 @@ export default function InventoryPage() {
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Total Value</p>
-            <p className="text-2xl font-semibold text-foreground">৳{totalValue.toLocaleString()}</p>
+            <p className="text-2xl font-semibold text-foreground">{formatCurrency(totalValue)}</p>
           </div>
         </div>
 
@@ -323,7 +324,7 @@ export default function InventoryPage() {
                       <span className={`font-medium ${item.stockQty <= item.minStockLevel ? "text-amber-600" : ""}`}>{item.stockQty}</span>
                       <span className="text-muted-foreground text-xs ml-1">(min: {item.minStockLevel})</span>
                     </TableCell>
-                    <TableCell>৳{Number(item.unitPrice).toLocaleString()}</TableCell>
+                    <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
                     <TableCell className="text-muted-foreground">{item.supplier}</TableCell>
                     <TableCell className="text-muted-foreground">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}</TableCell>
                     <TableCell>
@@ -380,7 +381,7 @@ export default function InventoryPage() {
                 <div><Label className="text-muted-foreground">Name</Label><p className="font-medium">{viewItem.name}</p></div>
                 <div><Label className="text-muted-foreground">Category</Label><p className="font-medium">{viewItem.category}</p></div>
                 <div><Label className="text-muted-foreground">Quantity</Label><p className="font-medium">{viewItem.stockQty} (min: {viewItem.minStockLevel})</p></div>
-                <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">৳{Number(viewItem.unitPrice).toLocaleString()}</p></div>
+                <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">{formatCurrency(viewItem.unitPrice)}</p></div>
                 <div><Label className="text-muted-foreground">Supplier</Label><p className="font-medium">{viewItem.supplier}</p></div>
                 <div><Label className="text-muted-foreground">Expiry Date</Label><p className="font-medium">{viewItem.expiryDate ? new Date(viewItem.expiryDate).toLocaleDateString() : "—"}</p></div>
               </div>

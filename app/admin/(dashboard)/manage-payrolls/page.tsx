@@ -48,6 +48,7 @@ import { getBasicEmployees } from "@admin/api/employees/employees"
 import { StatCard } from "@admin/components/stat-card"
 import { useBusiness } from "@/context/BusinessContext"
 import { useDebounce } from "@/hooks/use-debounce"
+import { formatCurrency, formatMoney } from "@/lib/utils"
 import { Search, Filter } from "lucide-react"
 // jsPDF is imported dynamically to avoid SSR build errors
 
@@ -354,10 +355,10 @@ export default function HRPayrollPage() {
 
     // Salary Breakdown
     const salaryData = [
-      ["Base Salary", `BDT ${Number(record.baseSalary).toLocaleString()}`],
-      ["Bonus", `BDT ${Number(record.bonus).toLocaleString()}`],
-      ["Deductions", `BDT ${Number(record.deductions).toLocaleString()}`],
-      ["Net Salary", `BDT ${Number(record.netSalary).toLocaleString()}`],
+      ["Base Salary", `BDT ${formatMoney(record.baseSalary)}`],
+      ["Bonus", `BDT ${formatMoney(record.bonus)}`],
+      ["Deductions", `BDT ${formatMoney(record.deductions)}`],
+      ["Net Salary", `BDT ${formatMoney(record.netSalary)}`],
     ]
 
     autoTable(doc, {
@@ -484,14 +485,14 @@ export default function HRPayrollPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
         <StatCard
           title="Total Payroll"
-          value={`৳${totalPayroll.toLocaleString()}`}
+          value={formatCurrency(totalPayroll)}
           icon={Receipt}
           iconWrapperClassName="bg-blue-50 text-blue-500"
           className="border-t-4 border-t-transparent hover:border-t-blue-500 transition-all"
         />
         <StatCard
           title="Pending"
-          value={`৳${pendingPayroll.toLocaleString()}`}
+          value={formatCurrency(pendingPayroll)}
           icon={MinusCircle}
           iconWrapperClassName="bg-amber-50 text-amber-500"
           className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
@@ -735,10 +736,10 @@ export default function HRPayrollPage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{record.role}</TableCell>
-                    <TableCell className="hidden md:table-cell">৳{Number(record.baseSalary).toLocaleString()}</TableCell>
-                    <TableCell className="hidden md:table-cell text-green-600">+৳{Number(record.bonus).toLocaleString()}</TableCell>
-                    <TableCell className="hidden md:table-cell text-red-600">-৳{Number(record.deductions).toLocaleString()}</TableCell>
-                    <TableCell className="font-medium">৳{Number(record.netSalary).toLocaleString()}</TableCell>
+                    <TableCell className="hidden md:table-cell">{formatCurrency(record.baseSalary)}</TableCell>
+                    <TableCell className="hidden md:table-cell text-green-600">+{formatCurrency(record.bonus)}</TableCell>
+                    <TableCell className="hidden md:table-cell text-red-600">-{formatCurrency(record.deductions)}</TableCell>
+                    <TableCell className="font-medium">{formatCurrency(record.netSalary)}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(record.status)}`}>
                         {record.status}
@@ -816,19 +817,19 @@ export default function HRPayrollPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-0.5">Base Salary</p>
-                  <p className="font-medium">৳{Number(viewRecord.baseSalary).toLocaleString()}</p>
+                  <p className="font-medium">{formatCurrency(viewRecord.baseSalary)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-0.5">Bonus</p>
-                  <p className="font-medium text-green-600">+৳{Number(viewRecord.bonus).toLocaleString()}</p>
+                  <p className="font-medium text-green-600">+{formatCurrency(viewRecord.bonus)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-0.5">Deductions</p>
-                  <p className="font-medium text-red-600">-৳{Number(viewRecord.deductions).toLocaleString()}</p>
+                  <p className="font-medium text-red-600">-{formatCurrency(viewRecord.deductions)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-0.5">Net Salary</p>
-                  <p className="font-semibold text-base">৳{Number(viewRecord.netSalary).toLocaleString()}</p>
+                  <p className="font-semibold text-base">{formatCurrency(viewRecord.netSalary)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-0.5">Status</p>

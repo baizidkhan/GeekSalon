@@ -5,6 +5,7 @@ import { X, Phone, User, Calendar, Clock, FileText, Loader2, CheckCircle2 } from
 import { bookPackage } from "@admin/api/packages/packages"
 import api from "@admin/api/base"
 import { getInvoiceSettings } from "@admin/api/settings/settings"
+import { formatCurrency } from "@/lib/utils"
 
 interface Package {
   id: string
@@ -60,14 +61,14 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
   useEffect(() => {
     getInvoiceSettings()
       .then((s) => { if (s?.taxRate) setTaxRate(Number(s.taxRate)) })
-      .catch(() => {})
-      
+      .catch(() => { })
+
     api.get("/employee/basic")
       .then((res) => {
         const stylists = Array.isArray(res.data) ? res.data.filter((emp: any) => emp.role === "Stylist") : []
         setStaffList(stylists)
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   // Reset form when pkg changes
@@ -146,7 +147,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
               </p>
               <h2 className="text-xl font-serif text-white">{pkg.title}</h2>
               <p className="text-white/60 text-sm mt-0.5 font-medium">
-                ৳{Number(pkg.price).toLocaleString()} / {pkg.billingCycle || "session"}
+                {formatCurrency(pkg.price)} / {pkg.billingCycle || "session"}
               </p>
             </div>
             <button
@@ -285,15 +286,15 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
             <div className="mt-4 p-4 bg-white/5 border border-white/5 space-y-3 rounded-lg">
               <div className="flex justify-between text-sm">
                 <span className="text-white/70 tracking-wider text-[10px] uppercase font-bold">Subtotal</span>
-                <span className="text-white font-medium">৳{parseFloat(String(pkg.price)).toLocaleString()}</span>
+                <span className="text-white font-medium">{formatCurrency(pkg.price)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-white/70 tracking-wider text-[10px] uppercase font-bold">Tax ({taxRate}%)</span>
-                <span className="text-white font-medium">৳{(parseFloat(String(pkg.price)) * taxRate / 100).toFixed(2)}</span>
+                <span className="text-white font-medium">{formatCurrency((parseFloat(String(pkg.price)) * taxRate) / 100)}</span>
               </div>
               <div className="pt-3 border-t border-white/10 flex justify-between items-baseline">
                 <span className="uppercase tracking-[0.2em] text-[10px] text-white font-bold">Total Price</span>
-                <span className="text-2xl font-serif text-[#c4a484]">৳{calcTotal(pkg.price, taxRate)}</span>
+                <span className="text-2xl font-serif text-[#c4a484]">{formatCurrency(calcTotal(pkg.price, taxRate))}</span>
               </div>
             </div>
 

@@ -13,6 +13,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
+import { formatCurrency } from "@/lib/utils"
 
 interface RevenueTrendPoint {
   label: string
@@ -51,7 +52,7 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
   }, [])
 
   const [filter, setFilter] = useState<"weekly" | "monthly" | "6months" | "yearly">("weekly")
-  
+
   if (!mounted) return <div className="h-60" />
 
   const selectedData =
@@ -104,7 +105,7 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
               }
             />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-            <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`৳${(value || 0).toLocaleString()}`, "Revenue"]} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [formatCurrency(value), "Revenue"]} />
             <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revenueGradient)" dot={{ r: 4, fill: "#3b82f6", strokeWidth: 2, stroke: "white" }} activeDot={{ r: 6, fill: "#3b82f6" }} />
           </AreaChart>
         </ResponsiveContainer>

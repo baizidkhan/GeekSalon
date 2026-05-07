@@ -43,6 +43,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { formatCurrency } from "@/lib/utils"
 
 interface Invoice {
   id: string
@@ -305,8 +306,8 @@ export default function BillingPage() {
   </table>
   <table class="totals-table">
     <tbody>
-      <tr><td>Total</td><td>৳${invoice.amount.toLocaleString()}</td></tr>
-      ${invoice.status === "Partial" ? `<tr><td>Paid</td><td style="color:#16a34a">৳${(invoice.paidAmount ?? 0).toLocaleString()}</td></tr><tr><td>Due</td><td style="color:#dc2626">৳${due.toLocaleString()}</td></tr>` : ""}
+      <tr><td>Total</td><td>${formatCurrency(invoice.amount)}</td></tr>
+      ${invoice.status === "Partial" ? `<tr><td>Paid</td><td style="color:#16a34a">${formatCurrency(invoice.paidAmount ?? 0)}</td></tr><tr><td>Due</td><td style="color:#dc2626">${formatCurrency(due)}</td></tr>` : ""}
       <tr class="grand-total"><td>Payment</td><td>${invoice.paymentMethod}</td></tr>
     </tbody>
   </table>
@@ -415,7 +416,7 @@ export default function BillingPage() {
                       <Label>Amount Paid (৳)</Label>
                       <Input type="number" value={newInvoice.paidAmount} onChange={(e) => setNewInvoice({ ...newInvoice, paidAmount: e.target.value })} placeholder="Enter amount paid so far" />
                       {newInvoice.paidAmount && newInvoice.total && (
-                        <p className="text-xs text-muted-foreground mt-1">Due: ৳{Math.max(0, parseFloat(newInvoice.total) - parseFloat(newInvoice.paidAmount)).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Due: {formatCurrency(Math.max(0, parseFloat(newInvoice.total) - parseFloat(newInvoice.paidAmount)))}</p>
                       )}
                     </div>
                   )}
@@ -439,7 +440,7 @@ export default function BillingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Total Revenue</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">৳{totalRevenue.toLocaleString()}</p>
+            <p className="text-2xl font-semibold text-foreground mt-1">{formatCurrency(totalRevenue)}</p>
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
             <p className="text-sm text-muted-foreground">Total Invoices</p>
@@ -547,10 +548,10 @@ export default function BillingPage() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">
-                      <div>৳{invoice.amount.toLocaleString()}</div>
+                      <div>{formatCurrency(invoice.amount)}</div>
                       {invoice.status === "Partial" && (
                         <div className="text-xs text-muted-foreground font-normal">
-                          Paid: ৳{(invoice.paidAmount ?? 0).toLocaleString()} · Due: ৳{Math.max(0, invoice.amount - (invoice.paidAmount ?? 0)).toLocaleString()}
+                          Paid: {formatCurrency(invoice.paidAmount ?? 0)} · Due: {formatCurrency(Math.max(0, invoice.amount - (invoice.paidAmount ?? 0)))}
                         </div>
                       )}
                     </TableCell>
@@ -609,7 +610,7 @@ export default function BillingPage() {
           {viewInvoice && (() => {
             const parsedPaid = parseFloat(viewEditPaidAmount)
             const partialError = viewEditStatus === "Partial" && viewEditPaidAmount !== "" && parsedPaid >= viewInvoice.amount
-              ? `Must be less than ৳${viewInvoice.amount.toLocaleString()}`
+              ? `Must be less than ${formatCurrency(viewInvoice.amount)}`
               : null
             const canSave = (viewEditStatus !== "Partial" || (viewEditPaidAmount !== "" && parsedPaid > 0 && !partialError))
             const hasChanged = viewEditStatus !== viewInvoice.status ||
@@ -622,7 +623,7 @@ export default function BillingPage() {
                     <div><Label className="text-muted-foreground">Invoice No</Label><p className="font-medium">{viewInvoice.invoiceNo}</p></div>
                     <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
                     <div><Label className="text-muted-foreground">Services</Label><p className="font-medium">{viewInvoice.services.join(", ")}</p></div>
-                    <div><Label className="text-muted-foreground">Amount</Label><p className="font-medium">৳{viewInvoice.amount.toLocaleString()}</p></div>
+                    <div><Label className="text-muted-foreground">Amount</Label><p className="font-medium">{formatCurrency(viewInvoice.amount)}</p></div>
                     <div><Label className="text-muted-foreground">Payment Method</Label><p className="font-medium">{viewInvoice.paymentMethod}</p></div>
                     <div><Label className="text-muted-foreground">Date</Label><p className="font-medium">{viewInvoice.date}</p></div>
                   </div>
@@ -652,7 +653,7 @@ export default function BillingPage() {
                             className={`mt-1 ${partialError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                             value={viewEditPaidAmount}
                             onChange={(e) => setViewEditPaidAmount(e.target.value)}
-                            placeholder={`< ৳${viewInvoice.amount.toLocaleString()}`}
+                            placeholder={`< ${formatCurrency(viewInvoice.amount)}`}
                           />
                         </div>
                       )}
@@ -662,8 +663,8 @@ export default function BillingPage() {
                         {partialError
                           ? <span className="text-destructive">{partialError}</span>
                           : viewEditPaidAmount !== "" && parsedPaid > 0
-                          ? <span className="text-muted-foreground">Due: ৳{Math.max(0, viewInvoice.amount - parsedPaid).toLocaleString()}</span>
-                          : null}
+                            ? <span className="text-muted-foreground">Due: {formatCurrency(Math.max(0, viewInvoice.amount - parsedPaid))}</span>
+                            : null}
                       </p>
                     )}
                   </div>
@@ -728,7 +729,7 @@ export default function BillingPage() {
                   />
                   {editInvoiceState.paidAmount != null && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Due: ৳{Math.max(0, editInvoiceState.amount - editInvoiceState.paidAmount).toLocaleString()}
+                      Due: {formatCurrency(Math.max(0, editInvoiceState.amount - editInvoiceState.paidAmount))}
                     </p>
                   )}
                 </div>

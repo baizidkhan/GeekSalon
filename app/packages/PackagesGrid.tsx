@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Check } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
 import PackageBookingModal from "./PackageBookingModal"
 
 interface Package {
@@ -27,15 +28,14 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 items-stretch max-w-5xl mx-auto">
           {displayedPackages.map((pkg, i) => {
             const isMiddle = i === 1;
-            
+
             return (
               <div
                 key={pkg.id}
-                className={`relative flex flex-col transition-all duration-700 ${
-                  isMiddle 
-                    ? "z-10 scale-100 lg:scale-105 shadow-[0_20px_50px_rgba(0,0,0,0.5)]" 
+                className={`relative flex flex-col transition-all duration-700 ${isMiddle
+                    ? "z-10 scale-100 lg:scale-105 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
                     : "z-0 scale-95 opacity-80"
-                }`}
+                  }`}
               >
                 {/* Most Popular Header for Middle Card */}
                 {isMiddle && (
@@ -46,9 +46,8 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                   </div>
                 )}
 
-                <div className={`flex-grow p-10 border border-white/10 bg-[#0d0d0d] flex flex-col space-y-8 ${
-                  isMiddle ? "border-white/20" : ""
-                }`}>
+                <div className={`flex-grow p-10 border border-white/10 bg-[#0d0d0d] flex flex-col space-y-8 ${isMiddle ? "border-white/20" : ""
+                  }`}>
                   {/* Header Section */}
                   <div className="space-y-6">
                     <div className="space-y-2">
@@ -59,7 +58,7 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                     </div>
 
                     <div className="flex items-baseline gap-1">
-                      <span className="text-5xl font-serif text-white">৳{pkg.price}</span>
+                      <span className="text-5xl font-serif text-white">{formatCurrency(pkg.price)}</span>
                       <span className="text-white/30 text-sm">/ {pkg.billingCycle || "session"}</span>
                     </div>
 
@@ -83,16 +82,15 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                   {/* Action Button */}
                   <button
                     onClick={() => setBookingPkg(pkg)}
-                    className={`w-full py-4 font-bold tracking-[0.2em] text-[10px] uppercase transition-all duration-500 flex items-center justify-center gap-2 group/btn ${
-                      isMiddle
+                    className={`w-full py-4 font-bold tracking-[0.2em] text-[10px] uppercase transition-all duration-500 flex items-center justify-center gap-2 group/btn ${isMiddle
                         ? "bg-white text-black hover:bg-[#c4a484] hover:text-white"
                         : "bg-transparent text-white border border-white/10 hover:border-white/40"
-                    }`}
+                      }`}
                   >
                     Book This Package
                   </button>
                 </div>
-                
+
                 {/* Bottom Glow for Middle Card */}
                 {isMiddle && (
                   <div className="absolute -bottom-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent shadow-[0_5px_20px_rgba(255,255,255,0.2)]" />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -485,7 +485,7 @@ export default function ManagePackagesPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="font-semibold">৳{pkg.price}</div>
+                    <div className="font-semibold">{formatCurrency(pkg.price)}</div>
                     <div className="text-[10px] text-muted-foreground uppercase">{pkg.billingCycle}</div>
                   </TableCell>
                   <TableCell>
@@ -631,7 +631,7 @@ export default function ManagePackagesPage() {
                   {packageToView.category}
                 </span>
                 <div className="text-right">
-                  <div className="text-3xl font-bold">৳{packageToView.price}</div>
+                  <div className="text-3xl font-bold">{formatCurrency(packageToView.price)}</div>
                   <div className="text-xs text-muted-foreground uppercase">{packageToView.billingCycle}</div>
                 </div>
               </div>

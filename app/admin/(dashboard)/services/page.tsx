@@ -5,7 +5,7 @@ import { useDebounce } from "@/hooks/use-debounce"
 import api from "@admin/api/base"
 import { getServices, createService, updateService, deleteService } from "@admin/api/services/services"
 import { toast } from "sonner"
-import { getMediaUrl } from "@/lib/utils"
+import { formatCurrency, getMediaUrl } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -265,7 +265,7 @@ export default function ServicesPage() {
     try {
       const formData = new FormData()
       formData.append('data', JSON.stringify({ status: !currentStatus ? 'active' : 'hidden' }))
-      
+
       await updateService(id, formData)
       toast.success(`Service ${!currentStatus ? 'activated' : 'deactivated'}`)
       fetchServices()
@@ -484,7 +484,7 @@ export default function ServicesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">
-                      ৳{service.price.toLocaleString()}
+                      {formatCurrency(service.price)}
                     </TableCell>
                     <TableCell>
                       <Switch
@@ -561,7 +561,7 @@ export default function ServicesPage() {
                 <div><Label className="text-muted-foreground">Name</Label><p className="font-medium">{serviceToView.name}</p></div>
                 <div><Label className="text-muted-foreground">Category</Label><p className="font-medium">{serviceToView.category}</p></div>
                 <div><Label className="text-muted-foreground">Duration</Label><p className="font-medium">{serviceToView.duration} min</p></div>
-                <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">৳{serviceToView.price.toLocaleString()}</p></div>
+                <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">{formatCurrency(serviceToView.price)}</p></div>
                 <div><Label className="text-muted-foreground">Status</Label><p className="font-medium">{serviceToView.active ? "Active" : "Inactive"}</p></div>
               </div>
               <div><Label className="text-muted-foreground">Description</Label><p className="font-medium whitespace-pre-wrap">{serviceToView.description || "No description provided"}</p></div>

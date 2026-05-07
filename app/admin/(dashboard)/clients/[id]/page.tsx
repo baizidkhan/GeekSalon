@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ArrowLeft, Phone, Mail, Calendar, Clock, User, Receipt, Scissors, Zap } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
 
 interface Invoice {
   id: string
@@ -150,7 +151,7 @@ export default function ClientHistoryPage() {
           </div>
           <div className="flex items-center gap-2">
             <Receipt className="w-4 h-4 text-primary/60" />
-            <span>৳<span className="font-medium">{totalSpent.toLocaleString()}</span> total spent</span>
+            <span><span className="font-medium">{formatCurrency(totalSpent)}</span> total spent</span>
           </div>
         </div>
       </div>
@@ -276,11 +277,10 @@ export default function ClientHistoryPage() {
                     .map((svc, i) => (
                       <span
                         key={i}
-                        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${
-                          (selectedAppointment as any).isPackage 
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${(selectedAppointment as any).isPackage
                             ? "bg-secondary/10 text-secondary-foreground border border-secondary/20"
                             : "bg-primary/10 text-primary border border-primary/20"
-                        }`}
+                          }`}
                       >
                         <Scissors className="w-3 h-3" />
                         {svc}
@@ -331,7 +331,7 @@ export default function ClientHistoryPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Total</span>
-                        <span className="font-bold text-base">৳{Number(inv.total).toLocaleString()}</span>
+                        <span className="font-bold text-base">{formatCurrency(inv.total)}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Status</span>
@@ -376,7 +376,7 @@ export default function ClientHistoryPage() {
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <span className="text-sm text-muted-foreground">Total</span>
-                <span className="text-lg font-bold">৳{Number(selectedInvoice.total).toLocaleString()}</span>
+                <span className="text-lg font-bold">{formatCurrency(selectedInvoice.total)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Status</span>

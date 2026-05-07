@@ -44,6 +44,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { formatCurrency } from "@/lib/utils"
 
 interface Client {
   id: string
@@ -600,7 +601,7 @@ export default function ClientsPage() {
                         {client.visits} {client.visits === 1 ? 'time' : 'times'}{getMainMethod(client) ? ` (${getMainMethod(client)})` : ""}
                       </TableCell>
                       <TableCell>{getMainService(client)}</TableCell>
-                      <TableCell>৳{(client.totalSpent ?? 0).toLocaleString()}</TableCell>
+                      <TableCell>{formatCurrency(client.totalSpent ?? 0)}</TableCell>
                       <TableCell>{client.lastVisit ?? '-'}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
@@ -693,7 +694,7 @@ export default function ClientsPage() {
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Visits</p>
                         </div>
                         <div className="text-center border-l border-border">
-                          <p className="text-lg font-bold text-foreground">৳{(client.totalSpent ?? 0) >= 1000 ? ((client.totalSpent ?? 0) / 1000).toFixed(1) + 'k' : (client.totalSpent ?? 0).toLocaleString()}</p>
+                          <p className="text-lg font-bold text-foreground">{formatCurrency(client.totalSpent ?? 0)}</p>
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Spent</p>
                         </div>
                       </div>
@@ -778,7 +779,7 @@ export default function ClientsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Phone</Label><p className="font-medium">{viewClient.phone}</p></div>
                 <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Visits</Label><p className="font-medium">{viewClient.visits}</p></div>
-                <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Total Spent</Label><p className="font-medium">৳{viewClient.totalSpent.toLocaleString()}</p></div>
+                <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Total Spent</Label><p className="font-medium">{formatCurrency(viewClient.totalSpent)}</p></div>
                 <div className="space-y-1"><Label className="text-[13px] font-semibold tracking-wide text-muted-foreground">Last Visit</Label><p className="font-medium">{viewClient.lastVisit ?? '-'}</p></div>
               </div>
             </div>

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Check, ChevronLeft, ChevronRight, X, Clock, Calendar, User, Phone } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
 
 const steps = [
     { id: 1, label: "Service" },
@@ -73,14 +74,14 @@ export function BookingModal() {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/invoice-setting`, { cache: "no-store" })
             const data = await res.json()
             if (data?.taxRate) setTaxRate(Number(data.taxRate))
-        } catch {}
+        } catch { }
     }
 
     const fetchSettings = async () => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/appointment-setting`, { cache: "no-store" })
             setSettings(await res.json())
-        } catch {}
+        } catch { }
     }
 
     const fetchStylists = async () => {
@@ -95,7 +96,7 @@ export function BookingModal() {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/service/active`, { cache: "no-store" })
             setAvailableServices(await res.json())
-        } catch {}
+        } catch { }
     }
 
     const validateStep = (currentStep: number) => {
@@ -245,22 +246,20 @@ export function BookingModal() {
                             const active = step === s.id
                             return (
                                 <div key={s.id} className="relative z-10 flex flex-col items-center gap-2">
-                                    <div className={`flex h-[30px] w-[30px] items-center justify-center border transition-all duration-300 ${
-                                        done
+                                    <div className={`flex h-[30px] w-[30px] items-center justify-center border transition-all duration-300 ${done
                                             ? "border-white bg-white text-black"
                                             : active
                                                 ? "border-white bg-white text-black"
                                                 : "border-white/15 bg-[#0c0c0c] text-white/25"
-                                    }`}>
+                                        }`}>
                                         {done
                                             ? <Check className="h-3 w-3" strokeWidth={3} />
                                             : <span className="text-[11px] font-medium">{s.id}</span>
                                         }
                                     </div>
                                     <span
-                                        className={`text-[9px] uppercase tracking-[0.22em] transition-colors duration-300 ${
-                                            step >= s.id ? "text-white" : "text-white/45"
-                                        }`}
+                                        className={`text-[9px] uppercase tracking-[0.22em] transition-colors duration-300 ${step >= s.id ? "text-white" : "text-white/45"
+                                            }`}
                                         style={{ fontFamily: "Inter, sans-serif" }}
                                     >
                                         {s.label}
@@ -302,20 +301,18 @@ export function BookingModal() {
                                                         <div
                                                             key={s.id}
                                                             onClick={() => toggleService(s.id)}
-                                                            className={`group flex cursor-pointer items-center justify-between border-b border-white/5 px-4 py-3 last:border-0 transition-all duration-200 ${
-                                                                selected ? "bg-white text-black" : "hover:bg-white/5 text-white"
-                                                            }`}
+                                                            className={`group flex cursor-pointer items-center justify-between border-b border-white/5 px-4 py-3 last:border-0 transition-all duration-200 ${selected ? "bg-white text-black" : "hover:bg-white/5 text-white"
+                                                                }`}
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                <div className={`flex h-4 w-4 shrink-0 items-center justify-center border transition-all duration-200 ${
-                                                                    selected ? "border-black/30 bg-transparent" : "border-white/20"
-                                                                }`}>
+                                                                <div className={`flex h-4 w-4 shrink-0 items-center justify-center border transition-all duration-200 ${selected ? "border-black/30 bg-transparent" : "border-white/20"
+                                                                    }`}>
                                                                     {selected && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
                                                                 </div>
                                                                 <span className="text-[12.5px] font-medium">{s.name}</span>
                                                             </div>
                                                             <span className={`font-mono text-[11px] ${selected ? "text-black/50" : "text-white"}`}>
-                                                                ৳{Number(s.price).toLocaleString()}
+                                                                {formatCurrency(s.price)}
                                                             </span>
                                                         </div>
                                                     )
@@ -367,18 +364,18 @@ export function BookingModal() {
                                         {currentServices.map(s => (
                                             <div key={s.id} className="flex justify-between text-[12.5px]">
                                                 <span className="text-white">{s.name}</span>
-                                                <span className="text-white">৳{Number(s.price).toLocaleString()}</span>
+                                                <span className="text-white">{formatCurrency(s.price)}</span>
                                             </div>
                                         ))}
                                         {taxRate > 0 && (
                                             <div className="flex justify-between text-[12.5px]">
                                                 <span className="text-white">Tax ({taxRate}%)</span>
-                                                <span className="text-white">৳{tax.toFixed(2)}</span>
+                                                <span className="text-white">{formatCurrency(tax)}</span>
                                             </div>
                                         )}
                                         <div className="flex justify-between border-t border-white/10 pt-3">
                                             <span className="text-[10px] uppercase tracking-[0.25em] text-white" style={{ fontFamily: "Inter, sans-serif" }}>Total</span>
-                                            <span className="text-lg font-semibold text-white">৳{total.toFixed(2)}</span>
+                                            <span className="text-lg font-semibold text-white">{formatCurrency(total)}</span>
                                         </div>
                                     </div>
                                 )}
@@ -530,7 +527,7 @@ export function BookingModal() {
                                         </div>
                                         <div className="flex items-center justify-between bg-white/[0.03] px-5 py-4">
                                             <span className="text-[11px] uppercase tracking-wider text-white" style={{ fontFamily: "Inter, sans-serif" }}>Total Amount</span>
-                                            <span className="text-lg font-semibold text-white">৳ {total.toFixed(2)}</span>
+                                            <span className="text-lg font-semibold text-white">{formatCurrency(total)}</span>
                                         </div>
                                     </div>
                                 </div>

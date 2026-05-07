@@ -6,7 +6,7 @@ import { Footer } from "../components/footer"
 import { Service, ServiceCategory } from "@/lib/types"
 import Link from "next/link"
 import { useBooking } from "@/context/BookingContext"
-import { getMediaUrl } from "@/lib/utils"
+import { formatCurrency, getMediaUrl } from "@/lib/utils"
 
 const categories = ["All", ...Object.values(ServiceCategory)]
 
@@ -22,10 +22,10 @@ export default function ServicesPage() {
             try {
                 // Use the endpoint http://localhost:4000/service/active?category=hair
                 // If active is "All", we omit the category parameter
-                const url = active === "All" 
-                    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/service/active` 
+                const url = active === "All"
+                    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/service/active`
                     : `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/service/active?category=${active.toLowerCase()}`
-                
+
                 const response = await fetch(url)
                 const data = await response.json()
                 setServices(data)
@@ -68,11 +68,10 @@ export default function ServicesPage() {
                                 key={cat}
                                 type="button"
                                 onClick={() => setActive(cat)}
-                                className={`px-5 py-2 text-[11px] uppercase tracking-[0.25em] transition-all duration-300 ${
-                                    active === cat
+                                className={`px-5 py-2 text-[11px] uppercase tracking-[0.25em] transition-all duration-300 ${active === cat
                                         ? "bg-white text-black"
                                         : "border border-white/25 bg-transparent text-white/65 hover:border-white/50 hover:text-white"
-                                }`}
+                                    }`}
                                 style={{ fontFamily: 'Inter, sans-serif' }}
                             >
                                 {cat}
@@ -99,10 +98,10 @@ export default function ServicesPage() {
                                         {/* Image */}
                                         <div className={`relative aspect-[4/3] overflow-hidden bg-neutral-900 shrink-0`}>
                                             {item.imageUrl ? (
-                                                <img 
-                                                    src={getMediaUrl(item.imageUrl)} 
-                                                    alt={item.name} 
-                                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                                <img
+                                                    src={getMediaUrl(item.imageUrl)}
+                                                    alt={item.name}
+                                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                 />
                                             ) : (
                                                 <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-stone-800 to-stone-950 text-white/20">
@@ -111,7 +110,7 @@ export default function ServicesPage() {
                                             )}
                                             <div className="absolute inset-0 bg-black/20" />
                                             {/* Arrow icon */}
-                                            <Link 
+                                            <Link
                                                 href={`/services/${item.id}`}
                                                 className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center border border-white/30 bg-black/30 backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-black group-hover:border-white"
                                             >
@@ -139,7 +138,7 @@ export default function ServicesPage() {
                                                 <div className="my-5 border-t border-white/10" />
 
                                                 <p className="mb-5 text-[11px] uppercase tracking-[0.35em] text-white/45" style={{ fontFamily: 'Inter, sans-serif' }}>
-                                                    Starting from ৳{item.price}
+                                                    Starting from {formatCurrency(item.price)}
                                                 </p>
 
                                                 <div className="flex gap-3">

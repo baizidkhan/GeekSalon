@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { format } from "date-fns"
 import { useAuth } from "@admin/hooks/use-auth"
 import { hasPermission } from "@admin/lib/auth-utils"
+import { formatCurrency, formatMoney } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -938,8 +939,8 @@ export default function AppointmentsPage() {
                       {newAppointment.isPackage ? "Package" : "Service"} <span className="text-destructive">*</span>
                     </Label>
                     <div className="flex items-center gap-2">
-                      <Checkbox 
-                        id="isPackage" 
+                      <Checkbox
+                        id="isPackage"
                         checked={newAppointment.isPackage}
                         onCheckedChange={(checked) => {
                           setNewAppointment({
@@ -956,42 +957,42 @@ export default function AppointmentsPage() {
                   </div>
                   {!newAppointment.isPackage ? (
                     <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      >
-                        <span className={newAppointment.services.length === 0 ? "text-muted-foreground" : "text-foreground"}>
-                          {newAppointment.services.length === 0
-                            ? "Select services"
-                            : newAppointment.services.join(", ")}
-                        </span>
-                        <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
-                      {serviceOptions.map((s) => (
-                        <div
-                          key={s.name}
-                          className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
-                          onClick={() => {
-                            const selected = newAppointment.services
-                            const next = selected.includes(s.name)
-                              ? selected.filter((x) => x !== s.name)
-                              : [...selected, s.name]
-                            setNewAppointment({ ...newAppointment, services: next })
-                            if (next.length > 0) clearNewAppointmentError("services")
-                          }}
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                         >
-                          <div className="flex items-center gap-2">
-                            <Checkbox checked={newAppointment.services.includes(s.name)} />
-                            <span className="text-sm">{s.name}</span>
+                          <span className={newAppointment.services.length === 0 ? "text-muted-foreground" : "text-foreground"}>
+                            {newAppointment.services.length === 0
+                              ? "Select services"
+                              : newAppointment.services.join(", ")}
+                          </span>
+                          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+                        {serviceOptions.map((s) => (
+                          <div
+                            key={s.name}
+                            className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                            onClick={() => {
+                              const selected = newAppointment.services
+                              const next = selected.includes(s.name)
+                                ? selected.filter((x) => x !== s.name)
+                                : [...selected, s.name]
+                              setNewAppointment({ ...newAppointment, services: next })
+                              if (next.length > 0) clearNewAppointmentError("services")
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Checkbox checked={newAppointment.services.includes(s.name)} />
+                              <span className="text-sm">{s.name}</span>
+                            </div>
+                            <span className="text-xs font-medium text-muted-foreground">{formatCurrency(s.price)}</span>
                           </div>
-                          <span className="text-xs font-medium text-muted-foreground">${parseFloat(s.price.toString()).toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </PopoverContent>
-                  </Popover>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
                   ) : (
                     <Select
                       value={newAppointment.packageName}
@@ -1008,7 +1009,7 @@ export default function AppointmentsPage() {
                           <SelectItem key={p.name} value={p.name}>
                             <div className="flex items-center justify-between w-full">
                               <span>{p.name}</span>
-                              <span className="text-xs text-muted-foreground ml-2">${parseFloat(p.price.toString()).toFixed(2)}</span>
+                              <span className="text-xs text-muted-foreground ml-2">{formatCurrency(p.price)}</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -1034,7 +1035,7 @@ export default function AppointmentsPage() {
                         }, 0)
                       }
                       const tax = (subtotal * parseFloat(taxRate.toString())) / 100
-                      return (subtotal + tax).toFixed(2)
+                      return formatMoney(subtotal + tax)
                     })()}`}
                     readOnly
                     className="bg-muted cursor-not-allowed font-medium text-primary"
@@ -1494,8 +1495,8 @@ export default function AppointmentsPage() {
                     {selectedAppointment.isPackage ? "Package" : "Service"}
                   </Label>
                   <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="editIsPackage" 
+                    <Checkbox
+                      id="editIsPackage"
                       checked={selectedAppointment.isPackage}
                       onCheckedChange={(checked) => {
                         setSelectedAppointment({
@@ -1510,50 +1511,50 @@ export default function AppointmentsPage() {
                   </div>
                 </div>
                 {!selectedAppointment.isPackage ? (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    >
-                      <span className={selectedAppointment.service ? "text-foreground" : "text-muted-foreground"}>
-                        {selectedAppointment.service || "Select services"}
-                      </span>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
-                    {serviceOptions.map((s) => {
-                      const selectedServices = selectedAppointment.service
-                        ? selectedAppointment.service.split(",").map((svc) => svc.trim()).filter(Boolean)
-                        : []
-                      const isSelected = selectedServices.includes(s.name)
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      >
+                        <span className={selectedAppointment.service ? "text-foreground" : "text-muted-foreground"}>
+                          {selectedAppointment.service || "Select services"}
+                        </span>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+                      {serviceOptions.map((s) => {
+                        const selectedServices = selectedAppointment.service
+                          ? selectedAppointment.service.split(",").map((svc) => svc.trim()).filter(Boolean)
+                          : []
+                        const isSelected = selectedServices.includes(s.name)
 
-                      return (
-                        <div
-                          key={s.name}
-                          className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
-                          onClick={() => {
-                            const next = isSelected
-                              ? selectedServices.filter((x) => x !== s.name)
-                              : [...selectedServices, s.name]
+                        return (
+                          <div
+                            key={s.name}
+                            className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                            onClick={() => {
+                              const next = isSelected
+                                ? selectedServices.filter((x) => x !== s.name)
+                                : [...selectedServices, s.name]
 
-                            setSelectedAppointment({
-                              ...selectedAppointment,
-                              service: next.join(", "),
-                            })
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Checkbox checked={isSelected} />
-                            <span className="text-sm">{s.name}</span>
+                              setSelectedAppointment({
+                                ...selectedAppointment,
+                                service: next.join(", "),
+                              })
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Checkbox checked={isSelected} />
+                              <span className="text-sm">{s.name}</span>
+                            </div>
+                            <span className="text-xs font-medium text-muted-foreground">{formatCurrency(s.price)}</span>
                           </div>
-                          <span className="text-xs font-medium text-muted-foreground">${parseFloat(s.price.toString()).toFixed(2)}</span>
-                        </div>
-                      )
-                    })}
-                  </PopoverContent>
-                </Popover>
+                        )
+                      })}
+                    </PopoverContent>
+                  </Popover>
                 ) : (
                   <Select
                     value={selectedAppointment.packageName}
@@ -1569,7 +1570,7 @@ export default function AppointmentsPage() {
                         <SelectItem key={p.name} value={p.name}>
                           <div className="flex items-center justify-between w-full">
                             <span>{p.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">${parseFloat(p.price.toString()).toFixed(2)}</span>
+                            <span className="text-xs text-muted-foreground ml-2">{formatCurrency(p.price)}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -1580,7 +1581,7 @@ export default function AppointmentsPage() {
               <div className="space-y-2">
                 <Label className="text-[13px] font-semibold tracking-wide">Total Price (incl. tax)</Label>
                 <Input
-                  value={`$${(() => {
+                  value={`৳${(() => {
                     let subtotal = 0
                     if (selectedAppointment.isPackage && selectedAppointment.packageName) {
                       const pkg = packageOptions.find((p) => p.name === selectedAppointment.packageName)
@@ -1593,7 +1594,7 @@ export default function AppointmentsPage() {
                       }, 0)
                     }
                     const tax = (subtotal * parseFloat(taxRate.toString())) / 100
-                    return (subtotal + tax).toFixed(2)
+                    return formatMoney(subtotal + tax)
                   })()}`}
                   readOnly
                   className="bg-muted cursor-not-allowed font-medium text-primary"

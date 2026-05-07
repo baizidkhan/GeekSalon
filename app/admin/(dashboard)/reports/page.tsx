@@ -32,6 +32,7 @@ import {
 import { Download, TrendingUp, Users, Calendar, Wallet, Wallet2Icon, Banknote } from "lucide-react"
 import { getReports } from "@admin/api/reports/reports"
 import { StatCard } from "@admin/components/stat-card"
+import { formatCurrency, formatMoney } from "@/lib/utils"
 
 interface ReportData {
   totalRevenue: number
@@ -244,8 +245,8 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
               title="Total Revenue"
-              value={`৳${data.totalRevenue.toLocaleString()}`}
-              subtitle={<span className="text-blue-500 font-medium">৳{data.paidRevenue.toLocaleString()} paid</span>}
+              value={formatCurrency(data.totalRevenue)}
+              subtitle={<span className="text-blue-500 font-medium">{formatCurrency(data.paidRevenue)} paid</span>}
               icon={Wallet}
               iconWrapperClassName="bg-blue-50 text-blue-400"
               className="border-blue-200 ring-2 ring-blue-50"
@@ -275,7 +276,7 @@ export default function ReportsPage() {
             />
             <StatCard
               title="Avg. Revenue"
-              value={`৳${avgTicket.toLocaleString()}`}
+              value={formatCurrency(avgTicket)}
               subtitle={<span className="text-slate-400">Per completed service</span>}
               icon={TrendingUp}
               iconWrapperClassName="bg-purple-50 text-purple-400"
@@ -296,7 +297,7 @@ export default function ReportsPage() {
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white border border-slate-100 shadow-xl rounded-lg p-2 text-xs font-bold text-slate-600">
-                            BDT {payload[0].value}
+                            BDT {formatMoney(Number(payload[0].value ?? 0))}
                           </div>
                         );
                       }
@@ -432,7 +433,7 @@ export default function ReportsPage() {
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                     <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: "#475569", fontWeight: 600 }} width={100} />
-                    <Tooltip cursor={{ fill: '#f8fafc' }} formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]} />
+                    <Tooltip cursor={{ fill: '#f8fafc' }} formatter={(value: number) => [formatCurrency(value), "Revenue"]} />
                     <Bar dataKey="revenue" fill="#29b6f6" radius={[0, 6, 6, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>

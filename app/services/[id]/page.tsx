@@ -9,7 +9,7 @@ import { Service } from "@/lib/types"
 import { Clock, CheckCircle2 } from "lucide-react"
 import { useBooking } from "@/context/BookingContext"
 import { useBusiness } from "@/context/BusinessContext"
-import { getMediaUrl } from "@/lib/utils"
+import { formatCurrency, getMediaUrl } from "@/lib/utils"
 
 export default function ServiceDetailPage() {
     const { businessInfo } = useBusiness()
@@ -71,9 +71,9 @@ export default function ServiceDetailPage() {
             {/* Hero Section with Image Background */}
             <section className="relative h-[60vh] w-full overflow-hidden">
                 {service.imageUrl ? (
-                    <img 
-                        src={getMediaUrl(service.imageUrl)} 
-                        alt={service.name} 
+                    <img
+                        src={getMediaUrl(service.imageUrl)}
+                        alt={service.name}
                         className="h-full w-full object-cover"
                     />
                 ) : (
@@ -87,7 +87,7 @@ export default function ServiceDetailPage() {
                 <div className="mx-auto max-w-5xl">
                     <div className="bg-[#101010] border border-white/10 p-8 md:p-12 shadow-[0_40px_100px_rgba(0,0,0,0.5)]">
                         <div className="grid gap-10 md:grid-cols-3">
-                            
+
                             {/* Left Content */}
                             <div className="md:col-span-2">
                                 <p className="mb-4 text-[10px] uppercase tracking-[0.5em] text-white/40">
@@ -128,9 +128,9 @@ export default function ServiceDetailPage() {
                                         Starting From
                                     </p>
                                     <div className="mb-8 text-4xl font-light" style={{ fontFamily: 'Playfair Display, serif' }}>
-                                        ৳{service.price}
+                                        {formatCurrency(service.price)}
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => openBooking(service)}
                                         className="w-full bg-white text-black py-4 text-[11px] uppercase tracking-[0.3em] font-medium transition-all duration-300 hover:bg-stone-200"
                                     >

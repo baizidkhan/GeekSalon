@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useBooking } from "@/context/BookingContext"
 import { Service } from "@/lib/types"
-import { getMediaUrl } from "@/lib/utils"
+import { formatCurrency, getMediaUrl } from "@/lib/utils"
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
     Hair: "from-rose-200 via-pink-200 to-fuchsia-200",
@@ -86,7 +86,7 @@ export function SignatureExperiencesSection({ services }: { services: Service[] 
                                             <div className="my-6 border-t border-white/10" />
 
                                             <p className="mb-5 text-[11px] uppercase tracking-[0.35em] text-white/45" style={{ fontFamily: 'Inter, sans-serif' }}>
-                                                From ৳{Number(item.price).toLocaleString()}
+                                                From {formatCurrency(item.price)}
                                             </p>
 
                                             <div className="flex gap-3">

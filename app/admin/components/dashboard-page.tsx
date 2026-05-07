@@ -16,8 +16,10 @@ import {
   Bell,
   Plus
 } from "lucide-react"
+import { formatTime } from "@admin/api/attendance/attendance"
 import { getDashboardStats } from "@admin/api/dashboard/dashboard"
 import { useAuth } from "@admin/hooks/use-auth"
+import { formatMoney } from "@/lib/utils"
 import Link from "next/link"
 
 export function DashboardPage() {
@@ -53,11 +55,11 @@ export function DashboardPage() {
   const getTrend = (current: any, previous: any) => {
     const cur = parseFloat(String(current || 0))
     const prev = parseFloat(String(previous || 0))
-    
+
     if (!prev || prev === 0) {
       return cur > 0 ? { trend: "100%", trendUp: true } : { trend: "0%", trendUp: true }
     }
-    
+
     const diff = cur - prev
     const percent = Math.abs((diff / prev) * 100).toFixed(0)
     return {
@@ -116,20 +118,20 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
         <StatCard
           title="Revenue This week"
-          value={loading || !stats ? "—" : `TK. ${parseFloat(String(stats.weeklyRevenue ?? 0)).toFixed(2)}`}
+          value={loading || !stats ? "—" : `TK. ${formatMoney(stats.weeklyRevenue ?? 0)}`}
           icon={Wallet}
           iconWrapperClassName="bg-blue-50 text-blue-500"
           className="border-t-4 border-t-transparent hover:border-t-blue-500 transition-all"
           subtitle={
             <div className="text-slate-400">
-              Last Week Tk. {stats?.lastWeekRevenue ?? '0'}
+              Last Week TK. {formatMoney(stats?.lastWeekRevenue ?? 0)}
             </div>
           }
           trend={revenueTrend.trend}
           trendLabel="from last week"
           trendUp={revenueTrend.trendUp}
         />
-        
+
         <StatCard
           title="Today's Appointments"
           value={loading || !stats ? "—" : (stats.todaysAppointmentsCount ?? 0)}
@@ -195,10 +197,10 @@ export function DashboardPage() {
           sixMonthData={stats?.revenueTrendSixMonths ?? []}
           yearlyData={stats?.revenueTrendYearly ?? []}
         />
-        
-        <AppointmentChart 
-          weeklyData={stats?.appointmentTrendWeekly ?? []} 
-          monthlyData={stats?.appointmentTrendMonthly ?? []} 
+
+        <AppointmentChart
+          weeklyData={stats?.appointmentTrendWeekly ?? []}
+          monthlyData={stats?.appointmentTrendMonthly ?? []}
         />
       </div>
 
@@ -209,16 +211,16 @@ export function DashboardPage() {
         <div className="bg-white rounded-xl p-5 border border-slate-200">
           <div className="flex justify-between items-center mb-5">
             <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-500 shrink-0" />
-                Employee On Duty ({stats?.todaysAttendanceCount ?? 0})
-              </h3>
+              <Users className="w-4 h-4 text-blue-500 shrink-0" />
+              Employee On Duty ({stats?.todaysAttendanceCount ?? 0})
+            </h3>
             <Link href="/admin/attendance" className="text-[12px] text-blue-500 hover:underline">View all</Link>
           </div>
           <div className="flex items-center gap-4 mb-4 text-[12px] text-slate-500">
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-500 rounded-sm"></span> {stats?.todaysAttendanceCount ?? 0} Attend</span>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 bg-rose-500 rounded-sm"></span> {(stats?.activeEmployeesCount ?? 0) - (stats?.todaysAttendanceCount ?? 0)} Absent</span>
           </div>
-          
+
           <div className="mt-4 border-t border-slate-100 pt-2">
             <table className="w-full text-left text-[12px]">
               <thead>
@@ -242,14 +244,10 @@ export function DashboardPage() {
                     <tr key={i} className="border-b border-slate-50">
                       <td className="py-2.5 text-slate-700 font-medium">{rec.employeeName}</td>
                       <td className="py-2.5 text-slate-500">
-                        {rec.checkInTime
-                          ? new Date(rec.checkInTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Dhaka" })
-                          : "—"}
+                        {formatTime(rec.checkInTime)}
                       </td>
                       <td className="py-2.5 text-slate-500">
-                        {rec.checkOutTime
-                          ? new Date(rec.checkOutTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Dhaka" })
-                          : "—"}
+                        {formatTime(rec.checkOutTime)}
                       </td>
                     </tr>
                   ))

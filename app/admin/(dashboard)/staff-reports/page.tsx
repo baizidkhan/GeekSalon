@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Download, User, UserCheck, Zap, Calendar, Receipt, Clock } from "lucide-react"
 import { getStaffReports } from "@admin/api/staff-reports/staff-reports"
 import { StatCard } from "@admin/components/stat-card"
+import { formatCurrency } from "@/lib/utils"
 
 interface StaffPerformance {
   id: string
@@ -209,7 +210,7 @@ export default function StaffReportsPage() {
             />
             <StatCard
               title="Total Revenue"
-              value={`৳${data.totalRevenue.toLocaleString()}`}
+              value={formatCurrency(data.totalRevenue)}
               icon={Receipt}
               iconWrapperClassName="bg-amber-50 text-amber-500"
               className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
@@ -255,7 +256,7 @@ export default function StaffReportsPage() {
                         </span>
                       </TableCell>
                       <TableCell>{s.appointments}</TableCell>
-                      <TableCell className="font-medium">৳{s.revenue.toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(s.revenue)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
@@ -323,7 +324,7 @@ export default function StaffReportsPage() {
                     </Avatar>
                     <div>
                       <p className="font-medium">{topByRevenue.name}</p>
-                      <p className="text-sm text-muted-foreground">৳{topByRevenue.revenue.toLocaleString()} revenue</p>
+                      <p className="text-sm text-muted-foreground">{formatCurrency(topByRevenue.revenue)} revenue</p>
                     </div>
                   </div>
                 </div>

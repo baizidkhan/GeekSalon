@@ -54,7 +54,7 @@ import { unlinkDeviceUser } from "@admin/api/biometric/biometric"
 import { CACHE, markStale } from "@admin/lib/cache"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getMediaUrl } from "@/lib/utils"
+import { formatCurrency, getMediaUrl } from "@/lib/utils"
 
 export enum EmployeeRole {
   STYLIST = 'Stylist',
@@ -673,7 +673,7 @@ export default function EmployeesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{employee.role}</TableCell>
-                    <TableCell className="text-sm font-medium">৳{Number(employee.salary).toLocaleString()}</TableCell>
+                    <TableCell className="text-sm font-medium">{formatCurrency(employee.salary)}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-xs">
                         <div className="flex items-center gap-2">
@@ -1027,7 +1027,7 @@ export default function EmployeesPage() {
                   <div className="grid grid-cols-2 gap-y-4 gap-x-8">
                     <div><Label className="text-muted-foreground">Phone</Label><p className="font-medium">{selectedEmployee.phone}</p></div>
                     <div><Label className="text-muted-foreground">Email</Label><p className="font-medium">{selectedEmployee.email || "—"}</p></div>
-                    <div><Label className="text-muted-foreground">Salary</Label><p className="font-medium">৳{Number(selectedEmployee.salary).toLocaleString()}</p></div>
+                    <div><Label className="text-muted-foreground">Salary</Label><p className="font-medium">{formatCurrency(selectedEmployee.salary)}</p></div>
                     <div><Label className="text-muted-foreground">Commission</Label><p className="font-medium">{selectedEmployee.commission}%</p></div>
                     <div><Label className="text-muted-foreground">Experience</Label><p className="font-medium">{selectedEmployee.experience} years</p></div>
                     <div><Label className="text-muted-foreground">Join Date</Label><p className="font-medium">{selectedEmployee.joinDate || "—"}</p></div>
