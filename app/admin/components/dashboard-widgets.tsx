@@ -53,7 +53,7 @@ export function TodaysAppointments({ appointments }: TodaysAppointmentsProps) {
           <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
           Today's schedule
         </h3>
-        <span className="text-[12px] text-slate-500 cursor-pointer hover:underline">View All</span>
+        <Link href="/admin/appointments" className="text-[12px] text-slate-500 cursor-pointer hover:underline">View All</Link>
       </div>
 
       {appointments.length === 0 ? (
