@@ -116,37 +116,37 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <UnlinkedFingerprintModal />
       <div className="admin-root flex min-h-screen bg-[var(--background)]">
         {/* Mobile backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile top bar */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border md:hidden sticky top-0 z-30">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-sidebar-primary">
-              <Sparkles className="w-3.5 h-3.5 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Mobile top bar */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border md:hidden sticky top-0 z-30">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-sidebar-primary">
+                <Sparkles className="w-3.5 h-3.5 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
+              </div>
+              <span className="font-semibold text-sidebar-foreground text-sm tracking-wide">
+                {businessName}
+              </span>
             </div>
-            <span className="font-semibold text-sidebar-foreground text-sm tracking-wide">
-              {businessName}
-            </span>
           </div>
-        </div>
 
-        <main className="flex-1 overflow-auto">{children}</main>
+          <main className="flex-1 overflow-auto">{children}</main>
+        </div>
       </div>
-    </div>
     </>
   )
 }
