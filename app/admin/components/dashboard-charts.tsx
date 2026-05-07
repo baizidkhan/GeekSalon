@@ -51,7 +51,7 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
   }, [])
 
   const [filter, setFilter] = useState<"weekly" | "monthly" | "6months" | "yearly">("weekly")
-  
+
   if (!mounted) return <div className="h-60" />
 
   const selectedData =
