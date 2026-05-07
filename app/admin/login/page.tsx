@@ -29,11 +29,8 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const data = await login(useremail, password)
-      console.log('Login successful, response data:', data)
-
       const token = data?.accessToken
       if (token) {
-        console.log('Storing token in localStorage:', token.substring(0, 10) + '...')
         localStorage.setItem('accessToken', token)
         persistAccessTokenCookie(token)
       } else {
