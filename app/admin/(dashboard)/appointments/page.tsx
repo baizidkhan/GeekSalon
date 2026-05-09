@@ -97,7 +97,7 @@ interface Appointment {
 
 const statusOptions: AppointmentStatus[] = ["Pending", "Confirmed", "Checked In", "In Service", "Completed", "Cancelled"]
 const sourceOptions: AppointmentSource[] = ["Online", "Walk In", "Call"]
-const timeFilterOptions = ["All Time", "Today", "This Week", "This Month", "Last 6 Months", "This Year"]
+const timeFilterOptions = ["All Time", "Today", "This Week", "This Month", "Last 6 Months", "This Year", "Custom Date"]
 const PAGE_SIZE = 10
 
 /** Convert any server time value to 24h "HH:MM" for <input type="time"> */
@@ -492,6 +492,9 @@ export default function AppointmentsPage() {
     const param = searchParams.get("timeFilter")
     return param && timeFilterOptions.includes(param) ? param : "All Time"
   })
+  const [customDateFrom, setCustomDateFrom] = useState("")
+  const [customDateTo, setCustomDateTo] = useState("")
+  const [showCustomDate, setShowCustomDate] = useState(false)
   const [sourceFilter, setSourceFilter] = useState("All Sources")
   const [statusFilter, setStatusFilter] = useState("All Status")
   const [currentPage, setCurrentPage] = useState(1)
@@ -628,6 +631,14 @@ export default function AppointmentsPage() {
       today.setHours(0, 0, 0, 0)
 
       switch (timeFilter) {
+        case "Custom Date":
+          if (!customDateFrom && !customDateTo) {
+            matchesTime = true
+          } else {
+            if (customDateFrom && aptDate < new Date(customDateFrom)) matchesTime = false
+            if (customDateTo && aptDate > new Date(customDateTo)) matchesTime = false
+          }
+          break
         case "Today":
           matchesTime = aptDate.toDateString() === today.toDateString()
           break
@@ -661,7 +672,7 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [debouncedSearchName, debouncedSearchPhone, timeFilter, sourceFilter, statusFilter])
+  }, [debouncedSearchName, debouncedSearchPhone, timeFilter, sourceFilter, statusFilter, customDateFrom, customDateTo])
 
   const totalPages = Math.max(1, Math.ceil(filteredAppointments.length / PAGE_SIZE))
   const paginatedAppointments = filteredAppointments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -1167,16 +1178,35 @@ export default function AppointmentsPage() {
                 className="pl-9"
               />
             </div>
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {timeFilterOptions.map((option) => (
-                  <SelectItem key={option} value={option}>{option}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={showCustomDate && timeFilter === "Custom Date"} onOpenChange={(open) => setShowCustomDate(open)}>
+              <PopoverTrigger asChild>
+                <div>
+                  <Select value={timeFilter} onValueChange={(v) => { setTimeFilter(v); if (v === "Custom Date") setShowCustomDate(true) }}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeFilterOptions.map((option) => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-4">
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">From</Label>
+                    <Input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">To</Label>
+                    <Input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} />
+                  </div>
+                  <Button size="sm" className="w-full" onClick={() => setShowCustomDate(false)}>Apply</Button>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
