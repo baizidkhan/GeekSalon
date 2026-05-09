@@ -40,13 +40,13 @@ const navigation = [
       { name: "Appointments", href: "/admin/appointments", icon: Calendar, permission: "appointments" },
       { name: "Clients", href: "/admin/clients", icon: Users, permission: "clients" },
       { name: "Billing / POS", href: "/admin/billing", icon: CreditCard, permission: "invoice" },
+      { name: "Report and Analysis", href: "/admin/reports", icon: BarChart3, permission: "reports" },
     ],
   },
   {
     title: "SERVICE & STAFF",
     items: [
       { name: "Services", href: "/admin/services", icon: Scissors, permission: "service" },
-      { name: "Employee Management", href: "/admin/employee-account", icon: UserLock, permission: "user-management" },
       { name: "Employees", href: "/admin/employees", icon: UserCheck, permission: "employee" },
     ],
   },
@@ -54,7 +54,6 @@ const navigation = [
     title: "BUSINESS OPERATIONS",
     items: [
       { name: "Inventory", href: "/admin/inventory", icon: Package, permission: "inventory" },
-      { name: "Report and Analysis", href: "/admin/reports", icon: BarChart3, permission: "reports" },
       { name: "Staff Reports", href: "/admin/staff-reports", icon: UserCog, permission: "reports" },
       { name: "Manage Packages", href: "/admin/manage-packages", icon: Sparkles, permission: "makeover-packages" },
       { name: "Testimonials", href: "/admin/testimonials", icon: Quote, permission: "testimonial" },
@@ -72,6 +71,7 @@ const navigation = [
   {
     title: "SYSTEM",
     items: [
+      { name: "Roles & Permissions", href: "/admin/roles-permissions", icon: UserLock, permission: "user-management" },
       { name: "Settings", href: "/admin/settings", icon: Settings, permission: "settings" },
       { name: "Update Password", href: "/admin/update-password", icon: UserLock, permission: "update-password" },
     ],
@@ -126,49 +126,63 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col bg-white border-r border-slate-200 transition-all duration-300 z-50",
+        "flex flex-col bg-white border-r border-slate-200 z-50",
+        "transition-[width] duration-300 ease-in-out",
         "fixed top-0 left-0 h-full md:sticky md:top-0 md:min-h-screen md:max-h-screen",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         collapsed ? "md:w-16 w-64" : "w-[260px]"
       )}
     >
-      {/* Logo */}
-      <div className={cn(
-        "flex items-center gap-3 shrink-0 h-16",
-        collapsed ? "px-4 justify-center" : "px-6"
-      )}>
-        <div className="flex items-center justify-center shrink-0">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 7V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V7M4 7L12 3L20 7M4 7H20" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M9 21V12H15V21" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        {!collapsed && (
+      {/* Logo — expanded */}
+      {!collapsed && (
+        <div className="flex items-center shrink-0 h-16 border-b border-slate-100 px-3 gap-3">
+          <div className="flex items-center justify-center shrink-0">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 7V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V7M4 7L12 3L20 7M4 7H20" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 21V12H15V21" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-blue-500 text-[16px] leading-tight tracking-wide">
+            <h1 className="font-bold text-blue-500 text-[15px] leading-tight tracking-wide whitespace-nowrap">
               {businessName || "Salonbos"}
             </h1>
-            <p className="text-[10px] text-slate-400 font-medium">
-              Business os
-            </p>
+            <p className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Business os</p>
           </div>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="hidden md:flex p-1 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <LayoutDashboard className="w-4 h-4" />}
-        </button>
-        <button
-          onClick={onClose}
-          className="md:hidden p-1 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden md:flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-500 text-slate-400 transition-all duration-200 hover:scale-110 shrink-0"
+            title="Collapse sidebar"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onClose} className="md:hidden p-1 rounded-md text-slate-400 hover:text-slate-600 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Logo — collapsed */}
+      {collapsed && (
+        <div className="flex items-center justify-center shrink-0 h-16 border-b border-slate-100 w-full">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden md:flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-500 text-slate-400 transition-all duration-200 hover:scale-110"
+            title="Expand sidebar"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onClose} className="md:hidden p-1 rounded-md text-slate-400 hover:text-slate-600 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-4 space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+      <nav className={cn(
+        "flex-1 overflow-y-auto py-3 space-y-5 transition-all duration-300 ease-in-out",
+        "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+        collapsed ? "px-2" : "px-3"
+      )}>
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -191,13 +205,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             if (visibleItems.length === 0) return null
 
             return (
-              <div key={section.title} className="relative">
-                {!collapsed && (
-                  <p className="text-[11px] font-bold text-slate-800 mb-2 px-2 tracking-wide">
+              <div key={section.title}>
+                {/* Section label */}
+                <div className={cn(
+                  "transition-all duration-300 ease-in-out overflow-hidden",
+                  collapsed ? "h-0 opacity-0" : "h-5 opacity-100 mb-1"
+                )}>
+                  <p className="text-[10px] font-bold text-slate-400 px-2 tracking-widest uppercase whitespace-nowrap">
                     {section.title}
                   </p>
-                )}
-                <ul className="space-y-1">
+                </div>
+
+                <ul className="space-y-0.5">
                   {visibleItems.map((item) => {
                     const isActive = item.href === "/admin"
                       ? pathname === "/admin" || pathname === "/admin/dashboard"
@@ -207,23 +226,39 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <Link
                           href={item.href}
                           onClick={handleNavClick}
+                          title={collapsed ? item.name : undefined}
                           className={cn(
-                            "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative",
-                            collapsed && "justify-center",
+                            "flex items-center rounded-lg text-[13px] font-medium transition-all duration-150 relative group",
+                            collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2",
                             isActive
                               ? "bg-blue-50 text-blue-500"
                               : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                           )}
-                          title={collapsed ? item.name : undefined}
                         >
+                          {/* Active bar — only when expanded */}
                           {isActive && !collapsed && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[70%] bg-blue-500 rounded-r-full" />
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[60%] bg-blue-500 rounded-r-full" />
                           )}
-                          <item.icon className={cn(
-                            "w-4 h-4 shrink-0",
-                            isActive ? "text-blue-500" : "text-slate-400"
-                          )} />
-                          {!collapsed && <span className="truncate">{item.name}</span>}
+
+                          {/* Icon — slightly larger + blue dot indicator when collapsed+active */}
+                          <div className="relative shrink-0">
+                            <item.icon className={cn(
+                              "transition-all duration-150",
+                              collapsed ? "w-5 h-5" : "w-4 h-4",
+                              isActive ? "text-blue-500" : "text-slate-400 group-hover:text-slate-600"
+                            )} />
+                            {isActive && collapsed && (
+                              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            )}
+                          </div>
+
+                          {/* Label */}
+                          <span className={cn(
+                            "truncate transition-all duration-300 ease-in-out whitespace-nowrap",
+                            collapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100"
+                          )}>
+                            {item.name}
+                          </span>
                         </Link>
                       </li>
                     )
@@ -236,19 +271,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </nav>
 
       {/* Footer User Info & Logout */}
-      {!collapsed && user && (
-        <div className="p-4 border-t border-slate-100">
-          <div className="flex items-center gap-3">
+      {user && (
+        <div className="border-t border-slate-100 transition-all duration-300 ease-in-out">
+          <div className={cn(
+            "flex items-center gap-3 transition-all duration-300 ease-in-out",
+            collapsed ? "justify-center p-3" : "p-4"
+          )}>
             <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
               <span className="text-slate-400 text-sm font-medium uppercase">
                 {user.useremail.charAt(0)}
               </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-slate-800 truncate leading-none mb-1 capitalize">
+            <div className={cn(
+              "flex-1 min-w-0 transition-all duration-300 ease-in-out",
+              collapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100"
+            )}>
+              <p className="text-[13px] font-bold text-slate-800 truncate leading-none mb-1 capitalize whitespace-nowrap">
                 {(user as any).name || (user as any).username || user.useremail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ')}
               </p>
-              <p className="text-[11px] text-slate-400 truncate leading-none">{user.useremail}</p>
+              <p className="text-[11px] text-slate-400 truncate leading-none whitespace-nowrap">{user.useremail}</p>
             </div>
             <button
               onClick={handleLogoutClick}
@@ -258,19 +299,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Collapsed Footer Logout */}
-      {collapsed && user && (
-        <div className="p-4 border-t border-slate-100 flex justify-center">
-          <button
-            onClick={handleLogoutClick}
-            className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
-            title="Sign Out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
       )}
     </aside>
