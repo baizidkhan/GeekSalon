@@ -143,6 +143,47 @@ function exportCSV(records: AttendanceRecord[], label: string) {
   URL.revokeObjectURL(url)
 }
 
+// ─── Custom Bar Chart Tooltip ─────────────────────────────────────────────────
+
+function AttendanceTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null
+  const data = payload[0]?.payload
+  const items = [
+    { key: "present",  label: "Present",  color: "#22c55e" },
+    { key: "late",     label: "Late",     color: "#f59e0b" },
+    { key: "half_day", label: "Half Day", color: "#f97316" },
+    { key: "absent",   label: "Absent",   color: "#ef4444" },
+  ]
+  const total = items.reduce((s, i) => s + (data?.[i.key] ?? 0), 0)
+
+  return (
+    <div className="bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden min-w-[160px] -translate-y-6">
+      <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-100">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Date</p>
+        <p className="text-base font-bold text-slate-800">{data?.date ?? label}</p>
+      </div>
+      <div className="px-4 py-3 space-y-2">
+        {items.map(({ key, label, color }) => {
+          const val = data?.[key] ?? 0
+          return (
+            <div key={key} className="flex items-center justify-between gap-6">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                <span className="text-xs text-slate-500">{label}</span>
+              </div>
+              <span className="text-xs font-bold text-slate-800 tabular-nums">{val}</span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+        <span className="text-xs text-slate-400 font-medium">Total</span>
+        <span className="text-xs font-bold text-slate-700 tabular-nums">{total}</span>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AttendancePage() {
@@ -330,11 +371,13 @@ export default function AttendancePage() {
     }
     const bar = Array.from({ length: daysInMonth }, (_, i) => {
       const d = i + 1
-      const dateStr = `${year}-${String(Number(month) + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
-      if (dateStr > todayStr) return null
       const day = dayMap.get(d) ?? { present: 0, late: 0, half_day: 0, absent: 0 }
-      return { day: String(d), ...day }
-    }).filter(Boolean) as { day: string; present: number; late: number; half_day: number; absent: number }[]
+      const dd = String(d).padStart(2, "0")
+      const mm = String(Number(month) + 1).padStart(2, "0")
+      const yy = year.slice(2)
+      const fullDate = `${year}-${mm}-${dd}`
+      return { day: `${d}/${Number(month) + 1}`, date: `${dd}-${mm}-${yy}`, fullDate, ...day }
+    }) as { day: string; date: string; fullDate: string; present: number; late: number; half_day: number; absent: number }[]
 
     // Pie chart — selected date records when in date view, otherwise today
     const pieSource = viewMode === "date" ? pickerDateRecords : todayRecords
@@ -543,30 +586,35 @@ export default function AttendancePage() {
             </div>
           </div>
           {barData.length === 0 ? (
-            <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">
+            <div className="h-[260px] flex items-center justify-center text-muted-foreground text-sm">
               No data for {MONTH_NAMES[Number(month)]} {year}
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={barData} barSize={10} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart
+                data={barData}
+                barSize={10}
+                margin={{ top: 4, right: 8, left: 0, bottom: 40 }}
+                onClick={(e) => {
+                  const fullDate = e?.activePayload?.[0]?.payload?.fullDate
+                  if (fullDate) handleCalPickerDateClick(fullDate)
+                }}
+                style={{ cursor: "pointer" }}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="day"
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", angle: -45, textAnchor: "end" }}
                   axisLine={false}
                   tickLine={false}
-                  interval={2}
+                  interval={0}
+                  height={50}
                 />
-                <YAxis
-                  allowDecimals={false}
-                  domain={[0, fingerprintedCount > 0 ? fingerprintedCount : 'auto']}
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
+                <YAxis hide />
                 <Tooltip
-                  cursor={{ fill: "hsl(var(--muted))", radius: 4 }}
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", color: "hsl(var(--foreground))" }}
+                  cursor={{ fill: "rgba(148,163,184,0.12)", radius: 4 }}
+                  content={<AttendanceTooltip />}
+                  offset={28}
                 />
                 <Bar dataKey="present" stackId="a" fill="#22c55e" name="Present" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="late" stackId="a" fill="#f59e0b" name="Late" />
