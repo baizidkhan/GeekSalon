@@ -81,7 +81,13 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
 
                   {/* Action Button */}
                   <button
-                    onClick={() => setBookingPkg(pkg)}
+                    onClick={() => {
+                      if (!localStorage.getItem('accessToken')) {
+                        window.location.href = '/login'
+                        return
+                      }
+                      setBookingPkg(pkg)
+                    }}
                     className={`w-full py-4 font-bold tracking-[0.2em] text-[10px] uppercase transition-all duration-500 flex items-center justify-center gap-2 group/btn ${isMiddle
                         ? "bg-white text-black hover:bg-[#c4a484] hover:text-white"
                         : "bg-transparent text-white border border-white/10 hover:border-white/40"
