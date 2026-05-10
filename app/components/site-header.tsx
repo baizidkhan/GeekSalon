@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
 import { useBusiness } from "@/context/BusinessContext"
 
@@ -15,6 +15,11 @@ const navItems = [
 export function SiteHeader({ solid = false }: { solid?: boolean }) {
     const { businessName } = useBusiness()
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+    useEffect(() => {
+        setIsLoggedIn(!!localStorage.getItem('accessToken'))
+    }, [])
 
     return (
         <header
@@ -61,7 +66,26 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                 </nav>
 
                 {/* Desktop CTA */}
-                <div className="hidden md:flex min-w-[140px] justify-end">
+                <div className="hidden md:flex min-w-[140px] justify-end gap-4">
+                    {isLoggedIn ? (
+                        <Link
+                            href="/customer-dashboard"
+                            className="group relative inline-flex items-center gap-2 overflow-hidden border border-white/25 px-6 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all duration-300 hover:border-white/50 hover:text-white"
+                            style={{ fontFamily: 'Inter, sans-serif' }}
+                        >
+                            <span className="absolute inset-0 -translate-x-full bg-white/6 transition-transform duration-300 group-hover:translate-x-0" />
+                            <span className="relative">Dashboard</span>
+                        </Link>
+                    ) : (
+                        <Link
+                            href="/login"
+                            className="group relative inline-flex items-center gap-2 overflow-hidden border border-white/25 px-6 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all duration-300 hover:border-white/50 hover:text-white"
+                            style={{ fontFamily: 'Inter, sans-serif' }}
+                        >
+                            <span className="absolute inset-0 -translate-x-full bg-white/6 transition-transform duration-300 group-hover:translate-x-0" />
+                            <span className="relative">Login</span>
+                        </Link>
+                    )}
                     <Link
                         href="/admin/login"
                         className="group relative inline-flex items-center gap-2 overflow-hidden border border-white/25 px-6 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all duration-300 hover:border-white/50 hover:text-white"
@@ -99,7 +123,26 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                                 {item.label}
                             </Link>
                         ))}
-                        <div className="pt-5 border-t border-white/10">
+                        <div className="pt-5 border-t border-white/10 flex flex-col gap-4">
+                            {isLoggedIn ? (
+                                <Link
+                                    href="/customer-dashboard"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="inline-flex items-center gap-2 border border-white/25 px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all hover:border-white/50 hover:text-white w-fit"
+                                    style={{ fontFamily: 'Inter, sans-serif' }}
+                                >
+                                    Dashboard
+                                </Link>
+                            ) : (
+                                <Link
+                                    href="/login"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="inline-flex items-center gap-2 border border-white/25 px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all hover:border-white/50 hover:text-white w-fit"
+                                    style={{ fontFamily: 'Inter, sans-serif' }}
+                                >
+                                    Login
+                                </Link>
+                            )}
                             <Link
                                 href="/admin/login"
                                 onClick={() => setMobileOpen(false)}
