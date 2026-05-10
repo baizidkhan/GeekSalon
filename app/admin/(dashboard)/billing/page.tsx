@@ -325,7 +325,7 @@ export default function BillingPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={handleExportCSV}><Download className="w-4 h-4 mr-2" />Export CSV</Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />New Invoice</Button></DialogTrigger>
+              {/* <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />New Invoice</Button></DialogTrigger> */}
               <DialogContent className="sm:max-w-[420px]">
                 <DialogHeader>
                   <DialogTitle>Automatic Invoice Generation</DialogTitle>

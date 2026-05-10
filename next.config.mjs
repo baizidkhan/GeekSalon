@@ -1,11 +1,11 @@
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: "standalone",
   turbopack: {
     root: __dirname,
   },
@@ -15,6 +15,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-}
 
-export default nextConfig
+  async rewrites() {
+    return [
+      {
+        source: "/api/ai/knowledge/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL}/ai/knowledge/:path*`,
+      },
+    ];
+  },
+};
+
+export default nextConfig;

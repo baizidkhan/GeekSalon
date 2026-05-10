@@ -23,6 +23,7 @@ import { BookingProvider } from '@/context/BookingContext'
 import { BusinessProvider } from '@/context/BusinessContext'
 import { BookingModal } from '@/components/booking-modal'
 import { Toaster } from 'sonner'
+import { PublicChatWidget } from '@/components/ai/PublicChatWidget'
 
 export default function RootLayout({
   children,
@@ -35,6 +36,7 @@ export default function RootLayout({
             {children}
             <BookingModal />
             <Toaster position="top-center" theme="dark" richColors />
+            {/* <PublicChatWidget tenantId={process.env.NEXT_PUBLIC_TENANT_ID ?? 'default'} /> */}
           </BookingProvider>
         </BusinessProvider>
       </body>
