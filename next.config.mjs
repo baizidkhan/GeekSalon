@@ -15,6 +15,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/ai/knowledge/:path*',
+        destination: `${process.env.INTERNAL_API_BASE_URL}/ai/knowledge/:path*`,
+      },
+    ];
+  },
 }
 
 export default nextConfig
