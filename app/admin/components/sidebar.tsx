@@ -25,6 +25,7 @@ import {
   UserLock,
   Quote,
   X,
+  BrainCircuit,
 } from "lucide-react"
 import { useState } from "react"
 import { logout } from "@admin/api/auth/auth"
@@ -71,6 +72,7 @@ const navigation = [
   {
     title: "SYSTEM",
     items: [
+      // { name: "AI Knowledge Base", href: "/admin/ai-knowledge", icon: BrainCircuit, permission: "settings" },
       { name: "Roles & Permissions", href: "/admin/roles-permissions", icon: UserLock, permission: "user-management" },
       { name: "Settings", href: "/admin/settings", icon: Settings, permission: "settings" },
       { name: "Update Password", href: "/admin/update-password", icon: UserLock, permission: "update-password" },
