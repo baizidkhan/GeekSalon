@@ -19,6 +19,12 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     const [preSelectedStylist, setPreSelectedStylist] = useState<string | null>(null)
 
     const openBooking = (service?: Service, stylist?: string) => {
+        const token = localStorage.getItem('accessToken')
+        if (!token) {
+            window.location.href = '/login'
+            return
+        }
+
         if (service) {
             setSelectedService(service)
         } else {
