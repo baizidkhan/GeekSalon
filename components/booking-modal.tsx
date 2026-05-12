@@ -35,7 +35,8 @@ function getProfileFromToken(): { name: string; phone: string } {
         if (!token) return { name: "", phone: "" }
         const payload = token.split('.')[1]
         const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-        return { name: decoded.name || "", phone: decoded.phone || "" }
+        const phone = localStorage.getItem('userPhone') || decoded.phone || ""
+        return { name: decoded.clientName || decoded.name || "", phone }
     } catch { return { name: "", phone: "" } }
 }
 
