@@ -29,6 +29,16 @@ const steps = [
     { id: 4, label: "Confirm" },
 ]
 
+function getProfileFromToken(): { name: string; phone: string } {
+    try {
+        const token = localStorage.getItem('accessToken')
+        if (!token) return { name: "", phone: "" }
+        const payload = token.split('.')[1]
+        const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+        return { name: decoded.name || "", phone: decoded.phone || "" }
+    } catch { return { name: "", phone: "" } }
+}
+
 export function BookingModal() {
     const { isOpen, closeBooking, selectedService, preSelectedStylist } = useBooking()
     const [step, setStep] = useState(1)
@@ -57,14 +67,23 @@ export function BookingModal() {
             fetchServices()
             fetchSettings()
             fetchTaxRate()
+
+            const { name: loggedInName, phone: loggedInPhone } = getProfileFromToken()
+
+            setFormData({
+                clientName: loggedInName,
+                phoneNumber: loggedInPhone,
+                date: "",
+                time: "",
+                serviceId: selectedService?.id ?? "",
+                serviceName: selectedService?.name ?? "",
+                staff: preSelectedStylist ?? "",
+            })
+
             if (selectedService) {
-                setFormData(prev => ({ ...prev, serviceId: selectedService.id, serviceName: selectedService.name }))
                 setSelectedServiceIds([selectedService.id])
             } else {
                 setSelectedServiceIds([])
-            }
-            if (preSelectedStylist) {
-                setFormData(prev => ({ ...prev, staff: preSelectedStylist }))
             }
         }
     }, [isOpen, selectedService, preSelectedStylist])
@@ -118,9 +137,8 @@ export function BookingModal() {
                     newErrors.time = `Please select a time between ${openingTime} and ${closingTime}`
             }
         } else if (currentStep === 3) {
-            if (!formData.clientName) newErrors.clientName = "Please enter your name"
-            if (!formData.phoneNumber) newErrors.phoneNumber = "Please enter your phone number"
-            else if (!/^\d{11}$/.test(formData.phoneNumber)) newErrors.phoneNumber = "Please enter a valid 11-digit phone number"
+            if (!formData.clientName) newErrors.clientName = "Name is missing from your account"
+            if (!formData.phoneNumber) newErrors.phoneNumber = "Phone number is missing from your account"
         }
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -164,7 +182,7 @@ export function BookingModal() {
                 time: formData.time,
                 services: currentServices.map(s => s.name),
                 status: "Confirmed",
-                staff: formData.staff === "Any Expert" ? "" : formData.staff,
+                staff: formData.staff && formData.staff !== "Any Expert" ? formData.staff : "any",
                 source: "Online",
             }
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/appointments`, {
@@ -172,13 +190,17 @@ export function BookingModal() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             })
+            const data = await res.json().catch(() => null)
             if (res.ok) {
                 toast.success("Booking Confirmed!", {
                     description: "Our team will call you within 24 hours. Thank you for choosing us.",
                 })
                 closeBooking()
             } else {
-                toast.error("Booking failed. Please try again.")
+                const msg = data?.message
+                    ? (Array.isArray(data.message) ? data.message[0] : data.message)
+                    : "Booking failed. Please try again."
+                toast.error(msg)
             }
         } catch {
             toast.error("An error occurred. Please try again.")
@@ -196,7 +218,7 @@ export function BookingModal() {
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeBooking()}>
             <DialogContent
                 data-public-modal="true"
-                className="sm:max-w-[580px] bg-[#0c0c0c] border border-white/10 text-white p-0 overflow-hidden gap-0 [&>button]:hidden shadow-2xl"
+                className="sm:max-w-[580px] max-h-[calc(100dvh-2rem)] flex flex-col bg-[#0c0c0c] border border-white/10 text-white p-0 overflow-hidden gap-0 [&>button]:hidden shadow-2xl"
             >
                 {/* Top accent line */}
                 <div className="h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
@@ -247,10 +269,10 @@ export function BookingModal() {
                             return (
                                 <div key={s.id} className="relative z-10 flex flex-col items-center gap-2">
                                     <div className={`flex h-[30px] w-[30px] items-center justify-center border transition-all duration-300 ${done
+                                        ? "border-white bg-white text-black"
+                                        : active
                                             ? "border-white bg-white text-black"
-                                            : active
-                                                ? "border-white bg-white text-black"
-                                                : "border-white/15 bg-[#0c0c0c] text-white/25"
+                                            : "border-white/15 bg-[#0c0c0c] text-white/25"
                                         }`}>
                                         {done
                                             ? <Check className="h-3 w-3" strokeWidth={3} />
@@ -274,7 +296,7 @@ export function BookingModal() {
                 <div className="mx-8 mt-6 h-px bg-white/6" />
 
                 {/* Step Content */}
-                <div className="overflow-y-auto px-8 py-6" style={{ maxHeight: "380px" }}>
+                <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6">
                     <div key={step} className="animate-in fade-in slide-in-from-right-3 duration-300">
 
                         {/* ── Step 1: Services ── */}
@@ -440,22 +462,22 @@ export function BookingModal() {
 
                         {/* ── Step 3: Details ── */}
                         {step === 3 && (
-                            <div className="space-y-6">
+                            <div className="space-y-5">
                                 <div className="space-y-2.5">
                                     <Label
-                                        className="text-[10px] uppercase tracking-[0.28em] text-white"
+                                        className="text-[10px] uppercase tracking-[0.28em] text-white/60"
                                         style={{ fontFamily: "Inter, sans-serif" }}
                                     >
                                         Full Name
                                     </Label>
                                     <div className="relative">
-                                        <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white" />
+                                        <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                                         <Input
                                             name="clientName"
                                             value={formData.clientName}
-                                            onChange={handleInputChange}
-                                            placeholder="Your full name"
-                                            className={`h-12 rounded-none border-white/10 bg-transparent pl-11 text-white placeholder:text-white/30 focus-visible:ring-white/20 autofill:shadow-[0_0_0_1000px_#0c0c0c_inset] autofill:text-white ${errors.clientName ? "border-red-500/70" : ""}`}
+                                            readOnly
+                                            tabIndex={-1}
+                                            className="h-12 rounded-none border-white/8 bg-white/[0.03] pl-11 text-white/60 cursor-default select-none focus-visible:ring-0 focus-visible:border-white/8"
                                         />
                                     </div>
                                     {errors.clientName && <p className="text-[10px] tracking-wider text-red-400">{errors.clientName}</p>}
@@ -463,23 +485,27 @@ export function BookingModal() {
 
                                 <div className="space-y-2.5">
                                     <Label
-                                        className="text-[10px] uppercase tracking-[0.28em] text-white"
+                                        className="text-[10px] uppercase tracking-[0.28em] text-white/60"
                                         style={{ fontFamily: "Inter, sans-serif" }}
                                     >
                                         Phone Number
                                     </Label>
                                     <div className="relative">
-                                        <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white" />
+                                        <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                                         <Input
                                             name="phoneNumber"
                                             value={formData.phoneNumber}
-                                            onChange={handleInputChange}
-                                            placeholder="017XXXXXXXX"
-                                            className={`h-12 rounded-none border-white/10 bg-transparent pl-11 text-white placeholder:text-white/30 focus-visible:ring-white/20 autofill:shadow-[0_0_0_1000px_#0c0c0c_inset] autofill:text-white ${errors.phoneNumber ? "border-red-500/70" : ""}`}
+                                            readOnly
+                                            tabIndex={-1}
+                                            className="h-12 rounded-none border-white/8 bg-white/[0.03] pl-11 text-white/60 cursor-default select-none focus-visible:ring-0 focus-visible:border-white/8"
                                         />
                                     </div>
                                     {errors.phoneNumber && <p className="text-[10px] tracking-wider text-red-400">{errors.phoneNumber}</p>}
                                 </div>
+
+                                <p className="text-[10px] text-white/25 text-center tracking-wider" style={{ fontFamily: "Inter, sans-serif" }}>
+                                    To update your details, visit your profile settings.
+                                </p>
                             </div>
                         )}
 

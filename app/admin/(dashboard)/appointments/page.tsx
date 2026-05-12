@@ -505,6 +505,9 @@ export default function AppointmentsPage() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [assignStylistOpen, setAssignStylistOpen] = useState(false)
+  const [pendingConfirmAppointment, setPendingConfirmAppointment] = useState<Appointment | null>(null)
+  const [assignStylistSelected, setAssignStylistSelected] = useState("")
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [newAppointment, setNewAppointment] = useState(emptyForm)
   const [nameLocked, setNameLocked] = useState(false)
@@ -752,9 +755,9 @@ export default function AppointmentsPage() {
 
   const handleStatusChange = async (appointment: Appointment, newStatus: AppointmentStatus) => {
     if (newStatus === "Confirmed" && !appointment.employee?.trim()) {
-      toast.error("Employee should be selected for updating the status")
-      setSelectedAppointment({ ...appointment, status: "Confirmed" })
-      setEditDialogOpen(true)
+      setPendingConfirmAppointment(appointment)
+      setAssignStylistSelected("")
+      setAssignStylistOpen(true)
       return
     }
 
@@ -770,6 +773,27 @@ export default function AppointmentsPage() {
       }
     } catch (err) {
       console.error("Failed to update status", err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleAssignAndConfirm = async () => {
+    if (!pendingConfirmAppointment || !assignStylistSelected) return
+    try {
+      setIsSubmitting(true)
+      await updateAppointment(pendingConfirmAppointment.id, {
+        status: "Confirmed",
+        staff: assignStylistSelected,
+      })
+      setAssignStylistOpen(false)
+      setPendingConfirmAppointment(null)
+      setAssignStylistSelected("")
+      fetchAppointments()
+      router.push("/admin/billing")
+    } catch (err) {
+      console.error("Failed to confirm appointment", err)
+      toast.error("Failed to assign stylist and confirm appointment")
     } finally {
       setIsSubmitting(false)
     }
@@ -1717,6 +1741,85 @@ export default function AppointmentsPage() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Stylist Modal — shown when confirming an appointment with no stylist */}
+      <Dialog
+        open={assignStylistOpen}
+        onOpenChange={(open) => {
+          setAssignStylistOpen(open)
+          if (!open) {
+            setPendingConfirmAppointment(null)
+            setAssignStylistSelected("")
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Stylist to Confirm</DialogTitle>
+            <DialogDescription>
+              No stylist is assigned to this appointment. Select one before confirming.
+            </DialogDescription>
+          </DialogHeader>
+          {pendingConfirmAppointment && (
+            <div className="space-y-4 py-1">
+              <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-1 text-sm">
+                <p>
+                  <span className="text-muted-foreground">Client: </span>
+                  <span className="font-medium">{pendingConfirmAppointment.client}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Date: </span>
+                  <span className="font-medium">{pendingConfirmAppointment.date}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Time: </span>
+                  <span className="font-medium">{formatTimeDisplay(pendingConfirmAppointment.time)}</span>
+                </p>
+                {pendingConfirmAppointment.service && (
+                  <p>
+                    <span className="text-muted-foreground">
+                      {pendingConfirmAppointment.isPackage ? "Package" : "Services"}:{" "}
+                    </span>
+                    <span className="font-medium">
+                      {pendingConfirmAppointment.isPackage
+                        ? pendingConfirmAppointment.packageName
+                        : pendingConfirmAppointment.service}
+                    </span>
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="assign-stylist-select">
+                  Stylist <span className="text-destructive">*</span>
+                </Label>
+                <Select value={assignStylistSelected} onValueChange={setAssignStylistSelected}>
+                  <SelectTrigger id="assign-stylist-select" className="w-full">
+                    <SelectValue placeholder="Choose a stylist…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employeeOptions.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="mt-2">
+            <Button variant="outline" onClick={() => setAssignStylistOpen(false)} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssignAndConfirm}
+              disabled={!assignStylistSelected || isSubmitting}
+            >
+              {isSubmitting ? "Confirming…" : "Confirm Appointment"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

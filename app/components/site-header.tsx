@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect } from "react"
-import { Menu, X } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Menu, X, UserCircle, History, LogOut } from "lucide-react"
 import { useBusiness } from "@/context/BusinessContext"
 
 const navItems = [
@@ -12,22 +12,53 @@ const navItems = [
     { label: "Our Team", href: "/our-team" },
 ]
 
+function getUserFromToken(token: string): { name?: string; email?: string; role?: string } | null {
+    try {
+        const payload = token.split('.')[1]
+        const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+        return { name: decoded.name, email: decoded.useremail, role: decoded.role }
+    } catch {
+        return null
+    }
+}
+
 export function SiteHeader({ solid = false }: { solid?: boolean }) {
     const { businessName } = useBusiness()
     const [mobileOpen, setMobileOpen] = useState(false)
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const [user, setUser] = useState<{ name?: string; email?: string; role?: string } | null>(null)
+    const [dropdownOpen, setDropdownOpen] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        setIsLoggedIn(!!localStorage.getItem('accessToken'))
+        const token = localStorage.getItem('accessToken')
+        if (token) setUser(getUserFromToken(token))
     }, [])
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setDropdownOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handler)
+        return () => document.removeEventListener('mousedown', handler)
+    }, [])
+
+    const handleLogout = () => {
+        localStorage.removeItem('accessToken')
+        document.cookie = 'accessToken=; path=/; max-age=0'
+        window.location.href = '/'
+    }
+
+    const isCustomer = !user?.role || user.role === 'customer'
 
     return (
         <header
-            className={`sticky top-0 z-50 transition-colors duration-300 ${
-                solid
+            className={`sticky top-0 z-50 transition-colors duration-300 ${solid
                     ? "bg-[#0b0b0b] border-b border-white/10"
                     : "bg-transparent border-b border-white/8"
-            }`}
+                }`}
         >
             <div className="relative mx-auto flex h-24 w-full max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-10">
 
@@ -66,16 +97,47 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                 </nav>
 
                 {/* Desktop CTA */}
-                <div className="hidden md:flex min-w-[140px] justify-end gap-4">
-                    {isLoggedIn ? (
-                        <Link
-                            href="/customer-dashboard"
-                            className="group relative inline-flex items-center gap-2 overflow-hidden border border-white/25 px-6 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all duration-300 hover:border-white/50 hover:text-white"
-                            style={{ fontFamily: 'Inter, sans-serif' }}
-                        >
-                            <span className="absolute inset-0 -translate-x-full bg-white/6 transition-transform duration-300 group-hover:translate-x-0" />
-                            <span className="relative">Dashboard</span>
-                        </Link>
+                <div className="hidden md:flex min-w-[140px] justify-end items-center gap-4">
+                    {user ? (
+                        <div className="relative" ref={dropdownRef}>
+                            <button
+                                onClick={() => setDropdownOpen((o) => !o)}
+                                className="flex items-center justify-center w-9 h-9 rounded-full border border-white/25 text-white/65 hover:border-white/50 hover:text-white transition-all duration-200"
+                                aria-label="User menu"
+                            >
+                                <UserCircle size={20} strokeWidth={1.5} />
+                            </button>
+                            {dropdownOpen && (
+                                <div className="absolute right-0 top-12 w-56 bg-[#111] border border-white/12 shadow-2xl z-50">
+                                    {/* User info */}
+                                    <div className="px-4 py-3 border-b border-white/10">
+                                        <p className="text-[11px] text-white/90 font-medium truncate">{user.name || 'Guest'}</p>
+                                        <p className="text-[10px] text-white/40 truncate mt-0.5">{user.email}</p>
+                                    </div>
+                                    {/* History — only for customers */}
+                                    {isCustomer && (
+                                        <Link
+                                            href="/customer-dashboard"
+                                            onClick={() => setDropdownOpen(false)}
+                                            className="flex items-center gap-2.5 px-4 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55 hover:text-white hover:bg-white/5 transition-colors"
+                                            style={{ fontFamily: 'Inter, sans-serif' }}
+                                        >
+                                            <History size={13} strokeWidth={1.5} />
+                                            History
+                                        </Link>
+                                    )}
+                                    {/* Sign out */}
+                                    <button
+                                        onClick={handleLogout}
+                                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/40 hover:text-white hover:bg-white/5 transition-colors border-t border-white/10"
+                                        style={{ fontFamily: 'Inter, sans-serif' }}
+                                    >
+                                        <LogOut size={13} strokeWidth={1.5} />
+                                        Sign out
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <Link
                             href="/login"
@@ -86,15 +148,6 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                             <span className="relative">Login</span>
                         </Link>
                     )}
-                    <Link
-                        href="/admin/login"
-                        className="group relative inline-flex items-center gap-2 overflow-hidden border border-white/25 px-6 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all duration-300 hover:border-white/50 hover:text-white"
-                        style={{ fontFamily: 'Inter, sans-serif' }}
-                    >
-                        <span className="absolute inset-0 -translate-x-full bg-white/6 transition-transform duration-300 group-hover:translate-x-0" />
-                        <span className="relative">Admin</span>
-                        <span className="relative h-px w-4 bg-white/40 transition-all duration-300 group-hover:w-5 group-hover:bg-white/70" />
-                    </Link>
                 </div>
 
                 {/* Mobile Hamburger */}
@@ -124,15 +177,35 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                             </Link>
                         ))}
                         <div className="pt-5 border-t border-white/10 flex flex-col gap-4">
-                            {isLoggedIn ? (
-                                <Link
-                                    href="/customer-dashboard"
-                                    onClick={() => setMobileOpen(false)}
-                                    className="inline-flex items-center gap-2 border border-white/25 px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all hover:border-white/50 hover:text-white w-fit"
-                                    style={{ fontFamily: 'Inter, sans-serif' }}
-                                >
-                                    Dashboard
-                                </Link>
+                            {user ? (
+                                <>
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <UserCircle size={18} className="text-white/50" strokeWidth={1.5} />
+                                        <div>
+                                            <p className="text-[11px] text-white/80 font-medium">{user.name || 'Guest'}</p>
+                                            <p className="text-[10px] text-white/35">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    {isCustomer && (
+                                        <Link
+                                            href="/customer-dashboard"
+                                            onClick={() => setMobileOpen(false)}
+                                            className="inline-flex items-center gap-2 border border-white/25 px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all hover:border-white/50 hover:text-white w-fit"
+                                            style={{ fontFamily: 'Inter, sans-serif' }}
+                                        >
+                                            <History size={13} strokeWidth={1.5} />
+                                            History
+                                        </Link>
+                                    )}
+                                    <button
+                                        onClick={handleLogout}
+                                        className="inline-flex items-center gap-2 border border-white/15 px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/40 transition-all hover:border-white/35 hover:text-white/70 w-fit"
+                                        style={{ fontFamily: 'Inter, sans-serif' }}
+                                    >
+                                        <LogOut size={13} strokeWidth={1.5} />
+                                        Sign out
+                                    </button>
+                                </>
                             ) : (
                                 <Link
                                     href="/login"
@@ -143,15 +216,6 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                                     Login
                                 </Link>
                             )}
-                            <Link
-                                href="/admin/login"
-                                onClick={() => setMobileOpen(false)}
-                                className="inline-flex items-center gap-2 border border-white/25 px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all hover:border-white/50 hover:text-white"
-                                style={{ fontFamily: 'Inter, sans-serif' }}
-                            >
-                                Admin
-                                <span className="h-px w-4 bg-white/40" />
-                            </Link>
                         </div>
                     </div>
                 </div>

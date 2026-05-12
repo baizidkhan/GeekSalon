@@ -158,7 +158,7 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
         date,
         time,
         source: "online",
-        staff: staff === "Any Expert" ? "" : staff,
+        staff: staff === "Any Expert" ? "any" : staff,
         isPackage: true,
         packageName: pkg.title,
         ...(notes.trim() ? { notes: notes.trim() } : {}),

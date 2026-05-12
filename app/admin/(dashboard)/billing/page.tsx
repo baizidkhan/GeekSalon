@@ -35,7 +35,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Plus, Search, Receipt, Printer, MoreHorizontal, Download, Eye, Pencil, Trash2, User, Scissors, Calendar, Globe, Zap, Phone } from "lucide-react"
+import { Plus, Search, Receipt, Printer, MoreHorizontal, Download, Eye, Pencil, Trash2, User, UserCheck, Scissors, Calendar, Globe, Zap, Phone } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +53,7 @@ interface Invoice {
   amount: number
   paidAmount?: number
   paymentMethod: "Cash" | "bKash" | "Card"
+  staff: string
   sortAt: string
   date: string
   status: "Paid" | "Unpaid" | "Partial"
@@ -80,6 +81,7 @@ function mapInvoice(inv: any): Invoice {
     amount: Number(inv.total),
     paidAmount: inv.paidAmount != null ? Number(inv.paidAmount) : undefined,
     paymentMethod: inv.paymentMethod,
+    staff: inv.staff ?? "—",
     sortAt,
     date: sortAt ? sortAt.split("T")[0] : "",
     status: inv.status,
@@ -288,8 +290,8 @@ export default function BillingPage() {
   }
 
   const handleExportCSV = () => {
-    const headers = ["Invoice No", "Client", "Services", "Amount", "Payment Method", "Date", "Status"]
-    const rows = filteredInvoices.map(inv => [inv.invoiceNo, inv.client, inv.services.join("; "), inv.amount, inv.paymentMethod, inv.date, getStatusLabel(inv.status)])
+    const headers = ["Invoice No", "Client", "Services", "Amount", "Stylist", "Payment Method", "Date", "Status"]
+    const rows = filteredInvoices.map(inv => [inv.invoiceNo, inv.client, inv.services.join("; "), inv.amount, inv.staff, inv.paymentMethod, inv.date, getStatusLabel(inv.status)])
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n")
     const blob = new Blob([csv], { type: "text/csv" })
     const url = URL.createObjectURL(blob)
@@ -421,7 +423,7 @@ export default function BillingPage() {
                   <TableHead><span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary/60" />Phone</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-primary/60" />Services</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Amount</span></TableHead>
-                  <TableHead><span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-primary/60" />Payment</span></TableHead>
+                  <TableHead><span className="flex items-center gap-1.5"><UserCheck className="w-3.5 h-3.5 text-primary/60" />Stylist</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary/60" />Date</span></TableHead>
                   <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
                   <TableHead className="w-12"></TableHead>
@@ -469,7 +471,7 @@ export default function BillingPage() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell>{invoice.paymentMethod}</TableCell>
+                    <TableCell>{invoice.staff}</TableCell>
                     <TableCell>{invoice.date}</TableCell>
                     <TableCell><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>{getStatusLabel(invoice.status)}</span></TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
@@ -537,6 +539,7 @@ export default function BillingPage() {
                     <div><Label className="text-muted-foreground">Invoice No</Label><p className="font-medium">{viewInvoice.invoiceNo}</p></div>
                     <div><Label className="text-muted-foreground">Client</Label><p className="font-medium">{viewInvoice.client}</p></div>
                     <div><Label className="text-muted-foreground">Services</Label><p className="font-medium">{viewInvoice.services.join(", ")}</p></div>
+                    <div><Label className="text-muted-foreground">Stylist</Label><p className="font-medium">{viewInvoice.staff}</p></div>
                     <div><Label className="text-muted-foreground">Amount</Label><p className="font-medium">{formatCurrency(viewInvoice.amount)}</p></div>
                     <div><Label className="text-muted-foreground">Payment Method</Label><p className="font-medium">{viewInvoice.paymentMethod}</p></div>
                     <div><Label className="text-muted-foreground">Date</Label><p className="font-medium">{viewInvoice.date}</p></div>
