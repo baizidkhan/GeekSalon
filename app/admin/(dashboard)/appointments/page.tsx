@@ -754,7 +754,7 @@ export default function AppointmentsPage() {
   }
 
   const handleStatusChange = async (appointment: Appointment, newStatus: AppointmentStatus) => {
-    if (newStatus === "Confirmed" && !appointment.employee?.trim()) {
+    if (newStatus === "Confirmed" && (!appointment.employee?.trim() || appointment.employee.trim().toLowerCase() === "any")) {
       setPendingConfirmAppointment(appointment)
       setAssignStylistSelected("")
       setAssignStylistOpen(true)
