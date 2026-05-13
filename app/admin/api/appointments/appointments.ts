@@ -42,7 +42,7 @@ export async function createAppointment(payload: {
 
 export async function updateAppointment(id: string, payload: object) {
   const { data } = await api.patch(`/appointments/id/${encodeURIComponent(id)}`, payload)
-  markStale(CACHE.APPOINTMENTS, CACHE.DASHBOARD, CACHE.BILLING, CACHE.CLIENTS)
+  markStale(CACHE.APPOINTMENTS, CACHE.DASHBOARD, CACHE.BILLING, CACHE.CLIENTS, CACHE.PAYROLL)
   return data
 }
 

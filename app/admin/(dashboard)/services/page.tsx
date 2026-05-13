@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Clock, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2, Scissors, Package, Receipt, Zap } from "lucide-react"
+import { Plus, Search, Clock, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2, Scissors, Package, Receipt, Zap, Percent } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +49,7 @@ interface Service {
   duration: number
   description: string
   price: number
+  commission: number
   active: boolean
   imageUrl?: string
 }
@@ -79,6 +80,7 @@ export default function ServicesPage() {
     category: "",
     duration: "",
     price: "",
+    commission: "",
     description: "",
     imageUrl: "",
     imageFile: null as File | null,
@@ -125,6 +127,7 @@ export default function ServicesPage() {
         ...s,
         price: parseFloat(s.price) || 0,
         duration: parseInt(s.duration) || 0,
+        commission: parseFloat(s.commission) || 0,
         description: s.description || "",
         active: s.status === 'active'
       }))
@@ -183,6 +186,7 @@ export default function ServicesPage() {
           category: newService.category,
           duration: parseInt(newService.duration) || 30,
           price: parseFloat(newService.price) || 0,
+          commission: parseFloat(newService.commission) || 0,
           status: 'active',
           description: newService.description,
         }
@@ -193,7 +197,7 @@ export default function ServicesPage() {
         await createService(formData)
 
         toast.success("Service added successfully")
-        setNewService({ name: "", category: "", duration: "", price: "", description: "", imageUrl: "", imageFile: null, previewUrl: "" })
+        setNewService({ name: "", category: "", duration: "", price: "", commission: "", description: "", imageUrl: "", imageFile: null, previewUrl: "" })
         setIsDialogOpen(false)
         fetchServices()
       } catch (error) {
@@ -221,6 +225,7 @@ export default function ServicesPage() {
           category: serviceToEdit.category,
           duration: Number(serviceToEdit.duration) || 30,
           price: Number(serviceToEdit.price) || 0,
+          commission: Number(serviceToEdit.commission) || 0,
           status: serviceToEdit.active ? 'active' : 'hidden',
           description: serviceToEdit.description || "",
           imageUrl: serviceToEdit.imageFile ? undefined : serviceToEdit.imageUrl,
@@ -380,6 +385,18 @@ export default function ServicesPage() {
                     />
                   </div>
                 </div>
+                <div>
+                  <Label>Commission (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={newService.commission}
+                    onChange={(e) => setNewService({ ...newService, commission: e.target.value })}
+                    placeholder="e.g. 10 (employee earns 10% of service price)"
+                  />
+                </div>
                 <Button onClick={handleAddService} className="w-full" disabled={isSubmitting || isPreviewLoading}>
                   {isPreviewLoading ? "Processing Image..." : (isSubmitting ? "Adding..." : "Add Service")}
                 </Button>
@@ -434,6 +451,7 @@ export default function ServicesPage() {
                 <TableHead><span className="flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-primary/60" />Category</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary/60" />Duration</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Receipt className="w-3.5 h-3.5 text-primary/60" />Price</span></TableHead>
+                <TableHead><span className="flex items-center gap-1.5"><Percent className="w-3.5 h-3.5 text-primary/60" />Commission</span></TableHead>
                 <TableHead><span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-primary/60" />Status</span></TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
@@ -441,7 +459,7 @@ export default function ServicesPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
+                  <TableCell colSpan={7} className="text-center py-10">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
@@ -449,7 +467,7 @@ export default function ServicesPage() {
                 </TableRow>
               ) : filteredServices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                     No services found.
                   </TableCell>
                 </TableRow>
@@ -485,6 +503,11 @@ export default function ServicesPage() {
                     </TableCell>
                     <TableCell className="font-medium">
                       {formatCurrency(service.price)}
+                    </TableCell>
+                    <TableCell>
+                      <span className="px-2 py-1 bg-secondary rounded-md text-sm">
+                        {service.commission}%
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Switch
@@ -562,6 +585,7 @@ export default function ServicesPage() {
                 <div><Label className="text-muted-foreground">Category</Label><p className="font-medium">{serviceToView.category}</p></div>
                 <div><Label className="text-muted-foreground">Duration</Label><p className="font-medium">{serviceToView.duration} min</p></div>
                 <div><Label className="text-muted-foreground">Price</Label><p className="font-medium">{formatCurrency(serviceToView.price)}</p></div>
+                <div><Label className="text-muted-foreground">Commission</Label><p className="font-medium">{serviceToView.commission}%</p></div>
                 <div><Label className="text-muted-foreground">Status</Label><p className="font-medium">{serviceToView.active ? "Active" : "Inactive"}</p></div>
               </div>
               <div><Label className="text-muted-foreground">Description</Label><p className="font-medium whitespace-pre-wrap">{serviceToView.description || "No description provided"}</p></div>
@@ -620,6 +644,18 @@ export default function ServicesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Duration (min)</Label><Input type="number" value={serviceToEdit.duration} onChange={(e) => setServiceToEdit({ ...serviceToEdit, duration: parseInt(e.target.value) || 0 })} /></div>
                 <div><Label>Price (৳)</Label><Input type="number" value={serviceToEdit.price} onChange={(e) => setServiceToEdit({ ...serviceToEdit, price: parseFloat(e.target.value) || 0 })} /></div>
+              </div>
+              <div>
+                <Label>Commission (%)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={serviceToEdit.commission}
+                  onChange={(e) => setServiceToEdit({ ...serviceToEdit, commission: parseFloat(e.target.value) || 0 })}
+                  placeholder="e.g. 10"
+                />
               </div>
               <Button className="w-full" onClick={handleEditSave} disabled={isSubmitting || isPreviewLoading}>
                 {isPreviewLoading ? "Processing Image..." : (isSubmitting ? "Updating..." : "Save Changes")}

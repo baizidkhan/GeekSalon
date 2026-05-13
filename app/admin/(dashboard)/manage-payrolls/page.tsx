@@ -49,6 +49,7 @@ import { StatCard } from "@admin/components/stat-card"
 import { useBusiness } from "@/context/BusinessContext"
 import { useDebounce } from "@/hooks/use-debounce"
 import { formatCurrency, formatMoney } from "@/lib/utils"
+import { clearCacheByPrefix, CACHE } from "@admin/lib/cache"
 import { Search, Filter } from "lucide-react"
 // jsPDF is imported dynamically to avoid SSR build errors
 
@@ -151,6 +152,7 @@ export default function HRPayrollPage() {
   }, [selectedMonth, selectedYear, debouncedSearch, statusFilter])
 
   useEffect(() => {
+    clearCacheByPrefix(CACHE.PAYROLL)
     fetchPayroll()
   }, [fetchPayroll])
 

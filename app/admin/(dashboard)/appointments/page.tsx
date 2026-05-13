@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, Calendar as CalendarIcon, Clock, MoreHorizontal, Upload, Download, ChevronDown, Eye, Pencil, Trash2, User, Phone, Scissors, UserCheck, Globe, Zap, Check } from "lucide-react"
+import { Plus, Search, Calendar as CalendarIcon, Clock, MoreHorizontal, Upload, Download, ChevronDown, Eye, Pencil, Trash2, User, Phone, Scissors, UserCheck, Globe, Zap, Check, Percent } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,12 +49,14 @@ import {
 } from "@/components/ui/popover"
 import { Calendar as DateCalendar } from "@/components/ui/calendar"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
 import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "@admin/api/appointments/appointments"
 import { getClients } from "@admin/api/clients/clients"
 import { getActiveServices } from "@admin/api/services/services"
 import { getPackages } from "@admin/api/packages/packages"
 import { getStylists } from "@admin/api/employees/employees"
 import { getAppointmentSettings, getInvoiceSettings } from "@admin/api/settings/settings"
+import { clearCacheByPrefix, markStale, CACHE } from "@admin/lib/cache"
 import { toast } from "sonner"
 
 interface AppointmentRecord {
@@ -77,7 +79,7 @@ interface ClientOption {
   phone: string
 }
 
-type AppointmentStatus = "Pending" | "Confirmed" | "Checked In" | "In Service" | "Completed" | "Cancelled"
+type AppointmentStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled"
 type AppointmentSource = "Online" | "Walk In" | "Call"
 
 interface Appointment {
@@ -95,7 +97,7 @@ interface Appointment {
   packageName: string
 }
 
-const statusOptions: AppointmentStatus[] = ["Pending", "Confirmed", "Checked In", "In Service", "Completed", "Cancelled"]
+const statusOptions: AppointmentStatus[] = ["Pending", "Confirmed", "Completed", "Cancelled"]
 const sourceOptions: AppointmentSource[] = ["Online", "Walk In", "Call"]
 const timeFilterOptions = ["All Time", "Today", "This Week", "This Month", "Last 6 Months", "This Year", "Custom Date"]
 const PAGE_SIZE = 10
@@ -469,6 +471,7 @@ const emptyForm = {
   source: "Online" as AppointmentSource,
   isPackage: false,
   packageName: "",
+  applyCommission: true,
 }
 
 type NewAppointmentField = "phone" | "client" | "services" | "employee" | "date" | "time"
@@ -479,7 +482,7 @@ export default function AppointmentsPage() {
   const searchParams = useSearchParams()
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
-  const [serviceOptions, setServiceOptions] = useState<{ name: string; price: number }[]>([])
+  const [serviceOptions, setServiceOptions] = useState<{ name: string; price: number; commission: number }[]>([])
   const [packageOptions, setPackageOptions] = useState<{ name: string; price: number }[]>([])
   const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
   const [clientOptions, setClientOptions] = useState<ClientOption[]>([])
@@ -595,7 +598,7 @@ export default function AppointmentsPage() {
   useEffect(() => {
     fetchAppointments()
     getActiveServices()
-      .then((list: { name: string; price: number }[]) => setServiceOptions(list.map((s) => ({ name: s.name, price: s.price }))))
+      .then((list: { name: string; price: number; commission: number }[]) => setServiceOptions(list.map((s) => ({ name: s.name, price: s.price, commission: parseFloat((s.commission ?? 0).toString()) }))))
       .catch(console.error)
     getPackages()
       .then((res) => {
@@ -734,6 +737,7 @@ export default function AppointmentsPage() {
         isPackage: newAppointment.isPackage,
         packageName: newAppointment.isPackage ? newAppointment.packageName : undefined,
         source: newAppointment.source,
+        applyCommission: newAppointment.applyCommission,
       })
       setNewAppointment(emptyForm)
       setNewAppointmentErrors({})
@@ -767,10 +771,11 @@ export default function AppointmentsPage() {
         status: newStatus,
         staff: appointment.employee || undefined,
       })
-      fetchAppointments()
-      if (newStatus === "Confirmed") {
-        router.push("/admin/billing")
+      if (newStatus === "Completed") {
+        clearCacheByPrefix(CACHE.PAYROLL)
+        markStale(CACHE.PAYROLL)
       }
+      fetchAppointments()
     } catch (err) {
       console.error("Failed to update status", err)
     } finally {
@@ -790,7 +795,6 @@ export default function AppointmentsPage() {
       setPendingConfirmAppointment(null)
       setAssignStylistSelected("")
       fetchAppointments()
-      router.push("/admin/billing")
     } catch (err) {
       console.error("Failed to confirm appointment", err)
       toast.error("Failed to assign stylist and confirm appointment")
@@ -866,22 +870,18 @@ export default function AppointmentsPage() {
 
 
 
-  const getStatusButtonStyle = (status: AppointmentStatus) => {
+  const getStatusButtonStyle = (status: AppointmentStatus | string) => {
     switch (status) {
       case "Completed":
         return "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
       case "Confirmed":
         return "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-      case "Checked In":
-        return "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
-      case "In Service":
-        return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
       case "Pending":
         return "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
       case "Cancelled":
         return "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+        return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
     }
   }
 
@@ -1076,6 +1076,37 @@ export default function AppointmentsPage() {
                     className="bg-muted cursor-not-allowed font-medium text-primary"
                   />
                 </div>
+                {(() => {
+                  const commissionTotal = newAppointment.isPackage ? 0 : newAppointment.services.reduce((acc, name) => {
+                    const svc = serviceOptions.find(s => s.name === name)
+                    return acc + (svc ? (Number(svc.price) * Number(svc.commission) / 100) : 0)
+                  }, 0)
+                  if (commissionTotal <= 0) return null
+                  return (
+                    <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Percent className="w-4 h-4 text-primary/70 shrink-0" />
+                        <div>
+                          <p className="text-[13px] font-semibold">Employee Commission</p>
+                          <p className="text-xs text-muted-foreground">
+                            {newAppointment.applyCommission
+                              ? `৳${commissionTotal.toFixed(2)} will be added to the employee's bonus when completed`
+                              : "Commission disabled for this appointment"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-sm font-semibold ${newAppointment.applyCommission ? "text-green-600" : "text-muted-foreground line-through"}`}>
+                          ৳{commissionTotal.toFixed(2)}
+                        </span>
+                        <Switch
+                          checked={newAppointment.applyCommission}
+                          onCheckedChange={(checked) => setNewAppointment({ ...newAppointment, applyCommission: checked })}
+                        />
+                      </div>
+                    </div>
+                  )
+                })()}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[13px] font-semibold tracking-wide">Employee <span className="text-destructive">*</span></Label>
@@ -1342,9 +1373,8 @@ export default function AppointmentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
                           {statusOptions.map((status) => {
-                            const isRestricted = ["Checked In", "In Service", "Completed"].includes(status)
-                            const canAccess = appointment.status !== "Pending" && appointment.status !== "Cancelled"
-                            const isDisabled = isRestricted && !canAccess
+                            const isFinal = appointment.status === "Completed" || appointment.status === "Cancelled"
+                            const isDisabled = isFinal && status !== appointment.status
 
                             return (
                               <DropdownMenuItem
@@ -1722,6 +1752,7 @@ export default function AppointmentsPage() {
                 <Label className="text-[13px] font-semibold tracking-wide">Status</Label>
                 <Select
                   value={selectedAppointment.status}
+                  disabled={selectedAppointment.status === "Completed" || selectedAppointment.status === "Cancelled"}
                   onValueChange={(value: AppointmentStatus) =>
                     setSelectedAppointment({ ...selectedAppointment, status: value })
                   }
@@ -1735,6 +1766,9 @@ export default function AppointmentsPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {(selectedAppointment.status === "Completed" || selectedAppointment.status === "Cancelled") && (
+                  <p className="text-xs text-muted-foreground">Status is locked — Completed and Cancelled appointments cannot be changed.</p>
+                )}
               </div>
               <Button onClick={handleEditAppointment} className="mt-1 h-10 w-full" disabled={isSubmitting}>
                 {isSubmitting ? "Save Changes...." : "Save Changes"}
