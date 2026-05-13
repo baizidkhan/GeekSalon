@@ -67,7 +67,7 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
+        <h3 className="text-[15px] text-black flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-blue-500 shrink-0" />
           Revenue Trend
         </h3>
@@ -87,8 +87,8 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
           <AreaChart data={selectedData}>
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                <stop offset="5%" stopColor="#0076E9" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#0076E9" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -106,7 +106,7 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
             />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
             <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [formatCurrency(value), "Revenue"]} />
-            <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revenueGradient)" dot={{ r: 4, fill: "#3b82f6", strokeWidth: 2, stroke: "white" }} activeDot={{ r: 6, fill: "#3b82f6" }} />
+            <Area type="monotone" dataKey="revenue" stroke="#0076E9" strokeWidth={2.5} fill="url(#revenueGradient)" dot={{ r: 4, fill: "#0076E9", strokeWidth: 2, stroke: "white" }} activeDot={{ r: 6, fill: "#0076E9" }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -129,7 +129,7 @@ export function AppointmentChart({ weeklyData, monthlyData }: AppointmentChartPr
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
+        <h3 className="text-[15px] text-black flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-blue-500 shrink-0" />
           Appointment Trends
         </h3>
@@ -160,7 +160,7 @@ export function AppointmentChart({ weeklyData, monthlyData }: AppointmentChartPr
             />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />
             <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [value, "Appointments"]} />
-            <Bar dataKey="appointments" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="appointments" fill="#0076E9" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
