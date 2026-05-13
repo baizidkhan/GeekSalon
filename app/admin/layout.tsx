@@ -15,13 +15,14 @@ export default async function AdminLayout({
   const initialUser = token ? getUserFromToken(token) : null
 
   return (
-    <>
+    <div className="admin-root min-h-screen font-admin">
+      <link href="https://api.fontshare.com/v2/css?f[]=general-sans@200,300,400,500,600,700&display=swap" rel="stylesheet" />
       <AuthGuard initialUser={initialUser}>
         <BiometricProvider>
           {children}
         </BiometricProvider>
       </AuthGuard>
       {process.env.NODE_ENV === 'production' && <Analytics />}
-    </>
+    </div>
   )
 }
