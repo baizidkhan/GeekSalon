@@ -49,7 +49,7 @@ export function TodaysAppointments({ appointments }: TodaysAppointmentsProps) {
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-bold text-slate-800 text-[15px] flex items-center gap-2">
+        <h3 className="text-black text-[15px] flex items-center gap-2">
           <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
           Today's schedule
         </h3>
@@ -92,7 +92,7 @@ export function LowStockAlerts({ items }: LowStockAlertsProps) {
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-bold text-slate-800 text-[15px] flex items-center gap-2">
+        <h3 className="text-black text-[15px] flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
           Low Stock Alerts
         </h3>
@@ -129,7 +129,7 @@ export function TopServices({ services }: TopServicesProps) {
   return (
     <div className="bg-white rounded-xl p-5 border border-slate-200">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-bold text-slate-800 text-[15px] flex items-center gap-2">
+        <h3 className="text-black text-[15px] flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />
           Top Services
         </h3>

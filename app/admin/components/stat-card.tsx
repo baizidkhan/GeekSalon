@@ -36,7 +36,7 @@ export const StatCard = memo(function StatCard({
       className
     )}>
       <div className="flex items-start justify-between mb-4">
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-tight">{title}</h3>
+        <h3 className="text-sm text-black uppercase tracking-tight">{title}</h3>
         <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", iconWrapperClassName)}>
           <Icon className={cn("w-5 h-5", iconClassName)} />
         </div>

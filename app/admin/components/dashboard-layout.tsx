@@ -21,6 +21,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           --border: oklch(0.92 0.01 260);
           --background: oklch(0.975 0.005 258);
           --ring: oklch(0.6 0.155 258.8);
+          --font-sans: 'General Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+        }
+
+        .admin-root, .admin-root * {
+          font-family: 'General Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
         }
 
         /* 2. Fix Input Focus Rings in Admin */
@@ -144,7 +149,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <main className="flex-1 overflow-auto">{children}</main>
+          <main className="flex-1 overflow-auto bg-[#FAFAFA]">{children}</main>
         </div>
       </div>
     </>

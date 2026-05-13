@@ -250,7 +250,7 @@ export function DashboardPage() {
 
         <div className="bg-white rounded-xl p-5 border border-slate-200">
           <div className="flex justify-between items-center mb-5">
-            <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-2">
+            <h3 className="text-[15px] text-black flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500 shrink-0" />
               Employee On Duty ({attendanceLoading ? "…" : attendanceRecords.length})
             </h3>
