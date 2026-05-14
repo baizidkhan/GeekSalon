@@ -38,6 +38,9 @@ const navigation = [
     title: "CORE OPERATIONS",
     items: [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard, permission: "dashboard" },
+      { name: "Manager Dashboard", href: "/admin/manager", icon: UserCog, permission: "manager-dashboard" },
+      { name: "Staff Dashboard", href: "/admin/staff", icon: UserCheck, permission: "staff-dashboard" },
+      { name: "Stylist Dashboard", href: "/admin/stylist", icon: Scissors, permission: "stylist-dashboard" },
       { name: "Appointments", href: "/admin/appointments", icon: Calendar, permission: "appointments" },
       { name: "Clients", href: "/admin/clients", icon: Users, permission: "clients" },
       { name: "Billing / POS", href: "/admin/billing", icon: CreditCard, permission: "invoice" },
@@ -201,7 +204,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         ) : (
           navigation.map((section) => {
             const visibleItems = section.items.filter(item =>
-              hasPermission(user, item.permission)
+              hasPermission(user, item.permission) &&
+              (item.href !== "/admin/stylist" || user?.role === "stylist") &&
+              (item.href !== "/admin/staff" || user?.role === "staff") &&
+              (item.href !== "/admin/manager" || user?.role === "storeManager") &&
+              (item.href !== "/admin" || !["storeManager", "staff", "stylist"].includes(user?.role || ""))
             )
 
             if (visibleItems.length === 0) return null

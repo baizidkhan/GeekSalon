@@ -47,7 +47,7 @@ function getStatusDot(status: string) {
 
 export function TodaysAppointments({ appointments }: TodaysAppointmentsProps) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200">
+    <div className="bg-white rounded-[8px] p-5 border border-[#f2f2f2]">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-black text-[15px] flex items-center gap-2">
           <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
@@ -90,7 +90,7 @@ export function TodaysAppointments({ appointments }: TodaysAppointmentsProps) {
 
 export function LowStockAlerts({ items }: LowStockAlertsProps) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200">
+    <div className="bg-white rounded-[8px] p-5 border border-[#f2f2f2]">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-black text-[15px] flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
@@ -127,7 +127,7 @@ export function TopServices({ services }: TopServicesProps) {
   const maxCount = services.length > 0 ? Math.max(...services.map((s) => s.count)) : 1
 
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200">
+    <div className="bg-white rounded-[8px] p-5 border border-[#f2f2f2]">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-black text-[15px] flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />

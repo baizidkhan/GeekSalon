@@ -52,6 +52,7 @@ import { useRouter } from "next/navigation"
 import { hasPermission } from "@admin/lib/auth-utils"
 
 const AVAILABLE_PERMISSIONS = [
+    { id: "stylist-dashboard", label: "Stylist Dashboard" },
     { id: "dashboard", label: "Dashboard" },
     { id: "clients", label: "Clients" },
     { id: "appointments", label: "Appointments" },
@@ -228,6 +229,8 @@ export default function EmployeeAccountPage() {
                 return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Manager</Badge>
             case "staff":
                 return <Badge className="bg-green-100 text-green-700 border-green-200">Staff</Badge>
+            case "stylist":
+                return <Badge className="bg-pink-100 text-pink-700 border-pink-200">Stylist</Badge>
             case "custom":
                 return <Badge className="bg-purple-100 text-purple-700 border-purple-200">Custom</Badge>
             default:
@@ -358,7 +361,8 @@ export default function EmployeeAccountPage() {
                                         <SelectContent>
                                             <SelectItem value="admin">Admin (Full Access)</SelectItem>
                                             <SelectItem value="storeManager">Store Manager</SelectItem>
-                                            <SelectItem value="staff">Staff (Default)</SelectItem>
+                                            <SelectItem value="staff">Staff</SelectItem>
+                                            <SelectItem value="stylist">Stylist (Default)</SelectItem>
                                             <SelectItem value="custom">Custom (Select Permissions)</SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -439,6 +443,8 @@ export default function EmployeeAccountPage() {
                                                     <span className="text-xs text-muted-foreground italic">Admin</span>
                                                 ) : user.role === 'storeManager' ? (
                                                     <span className="text-xs text-muted-foreground italic">Store Manager</span>
+                                                ) : user.role === 'stylist' ? (
+                                                    <span className="text-xs text-muted-foreground italic">Stylist</span>
                                                 ) : user.role === 'staff' ? (
                                                     <span className="text-xs text-muted-foreground italic">Staff</span>
                                                 ) : user.permissions?.length > 0 ? (
@@ -506,6 +512,7 @@ export default function EmployeeAccountPage() {
                                         <SelectItem value="admin">Admin</SelectItem>
                                         <SelectItem value="storeManager">Store Manager</SelectItem>
                                         <SelectItem value="staff">Staff</SelectItem>
+                                        <SelectItem value="stylist">Stylist</SelectItem>
                                         <SelectItem value="custom">Custom</SelectItem>
                                     </SelectContent>
                                 </Select>

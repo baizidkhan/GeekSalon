@@ -65,7 +65,7 @@ export function RevenueChart({ weeklyData, monthlyData, sixMonthData, yearlyData
           : yearlyData
 
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200">
+    <div className="bg-white rounded-[8px] p-5 border border-[#f2f2f2]">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-[15px] text-black flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-blue-500 shrink-0" />
@@ -127,7 +127,7 @@ export function AppointmentChart({ weeklyData, monthlyData }: AppointmentChartPr
   const data = filter === "weekly" ? weeklyData : monthlyData
 
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-200">
+    <div className="bg-white rounded-[8px] p-5 border border-[#f2f2f2]">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-[15px] text-black flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-blue-500 shrink-0" />

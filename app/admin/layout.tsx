@@ -16,6 +16,8 @@ export default async function AdminLayout({
 
   return (
     <div className="admin-root min-h-screen font-admin">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link href="https://api.fontshare.com/v2/css?f[]=general-sans@200,300,400,500,600,700&display=swap" rel="stylesheet" />
       <AuthGuard initialUser={initialUser}>
         <BiometricProvider>

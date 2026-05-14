@@ -40,7 +40,15 @@ function LoginForm() {
                 if (user?.phone) localStorage.setItem("userPhone", user.phone)
                 window.location.href = "/"
             } else {
-                window.location.href = "/admin"
+                if (user?.role === "stylist") {
+                    window.location.href = "/admin/stylist"
+                } else if (user?.role === "storeManager") {
+                    window.location.href = "/admin/manager"
+                } else if (user?.role === "staff") {
+                    window.location.href = "/admin/staff"
+                } else {
+                    window.location.href = "/admin"
+                }
             }
         } catch (err: any) {
             setError(err.response?.data?.message || "Invalid email or password. Please try again.")

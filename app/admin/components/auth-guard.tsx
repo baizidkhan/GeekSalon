@@ -9,6 +9,9 @@ import { Sparkles } from "lucide-react"
 const pathPermissionMap: Record<string, string> = {
   "/admin": "dashboard",
   "/admin/dashboard": "dashboard",
+  "/admin/manager": "manager-dashboard",
+  "/admin/staff": "staff-dashboard",
+  "/admin/stylist": "stylist-dashboard",
   "/admin/appointments": "appointments",
   "/admin/clients": "clients",
   "/admin/billing": "invoice",
@@ -23,6 +26,10 @@ const pathPermissionMap: Record<string, string> = {
   "/admin/leave-request": "leave-request",
   "/admin/manage-payrolls": "hr-payroll",
   "/admin/manage-packages": "makeover-packages",
+  "/admin/testimonials": "testimonial",
+  "/admin/roles-permissions": "user-management",
+  "/admin/update-password": "update-password",
+  "/admin/ip-config": "settings",
   "/admin/settings": "settings",
 }
 
@@ -45,16 +52,49 @@ export function AuthGuard({
   const permission = pathPermissionMap[pathname]
 
   useEffect(() => {
+    if (!mounted || loading || !user) return
+
+    if (pathname === "/admin" || pathname === "/admin/dashboard") {
+      if (user.role === "storeManager") {
+        router.replace("/admin/manager")
+        return
+      }
+
+      if (user.role === "staff") {
+        router.replace("/admin/staff")
+        return
+      }
+
+      if (user.role === "stylist") {
+        router.replace("/admin/stylist")
+        return
+      }
+    }
+  }, [user, loading, pathname, router, mounted])
+
+  useEffect(() => {
     if (mounted && !loading && user && permission && !hasPermission(user, permission)) {
       if (pathname === "/admin" || pathname === "/admin/dashboard") {
         const allowedModules = [
+          { path: "/admin/manager", perm: "manager-dashboard" },
+          { path: "/admin/staff", perm: "staff-dashboard" },
+          { path: "/admin/stylist", perm: "stylist-dashboard" },
           { path: "/admin/appointments", perm: "appointments" },
           { path: "/admin/clients", perm: "clients" },
           { path: "/admin/billing", perm: "invoice" },
           { path: "/admin/services", perm: "service" },
           { path: "/admin/employees", perm: "employee" },
           { path: "/admin/inventory", perm: "inventory" },
+          { path: "/admin/reports", perm: "reports" },
+          { path: "/admin/staff-reports", perm: "reports" },
           { path: "/admin/attendance", perm: "attendance" },
+          { path: "/admin/leave-request", perm: "leave-request" },
+          { path: "/admin/manage-payrolls", perm: "hr-payroll" },
+          { path: "/admin/manage-packages", perm: "makeover-packages" },
+          { path: "/admin/testimonials", perm: "testimonial" },
+          { path: "/admin/roles-permissions", perm: "user-management" },
+          { path: "/admin/settings", perm: "settings" },
+          { path: "/admin/update-password", perm: "update-password" },
         ]
         const firstAllowed = allowedModules.find(m => hasPermission(user, m.perm))
         if (firstAllowed) {
@@ -126,11 +166,6 @@ export function AuthGuard({
 
 
   if (permission && !hasPermission(user, permission)) {
-    // If landing on dashboard but no permission, return null while useEffect handles redirect
-    if (pathname === "/admin" || pathname === "/admin/dashboard") {
-      return null
-    }
-
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center bg-background text-foreground">
         <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6">

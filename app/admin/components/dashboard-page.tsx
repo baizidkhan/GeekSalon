@@ -5,7 +5,6 @@ import { StatCard } from "@admin/components/stat-card"
 import { RevenueChart, AppointmentChart } from "@admin/components/dashboard-charts"
 import {
   TodaysAppointments,
-  LowStockAlerts,
   TopServices,
 } from "@admin/components/dashboard-widgets"
 import {
@@ -13,7 +12,8 @@ import {
   Wallet,
   Users,
   AlertTriangle,
-  Plus
+  Plus,
+  Bell
 } from "lucide-react"
 import { formatTime, getTodayAttendance, type AttendanceRecord } from "@admin/api/attendance/attendance"
 import { getDashboardStats } from "@admin/api/dashboard/dashboard"
@@ -126,21 +126,25 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-[#fafafa] p-6 lg:p-8 font-sans">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-[28px] font-bold text-blue-500 mb-1">Dashboard</h1>
-          <p className="text-[13px] text-slate-500">{today} - Here's your salon today</p>
+      <div className="bg-white border border-[#f2f2f2] rounded-[8px] px-8 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-4">
+        <div className="leading-[normal]">
+          <h1 className="text-[32px] font-bold text-[#0076E9] mb-1">Dashboard</h1>
+          <p className="text-[14px] text-[#666666]">{today} - Here&apos;s your salon today</p>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/admin/appointments?new=true"
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-[13px] font-medium transition-colors"
+            className="flex items-center gap-2 bg-[#0076E9] hover:bg-[#0067cd] text-white px-4 py-2 rounded-[4px] text-[16px] font-medium transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Appointment
           </Link>
+          <div className="relative h-14 w-14 rounded-full border border-[#f2f2f2] bg-[#fafafa] flex items-center justify-center">
+            <Bell className="w-5 h-5 text-slate-600" />
+            <span className="absolute top-3 right-4 w-2 h-2 rounded-full bg-red-500" />
+          </div>
         </div>
       </div>
 
@@ -151,13 +155,12 @@ export function DashboardPage() {
       )}
 
       {/* Top Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard
           title="Revenue This week"
           value={loading || !stats ? "—" : `TK. ${formatMoney(stats.weeklyRevenue ?? 0)}`}
           icon={Wallet}
           iconWrapperClassName="bg-blue-50 text-blue-500"
-          className="border-t-4 border-t-transparent hover:border-t-blue-500 transition-all"
           subtitle={
             <div className="text-slate-400">
               Last Week TK. {formatMoney(stats?.lastWeekRevenue ?? 0)}
@@ -173,7 +176,7 @@ export function DashboardPage() {
           value={loading || !stats ? "—" : (stats.todaysAppointmentsCount ?? 0)}
           icon={Calendar}
           iconWrapperClassName="bg-emerald-50 text-emerald-500"
-          className="border-t-4 border-t-transparent hover:border-t-emerald-500 transition-all"
+          className="border border-[#f2f2f2]"
           subtitle={
             <div className="text-slate-400 flex flex-wrap gap-x-2.5 gap-y-1">
               <span>Online: {onlineCount}</span>
@@ -191,7 +194,7 @@ export function DashboardPage() {
           value={loading || !stats ? "—" : clientValue}
           icon={Users}
           iconWrapperClassName="bg-amber-50 text-amber-500"
-          className="border-t-4 border-t-transparent hover:border-t-amber-500 transition-all"
+          className="border border-[#f2f2f2]"
           subtitle={
             <div className="text-slate-400">
               Last Week {stats?.totalClientsLastWeek ?? '0'}
@@ -207,7 +210,7 @@ export function DashboardPage() {
           value={loading || !stats ? "—" : (stats.lowStockItemsCount ?? 0)}
           icon={AlertTriangle}
           iconWrapperClassName="bg-purple-50 text-purple-500"
-          className="border-t-4 border-t-transparent hover:border-t-purple-500 transition-all"
+          className="border border-[#f2f2f2]"
           subtitle={stats?.lowStockItemsCount ? `${stats.lowStockItemsCount} items low in stock` : "Inventory is healthy"}
           bottomContent={
             <div className="flex flex-wrap gap-2 mt-2">
@@ -226,7 +229,7 @@ export function DashboardPage() {
       </div>
 
       {/* Middle Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 mb-6">
         <RevenueChart
           weeklyData={stats?.revenueTrendWeekly ?? []}
           monthlyData={stats?.revenueTrendMonthly ?? []}
@@ -241,14 +244,13 @@ export function DashboardPage() {
       </div>
 
       {/* Bottom Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] xl:grid-cols-[1.5fr_1fr_1fr_1fr] gap-5 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr] gap-6 mb-6">
         <div className="xl:col-span-1">
           <TodaysAppointments appointments={stats?.todaysAppointments ?? []} />
         </div>
         <TopServices services={stats?.topServices ?? []} />
-        <LowStockAlerts items={stats?.lowStockItems ?? []} />
 
-        <div className="bg-white rounded-xl p-5 border border-slate-200">
+        <div className="bg-white rounded-[8px] p-5 border border-[#f2f2f2]">
           <div className="flex justify-between items-center mb-5">
             <h3 className="text-[15px] text-black flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500 shrink-0" />

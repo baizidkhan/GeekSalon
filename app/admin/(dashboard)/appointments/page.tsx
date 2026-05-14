@@ -478,6 +478,8 @@ type NewAppointmentField = "phone" | "client" | "services" | "employee" | "date"
 
 export default function AppointmentsPage() {
   const { user, loading: authLoading } = useAuth()
+  const isStylistUser = user?.role === "stylist"
+  const stylistName = (user?.employeeName ?? "").trim()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -579,7 +581,11 @@ export default function AppointmentsPage() {
   const fetchAppointments = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await getAppointments({ page: 1, limit: 1000 })
+      const res = await getAppointments({
+        page: 1,
+        limit: 1000,
+        ...(isStylistUser && stylistName ? { staff: stylistName } : {}),
+      })
       const list: AppointmentRecord[] = res?.data ?? res ?? []
       setAppointments(list.map(toUIAppointment))
     } catch (err) {
@@ -587,7 +593,7 @@ export default function AppointmentsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isStylistUser, stylistName])
 
   const fetchClients = useCallback(async () => {
     const res = await getClients(1, 1000)
@@ -624,7 +630,15 @@ export default function AppointmentsPage() {
       .catch(console.error)
   }, [fetchAppointments, fetchClients])
 
+  useEffect(() => {
+    if (!isStylistUser || !stylistName) return
+    setNewAppointment((current) =>
+      current.employee === stylistName ? current : { ...current, employee: stylistName },
+    )
+  }, [isStylistUser, stylistName])
+
   const filteredAppointments = appointments.filter((apt) => {
+    const matchesStylistOwnership = !isStylistUser || (stylistName && apt.employee?.toLowerCase() === stylistName.toLowerCase())
     const matchesName = apt.client.toLowerCase().includes(debouncedSearchName.toLowerCase())
     const matchesPhone = apt.phone.includes(debouncedSearchPhone)
     const matchesSource = sourceFilter === "All Sources" || apt.source === sourceFilter
@@ -673,7 +687,7 @@ export default function AppointmentsPage() {
       }
     }
 
-    return matchesName && matchesPhone && matchesSource && matchesStatus && matchesTime
+    return matchesStylistOwnership && matchesName && matchesPhone && matchesSource && matchesStatus && matchesTime
   })
 
   useEffect(() => {
@@ -732,7 +746,7 @@ export default function AppointmentsPage() {
         phoneNumber: normalizePhone(newAppointment.phone),
         date: newAppointment.date,
         time: newAppointment.time,
-        staff: newAppointment.employee || undefined,
+        staff: isStylistUser ? stylistName || undefined : newAppointment.employee || undefined,
         services: !newAppointment.isPackage && newAppointment.services.length > 0 ? newAppointment.services : undefined,
         isPackage: newAppointment.isPackage,
         packageName: newAppointment.isPackage ? newAppointment.packageName : undefined,
@@ -760,7 +774,7 @@ export default function AppointmentsPage() {
   const handleStatusChange = async (appointment: Appointment, newStatus: AppointmentStatus) => {
     if (newStatus === "Confirmed" && (!appointment.employee?.trim() || appointment.employee.trim().toLowerCase() === "any")) {
       setPendingConfirmAppointment(appointment)
-      setAssignStylistSelected("")
+      setAssignStylistSelected(isStylistUser ? stylistName : "")
       setAssignStylistOpen(true)
       return
     }
@@ -784,12 +798,13 @@ export default function AppointmentsPage() {
   }
 
   const handleAssignAndConfirm = async () => {
-    if (!pendingConfirmAppointment || !assignStylistSelected) return
+    const selectedStylist = isStylistUser ? stylistName : assignStylistSelected
+    if (!pendingConfirmAppointment || !selectedStylist) return
     try {
       setIsSubmitting(true)
       await updateAppointment(pendingConfirmAppointment.id, {
         status: "Confirmed",
-        staff: assignStylistSelected,
+        staff: selectedStylist,
       })
       setAssignStylistOpen(false)
       setPendingConfirmAppointment(null)
@@ -815,7 +830,7 @@ export default function AppointmentsPage() {
         clientName: selectedAppointment.client,
         date: selectedAppointment.date,
         time: selectedAppointment.time,
-        staff: selectedAppointment.employee || undefined,
+        staff: isStylistUser ? stylistName || undefined : selectedAppointment.employee || undefined,
         services: !selectedAppointment.isPackage && selectedServices.length > 0 ? selectedServices : undefined,
         isPackage: selectedAppointment.isPackage,
         packageName: selectedAppointment.isPackage ? selectedAppointment.packageName : undefined,
@@ -1112,6 +1127,7 @@ export default function AppointmentsPage() {
                     <Label className="text-[13px] font-semibold tracking-wide">Employee <span className="text-destructive">*</span></Label>
                     <Select
                       value={newAppointment.employee}
+                      disabled={isStylistUser}
                       onValueChange={(value) => {
                         setNewAppointment({ ...newAppointment, employee: value })
                         if (value.trim()) clearNewAppointmentError("employee")
@@ -1688,6 +1704,7 @@ export default function AppointmentsPage() {
                 <Label className="text-[13px] font-semibold tracking-wide">Employee</Label>
                 <Select
                   value={selectedAppointment.employee}
+                  disabled={isStylistUser}
                   onValueChange={(value) =>
                     setSelectedAppointment({ ...selectedAppointment, employee: value })
                   }
@@ -1828,7 +1845,7 @@ export default function AppointmentsPage() {
                 <Label htmlFor="assign-stylist-select">
                   Stylist <span className="text-destructive">*</span>
                 </Label>
-                <Select value={assignStylistSelected} onValueChange={setAssignStylistSelected}>
+                <Select value={assignStylistSelected} onValueChange={setAssignStylistSelected} disabled={isStylistUser}>
                   <SelectTrigger id="assign-stylist-select" className="w-full">
                     <SelectValue placeholder="Choose a stylist…" />
                   </SelectTrigger>
@@ -1849,7 +1866,7 @@ export default function AppointmentsPage() {
             </Button>
             <Button
               onClick={handleAssignAndConfirm}
-              disabled={!assignStylistSelected || isSubmitting}
+              disabled={!(isStylistUser ? stylistName : assignStylistSelected) || isSubmitting}
             >
               {isSubmitting ? "Confirming…" : "Confirm Appointment"}
             </Button>
