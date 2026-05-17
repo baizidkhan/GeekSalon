@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useBooking } from "@/context/BookingContext";
+import { ArrowRight } from "lucide-react";
 
 export function HeroSection() {
     const { openBooking } = useBooking()
@@ -20,43 +21,43 @@ export function HeroSection() {
 
                 {/* Headline — exactly 2 lines */}
                 <h1
-                    className="mx-auto max-w-6xl text-[2.6rem] font-semibold leading-[1.1] sm:text-5xl lg:text-[4rem]"
+                    className="mx-auto max-w-6xl text-[2.6rem] font-semibold leading-[1.1] sm:text-[4rem] lg:text-[5.5rem]"
                     style={{ fontFamily: 'Playfair Display, serif' }}
                 >
-                    <span className="block">The Art of Beauty,</span>
-                    <span className="block font-normal italic text-white/70">Redefined</span>
+                    <span className="block">The Art Of Beauty,</span>
+                    <span className="block font-normal italic text-[#d4af37]">Redefined</span>
                 </h1>
 
                 {/* Description */}
                 <p
-                    className="mx-auto mt-7 uppercase tracking-[0.2em]"
+                    className="mx-auto mt-6"
                     style={{
-                        fontFamily: 'Inter, sans-serif',
-                        fontSize: '16px',
+                        fontFamily: 'var(--font-inter), sans-serif',
+                        fontSize: '15px',
                         fontWeight: 400,
                         lineHeight: '24px',
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        color: 'rgba(255, 255, 255, 0.85)',
                     }}
                 >
-                    Luxury experiences crafted for modern elegance
+                    Luxury experiences crafted for modern elegance.
                 </p>
 
                 {/* Buttons */}
-                <div className="mt-11 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
                     <button
                         type="button"
                         onClick={() => openBooking()}
-                        className="inline-flex items-center justify-center border border-white bg-white px-10 py-3.5 text-[11px] font-medium uppercase tracking-[0.3em] text-slate-900 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-transparent hover:text-white hover:shadow-[0_14px_36px_rgba(0,0,0,0.3)]"
-                        style={{ fontFamily: 'Inter, sans-serif' }}
+                        className="inline-flex items-center justify-center bg-white px-10 py-3.5 text-[11px] font-bold uppercase tracking-widest text-black transition-all duration-300 hover:bg-gray-200"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                     >
-                        Book an Appointment
+                        BOOK AN APPOINTMENT
                     </button>
                     <Link
                         href="/services"
-                        className="inline-flex items-center justify-center border border-white/40 bg-transparent px-10 py-3.5 text-[11px] font-medium uppercase tracking-[0.3em] text-white/85 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-white hover:bg-white/8 hover:text-white hover:shadow-[0_14px_36px_rgba(0,0,0,0.3)]"
-                        style={{ fontFamily: 'Inter, sans-serif' }}
+                        className="inline-flex items-center justify-center gap-2 border border-white bg-transparent px-8 py-3.5 text-[11px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white/10"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                     >
-                        Explore Services
+                        EXPLORE OUR SERVICES <ArrowRight size={15} strokeWidth={2} />
                     </Link>
                 </div>
 
