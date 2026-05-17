@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { Sidebar } from "./sidebar"
 import { UnlinkedFingerprintModal } from "./unlinked-fingerprint-modal"
+import { NotificationProvider } from "@admin/context/notification-context"
+import { NotificationBell } from "./notification-bell"
 import { Menu, Sparkles } from "lucide-react"
 import { useBusiness } from "@/context/BusinessContext"
 
@@ -139,7 +141,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-1">
               <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-sidebar-primary">
                 <Sparkles className="w-3.5 h-3.5 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
               </div>
@@ -147,6 +149,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 {businessName}
               </span>
             </div>
+            <NotificationBell />
           </div>
 
           <main className="flex-1 overflow-auto bg-[#FAFAFA]">{children}</main>
@@ -157,5 +160,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 }
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <DashboardLayoutInner>{children}</DashboardLayoutInner>
+  return (
+    <NotificationProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </NotificationProvider>
+  )
 }

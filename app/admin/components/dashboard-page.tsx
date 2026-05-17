@@ -13,7 +13,6 @@ import {
   Users,
   AlertTriangle,
   Plus,
-  Bell
 } from "lucide-react"
 import { formatTime, getTodayAttendance, type AttendanceRecord } from "@admin/api/attendance/attendance"
 import { getDashboardStats } from "@admin/api/dashboard/dashboard"
@@ -21,6 +20,7 @@ import { useAuth } from "@admin/hooks/use-auth"
 import { CACHE, markStale } from "@admin/lib/cache"
 import { formatMoney } from "@/lib/utils"
 import { useBiometricSocket, type AttendanceUpdatedPayload } from "@/hooks/use-biometric-socket"
+import { NotificationBell } from "./notification-bell"
 import Link from "next/link"
 
 export function DashboardPage() {
@@ -141,10 +141,7 @@ export function DashboardPage() {
             <Plus className="w-4 h-4" />
             New Appointment
           </Link>
-          <div className="relative h-14 w-14 rounded-full border border-[#f2f2f2] bg-[#fafafa] flex items-center justify-center">
-            <Bell className="w-5 h-5 text-slate-600" />
-            <span className="absolute top-3 right-4 w-2 h-2 rounded-full bg-red-500" />
-          </div>
+          <NotificationBell />
         </div>
       </div>
 

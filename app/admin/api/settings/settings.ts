@@ -86,3 +86,17 @@ export async function upsertAppreciateExcellence(formData: FormData) {
   })
   return data
 }
+
+// Begin Your Journey
+export async function getBeginYourJourney() {
+  const { data } = await api.get('/begin-your-journey', { cache: false })
+  return data
+}
+
+export async function upsertBeginYourJourney(formData: FormData) {
+  const { data } = await api.put('/begin-your-journey', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return data
+}
+

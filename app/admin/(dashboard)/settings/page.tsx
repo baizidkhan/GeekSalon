@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Building2, Clock, CreditCard, Loader2, Image as ImageIcon, Plus, X, Upload, Video, Trash2, Pencil, Sparkles } from "lucide-react"
+import { Building2, Clock, CreditCard, Loader2, Image as ImageIcon, Plus, X, Upload, Video, Trash2, Pencil, Sparkles, Compass } from "lucide-react"
 import { ClockPickerField } from "@/components/ui/clock-picker"
 import {
   getBusinessInfo,
@@ -26,6 +26,8 @@ import {
   updateWhyChooseUsImages,
   getAppreciateExcellence,
   upsertAppreciateExcellence,
+  getBeginYourJourney,
+  upsertBeginYourJourney,
   type BusinessInfo,
   type AppointmentSetting,
   type InvoiceSetting
@@ -69,14 +71,25 @@ export default function SettingsPage() {
     videoUrl?: string;
   }>({ videoFile: null })
 
+  // Begin Your Journey states
+  const [savingJourney, setSavingJourney] = useState(false)
+  const [journeyPreview, setJourneyPreview] = useState<string | null>(null)
+  const [journeyForm, setJourneyForm] = useState<{
+    imageFile: File | null;
+    imageUrl?: string;
+  }>({
+    imageFile: null
+  })
+
   useEffect(() => {
     async function loadSettings() {
-      const [businessResult, appointmentResult, invoiceResult, whyChooseUsResult, appreciationResult] = await Promise.allSettled([
+      const [businessResult, appointmentResult, invoiceResult, whyChooseUsResult, appreciationResult, journeyResult] = await Promise.allSettled([
         getBusinessInfo(),
         getAppointmentSettings(),
         getInvoiceSettings(),
         getWhyChooseUsImages(),
         getAppreciateExcellence(),
+        getBeginYourJourney(),
       ])
       if (businessResult.status === 'fulfilled' && businessResult.value) setBusinessSettings(businessResult.value)
       if (appointmentResult.status === 'fulfilled' && appointmentResult.value) setBookingSettings(appointmentResult.value)
@@ -95,6 +108,15 @@ export default function SettingsPage() {
           videoFile: null,
           videoUrl: appreciationResult.value.videoUrl
         })
+      }
+      if (journeyResult.status === 'fulfilled' && journeyResult.value) {
+        setJourneyForm({
+          imageFile: null,
+          imageUrl: journeyResult.value.imageUrl || undefined,
+        })
+        if (journeyResult.value.imageUrl) {
+          setJourneyPreview(journeyResult.value.imageUrl)
+        }
       }
       setLoading(false)
     }
@@ -237,6 +259,36 @@ export default function SettingsPage() {
     }
   }
 
+  const handleSaveJourney = async () => {
+    if (!journeyForm.imageFile) {
+      toast.error("Please upload an image first")
+      return
+    }
+
+    setSavingJourney(true)
+    try {
+      const formData = new FormData()
+      formData.append('image', journeyForm.imageFile)
+
+      const response = await upsertBeginYourJourney(formData)
+      if (response) {
+        setJourneyForm({
+          imageFile: null,
+          imageUrl: response.imageUrl || undefined,
+        })
+        if (response.imageUrl) {
+          setJourneyPreview(response.imageUrl)
+        }
+        toast.success("Begin Your Journey background image updated successfully")
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to save Begin Your Journey background image")
+    } finally {
+      setSavingJourney(false)
+    }
+  }
+
   return (
     <div className="premium-page p-4 sm:p-6 md:p-8">
       <div className="mb-6">
@@ -246,7 +298,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="grid w-full max-w-3xl grid-cols-2 sm:grid-cols-5">
+        <TabsList className="grid w-full max-w-4xl grid-cols-2 sm:grid-cols-6">
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">Business</span>
@@ -266,6 +318,10 @@ export default function SettingsPage() {
           <TabsTrigger value="appreciation" className="flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             <span className="hidden sm:inline">Excellence</span>
+          </TabsTrigger>
+          <TabsTrigger value="journey" className="flex items-center gap-2">
+            <Compass className="w-4 h-4" />
+            <span className="hidden sm:inline">Journey</span>
           </TabsTrigger>
         </TabsList>
 
@@ -586,6 +642,112 @@ export default function SettingsPage() {
                   <p className="text-xs text-blue-800 leading-relaxed">
                     This section highlights your salon's major achievements. The video will be displayed prominently on your public home page.
                   </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="journey">
+          <div className="bg-card rounded-xl border border-border p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-medium text-foreground">Begin Your Journey Settings</h3>
+                <p className="text-sm text-muted-foreground">Upload or update the background image for the Begin Your Journey section on your home page</p>
+              </div>
+              <Button onClick={handleSaveJourney} disabled={savingJourney || !journeyForm.imageFile}>
+                {savingJourney && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Background Image
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl">
+              {/* Image Preview & Upload */}
+              <div className="space-y-4">
+                <div className="relative group aspect-[16/9] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center overflow-hidden transition-all hover:border-blue-400/50 hover:bg-blue-50/30">
+                  {journeyPreview ? (
+                    <>
+                      <img
+                        src={getMediaUrl(journeyPreview)}
+                        alt="Journey Background Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                        <label className="cursor-pointer bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-lg text-xs font-semibold transition-all">
+                          Change Background Image
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                setJourneyForm({ ...journeyForm, imageFile: file })
+                                const reader = new FileReader()
+                                reader.onloadend = () => {
+                                  setJourneyPreview(reader.result as string)
+                                }
+                                reader.readAsDataURL(file)
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      {journeyForm.imageFile && (
+                        <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                          NEW IMAGE (UNSAVED)
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <label className="cursor-pointer flex flex-col items-center gap-2 p-6 text-center w-full h-full justify-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-1">
+                        <Plus className="w-6 h-6" />
+                      </div>
+                      <span className="text-sm font-medium text-slate-600">Click to upload background image</span>
+                      <span className="text-xs text-slate-400">PNG, JPG or WEBP (Max 10MB)</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            setJourneyForm({ ...journeyForm, imageFile: file })
+                            const reader = new FileReader()
+                            reader.onloadend = () => {
+                              setJourneyPreview(reader.result as string)
+                            }
+                            reader.readAsDataURL(file)
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Informative Help Box */}
+              <div className="space-y-4 flex flex-col justify-center">
+                <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl flex gap-3">
+                  <div className="w-5 h-5 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">i</div>
+                  <div className="text-sm text-blue-800">
+                    <p className="font-semibold mb-1">Background Image Preview</p>
+                    <p className="opacity-90 leading-relaxed">
+                      This background image will be displayed on the <strong>Begin Your Journey</strong> CTA section at the bottom of the home landing page.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5 bg-amber-50 border border-amber-100 rounded-xl flex gap-3">
+                  <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">!</div>
+                  <div className="text-sm text-amber-800">
+                    <p className="font-semibold mb-1">Automatic Clean Up</p>
+                    <p className="opacity-90 leading-relaxed">
+                      When you upload a new image, the previously uploaded background file is automatically deleted from the server to save space.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

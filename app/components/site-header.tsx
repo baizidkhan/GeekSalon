@@ -6,10 +6,9 @@ import { Menu, X, UserCircle, History, LogOut } from "lucide-react"
 import { useBusiness } from "@/context/BusinessContext"
 
 const navItems = [
-    { label: "Home", href: "/" },
-    { label: "Services", href: "/services" },
-    { label: "Packages", href: "/packages" },
-    { label: "Our Team", href: "/our-team" },
+    { label: "SERVICES", href: "/services" },
+    { label: "PACKAGES", href: "/packages" },
+    { label: "ABOUT US", href: "/about" },
 ]
 
 function getUserFromToken(token: string): { name?: string; email?: string; role?: string } | null {
@@ -74,22 +73,17 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
             <div className="relative mx-auto flex h-24 w-full max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-10">
 
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-3 group min-w-[140px]">
-                    <div className="flex h-7 w-7 items-center justify-center border border-white/25 transition-all duration-300 group-hover:border-white/60">
-                        <span className="h-1 w-1 rounded-full bg-white/70 transition-all duration-300 group-hover:bg-white" />
-                    </div>
+                <Link href="/" className="flex items-center group min-w-[140px]">
                     <span
-                        className="transition-colors duration-300 group-hover:text-white/90"
+                        className="transition-colors duration-300 text-white group-hover:text-white/90"
                         style={{
-                            fontFamily: 'Inter, sans-serif',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            letterSpacing: '0.12em',
-                            textTransform: 'uppercase',
-                            color: 'rgba(255,255,255,0.80)',
+                            fontFamily: 'var(--font-josefin), sans-serif',
+                            fontSize: '24px',
+                            fontWeight: 700,
+                            letterSpacing: 'normal'
                         }}
                     >
-                        {businessName}
+                        {businessName || "Makeover"}
                     </span>
                 </Link>
 
@@ -99,8 +93,8 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                         <Link
                             key={item.label}
                             href={item.href}
-                            className="relative text-[10.5px] uppercase tracking-[0.28em] text-white/55 transition-colors duration-200 hover:text-white/90 after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-0 after:bg-white/40 after:transition-all after:duration-300 hover:after:w-full"
-                            style={{ fontFamily: 'Inter, sans-serif' }}
+                            className="relative text-[11px] font-bold uppercase tracking-widest text-white/90 transition-colors duration-200 hover:text-white after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
+                            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                         >
                             {item.label}
                         </Link>
@@ -162,14 +156,22 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                             </div>
                         </>
                     ) : (
-                        <Link
-                            href="/login"
-                            className="group relative inline-flex items-center gap-2 overflow-hidden border border-white/25 px-6 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all duration-300 hover:border-white/50 hover:text-white"
-                            style={{ fontFamily: 'Inter, sans-serif' }}
-                        >
-                            <span className="absolute inset-0 -translate-x-full bg-white/6 transition-transform duration-300 group-hover:translate-x-0" />
-                            <span className="relative">Login</span>
-                        </Link>
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href="/login"
+                                className="group relative inline-flex items-center justify-center border border-white px-7 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white/10"
+                                style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                            >
+                                <span className="relative">LOGIN</span>
+                            </Link>
+                            <Link
+                                href="/contact"
+                                className="group relative inline-flex items-center justify-center bg-white px-7 py-2.5 text-[10px] font-bold uppercase tracking-widest text-black transition-all duration-300 hover:bg-white/90"
+                                style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                            >
+                                <span className="relative">CONTACT US</span>
+                            </Link>
+                        </div>
                     )}
                 </div>
 
