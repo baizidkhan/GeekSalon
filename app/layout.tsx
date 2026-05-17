@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
-import { Manrope, Playfair_Display } from 'next/font/google'
+import { Manrope, Playfair_Display, Inter, Josefin_Sans } from 'next/font/google'
 import './globals.css'
 
 const manrope = Manrope({ subsets: ["latin"] });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const josefin = Josefin_Sans({ subsets: ["latin"], variable: "--font-josefin", display: "swap" });
 
 export const metadata: Metadata = {
   title: 'SalonBOS - Business OS',
@@ -29,7 +31,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={playfair.variable}>
+    <html lang="en" className={`${playfair.variable} ${inter.variable} ${josefin.variable}`}>
       <body className={`${manrope.className} antialiased`}>
         <BusinessProvider>
           <BookingProvider>

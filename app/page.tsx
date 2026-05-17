@@ -21,7 +21,7 @@ export default async function Home() {
             <div
                 className="relative overflow-hidden"
                 style={{
-                    backgroundImage: "url('/hero-bg.jpg')",
+                    backgroundImage: "url('/BannerImage.png')",
                     backgroundSize: 'cover',
                     backgroundPosition: 'center top',
                     backgroundRepeat: 'no-repeat',
