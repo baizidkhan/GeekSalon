@@ -165,7 +165,7 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                                 <span className="relative">LOGIN</span>
                             </Link>
                             <Link
-                                href="/contact"
+                                href="/"
                                 className="group relative inline-flex items-center justify-center bg-white px-7 py-2.5 text-[10px] font-bold uppercase tracking-widest text-black transition-all duration-300 hover:bg-white/90"
                                 style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                             >
