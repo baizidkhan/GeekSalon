@@ -21,6 +21,16 @@ function getUserFromToken(token: string): { name?: string; email?: string; role?
     }
 }
 
+function getDashboardLink(role?: string): { label: string; href: string } | null {
+    if (!role || role === 'customer') return null
+
+    if (role === 'stylist') return { label: 'Stylist Dashboard', href: '/admin/stylist' }
+    if (role === 'storeManager') return { label: 'Manager Dashboard', href: '/admin/manager' }
+    if (role === 'staff') return { label: 'Staff Dashboard', href: '/admin/staff' }
+
+    return { label: 'Admin Dashboard', href: '/admin' }
+}
+
 export function SiteHeader({ solid = false }: { solid?: boolean }) {
     const { businessName } = useBusiness()
     const [mobileOpen, setMobileOpen] = useState(false)
@@ -51,6 +61,7 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
     }
 
     const isCustomer = !user?.role || user.role === 'customer'
+    const dashboardLink = getDashboardLink(user?.role)
 
     return (
         <header
@@ -93,45 +104,57 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                 {/* Desktop CTA */}
                 <div className="hidden md:flex min-w-[140px] justify-end items-center gap-4">
                     {user ? (
-                        <div className="relative" ref={dropdownRef}>
-                            <button
-                                onClick={() => setDropdownOpen((o) => !o)}
-                                className="flex items-center justify-center w-9 h-9 rounded-full border border-white/25 text-white/65 hover:border-white/50 hover:text-white transition-all duration-200"
-                                aria-label="User menu"
-                            >
-                                <UserCircle size={20} strokeWidth={1.5} />
-                            </button>
-                            {dropdownOpen && (
-                                <div className="absolute right-0 top-12 w-56 bg-[#111] border border-white/12 shadow-2xl z-50">
-                                    {/* User info */}
-                                    <div className="px-4 py-3 border-b border-white/10">
-                                        <p className="text-[11px] text-white/90 font-medium truncate">{user.name || 'Guest'}</p>
-                                        <p className="text-[10px] text-white/40 truncate mt-0.5">{user.email}</p>
-                                    </div>
-                                    {/* History — only for customers */}
-                                    {isCustomer && (
-                                        <Link
-                                            href="/customer-dashboard"
-                                            onClick={() => setDropdownOpen(false)}
-                                            className="flex items-center gap-2.5 px-4 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55 hover:text-white hover:bg-white/5 transition-colors"
+                        <>
+                            {dashboardLink && (
+                                <Link
+                                    href={dashboardLink.href}
+                                    className="inline-flex items-center gap-2 border border-white/25 px-4 py-2 text-[10px] uppercase tracking-[0.22em] text-white/65 transition-all hover:border-white/50 hover:text-white"
+                                    style={{ fontFamily: 'Inter, sans-serif' }}
+                                >
+                                    {dashboardLink.label}
+                                </Link>
+                            )}
+
+                            <div className="relative" ref={dropdownRef}>
+                                <button
+                                    onClick={() => setDropdownOpen((o) => !o)}
+                                    className="flex items-center justify-center w-9 h-9 rounded-full border border-white/25 text-white/65 hover:border-white/50 hover:text-white transition-all duration-200"
+                                    aria-label="User menu"
+                                >
+                                    <UserCircle size={20} strokeWidth={1.5} />
+                                </button>
+                                {dropdownOpen && (
+                                    <div className="absolute right-0 top-12 w-56 bg-[#111] border border-white/12 shadow-2xl z-50">
+                                        {/* User info */}
+                                        <div className="px-4 py-3 border-b border-white/10">
+                                            <p className="text-[11px] text-white/90 font-medium truncate">{user.name || 'Guest'}</p>
+                                            <p className="text-[10px] text-white/40 truncate mt-0.5">{user.email}</p>
+                                        </div>
+                                        {/* History — only for customers */}
+                                        {isCustomer && (
+                                            <Link
+                                                href="/customer-dashboard"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center gap-2.5 px-4 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55 hover:text-white hover:bg-white/5 transition-colors"
+                                                style={{ fontFamily: 'Inter, sans-serif' }}
+                                            >
+                                                <History size={13} strokeWidth={1.5} />
+                                                History
+                                            </Link>
+                                        )}
+                                        {/* Sign out */}
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/40 hover:text-white hover:bg-white/5 transition-colors border-t border-white/10"
                                             style={{ fontFamily: 'Inter, sans-serif' }}
                                         >
-                                            <History size={13} strokeWidth={1.5} />
-                                            History
-                                        </Link>
-                                    )}
-                                    {/* Sign out */}
-                                    <button
-                                        onClick={handleLogout}
-                                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/40 hover:text-white hover:bg-white/5 transition-colors border-t border-white/10"
-                                        style={{ fontFamily: 'Inter, sans-serif' }}
-                                    >
-                                        <LogOut size={13} strokeWidth={1.5} />
-                                        Sign out
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                                            <LogOut size={13} strokeWidth={1.5} />
+                                            Sign out
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </>
                     ) : (
                         <div className="flex items-center gap-4">
                             <Link
@@ -197,6 +220,16 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                                         >
                                             <History size={13} strokeWidth={1.5} />
                                             History
+                                        </Link>
+                                    )}
+                                    {dashboardLink && (
+                                        <Link
+                                            href={dashboardLink.href}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="inline-flex items-center gap-2 border border-white/25 px-5 py-2.5 text-[10px] uppercase tracking-[0.25em] text-white/65 transition-all hover:border-white/50 hover:text-white w-fit"
+                                            style={{ fontFamily: 'Inter, sans-serif' }}
+                                        >
+                                            {dashboardLink.label}
                                         </Link>
                                     )}
                                     <button
