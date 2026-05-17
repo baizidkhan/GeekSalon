@@ -67,6 +67,7 @@ const AVAILABLE_PERMISSIONS = [
     { id: "reports", label: "Reports & Analytics" },
     { id: "hr-payroll", label: "Manage Payrolls" },
     { id: "settings", label: "System Settings" },
+    { id: "news-letter-subscriber", label: "Newsletter Subscribers" },
 ]
 
 

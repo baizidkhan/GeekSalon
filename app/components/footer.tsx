@@ -2,6 +2,8 @@
 
 import { useBusiness } from "@/context/BusinessContext"
 import Link from "next/link"
+import { useState } from "react"
+import { toast } from "sonner"
 
 const socials = [
     {
@@ -36,6 +38,38 @@ const socials = [
 
 export function Footer() {
     const { businessInfo } = useBusiness()
+    const [email, setEmail] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
+
+    const handleSubscribe = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!email) return
+
+        setIsLoading(true)
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/news-letter-subscriber`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to subscribe")
+            }
+
+            toast.success("Successfully subscribed to our newsletter!")
+            setEmail("")
+        } catch (error: any) {
+            console.error("Newsletter subscription error:", error)
+            toast.error(error.message || "Something went wrong. Please try again.")
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     return (
         <footer className="bg-[#000000] border-t border-white/5">
@@ -136,20 +170,24 @@ export function Footer() {
                             Get monthly beauty insights, salon trends, and real-world experiences from leading salons and beauty experts around the globe.
                         </p>
 
-                        <form className="flex border border-white/20 bg-transparent w-full">
+                        <form onSubmit={handleSubscribe} className="flex border border-white/20 bg-transparent w-full">
                             <input
                                 type="email"
                                 placeholder="Email your mail"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="flex-grow bg-transparent px-4 py-3 text-[12px] text-white placeholder-gray-500 focus:outline-none w-[50%]"
                                 style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                                 required
+                                disabled={isLoading}
                             />
                             <button
                                 type="submit"
-                                className="bg-white px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-black transition-colors duration-300 hover:bg-gray-200"
+                                disabled={isLoading}
+                                className="bg-white px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-black transition-colors duration-300 hover:bg-gray-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                             >
-                                SUBSCRIBE
+                                {isLoading ? "SUBSCRIBING..." : "SUBSCRIBE"}
                             </button>
                         </form>
                     </div>
