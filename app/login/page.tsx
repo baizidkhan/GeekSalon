@@ -3,9 +3,14 @@
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, Scissors } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
+import { Inter, Josefin_Sans, Playfair_Display } from "next/font/google"
 import api from "@admin/api/base"
 import { useBusiness } from "@/context/BusinessContext"
+
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"] })
+const josefin = Josefin_Sans({ subsets: ["latin"], weight: ["600"] })
+const playfair = Playfair_Display({ subsets: ["latin"], weight: ["400", "600"], style: ["normal", "italic"] })
 
 function LoginForm() {
     const { businessName } = useBusiness()
@@ -38,18 +43,8 @@ function LoginForm() {
             if (token) persistToken(token)
             if (user?.isCustomer || user?.role === "customer") {
                 if (user?.phone) localStorage.setItem("userPhone", user.phone)
-                window.location.href = "/"
-            } else {
-                if (user?.role === "stylist") {
-                    window.location.href = "/admin/stylist"
-                } else if (user?.role === "storeManager") {
-                    window.location.href = "/admin/manager"
-                } else if (user?.role === "staff") {
-                    window.location.href = "/admin/staff"
-                } else {
-                    window.location.href = "/admin"
-                }
             }
+            window.location.href = "/"
         } catch (err: any) {
             setError(err.response?.data?.message || "Invalid email or password. Please try again.")
         } finally {
@@ -58,158 +53,148 @@ function LoginForm() {
     }
 
     return (
-        <div className="min-h-screen flex" style={{ fontFamily: "Manrope, Inter, sans-serif" }}>
+        <div className={`${inter.className} min-h-screen bg-black text-white`}>
+            <div className="flex min-h-screen w-full">
+                <div
+                    className="relative hidden overflow-hidden border-r border-[#eccd80]/25 lg:flex lg:w-[56%]"
+                    style={{
+                        backgroundImage: "url('/login-cover.avif')",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                    }}
+                >
+                    <div className="relative flex min-h-screen w-full flex-col justify-between bg-black/56 p-8 xl:p-10">
+                        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_68%_34%,rgba(255,255,255,0.16),transparent_46%)]" />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/52 to-transparent" />
+                        <div className="pointer-events-none absolute inset-y-0 left-0 w-48 bg-gradient-to-r from-black/25 to-transparent" />
 
-            {/* ── Left hero panel ── */}
-            <div
-                className="hidden lg:flex lg:w-[52%] xl:w-[55%] relative flex-col justify-between p-14 overflow-hidden"
-                style={{
-                    backgroundImage: "url('/hero-bg.jpg')",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                }}
-            >
-                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-black/75" />
-
-                {/* Corner brackets */}
-                <div className="pointer-events-none absolute inset-8">
-                    <span className="absolute top-0 left-0 block h-12 w-12 border-l border-t border-white/20" />
-                    <span className="absolute top-0 right-0 block h-12 w-12 border-r border-t border-white/20" />
-                    <span className="absolute bottom-0 left-0 block h-12 w-12 border-l border-b border-white/20" />
-                    <span className="absolute bottom-0 right-0 block h-12 w-12 border-r border-b border-white/20" />
-                </div>
-
-                {/* Logo / brand */}
-                <div className="relative z-10 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/20 ring-1 ring-amber-500/40">
-                        <Scissors className="h-5 w-5 text-amber-400" />
-                    </div>
-                    <span className="text-white/90 font-semibold tracking-wide">{businessName}</span>
-                </div>
-
-                {/* Center quote */}
-                <div className="relative z-10">
-                    <p className="text-[11px] uppercase tracking-[0.3em] text-amber-400/80 mb-4">Welcome back</p>
-                    <h2
-                        className="text-4xl xl:text-5xl font-semibold text-white leading-[1.15] mb-6"
-                        style={{ fontFamily: "var(--font-serif, Georgia, serif)" }}
-                    >
-                        Beauty is an<br />art. Your salon<br />is the canvas.
-                    </h2>
-                    <p className="text-white/50 text-sm leading-relaxed max-w-xs">
-                        Sign in to manage your appointments, clients, and team — all in one place.
-                    </p>
-                </div>
-
-                {/* Footer tagline */}
-                <div className="relative z-10">
-                    <p className="text-[11px] text-white/30 tracking-[0.2em] uppercase">{businessName} &mdash; Salon Management</p>
-                </div>
-            </div>
-
-            {/* ── Right form panel ── */}
-            <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 bg-[#faf9f7]">
-                {/* Mobile logo */}
-                <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15 ring-1 ring-amber-500/30">
-                        <Scissors className="h-6 w-6 text-amber-600" />
-                    </div>
-                    <span className="text-stone-900 font-semibold tracking-wide text-lg">{businessName}</span>
-                </div>
-
-                <div className="w-full max-w-[400px]">
-                    <div className="mb-8">
-                        <h1
-                            className="text-3xl font-semibold text-stone-900 mb-2"
-                            style={{ fontFamily: "var(--font-serif, Georgia, serif)" }}
-                        >
-                            Sign in
-                        </h1>
-                        <p className="text-stone-500 text-sm">Enter your credentials to access your account.</p>
-                    </div>
-
-                    {/* Success banner */}
-                    {registered && (
-                        <div className="mb-6 flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
-                            <span className="flex-shrink-0 h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                                <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
-                                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                            </span>
-                            <p className="text-emerald-700 text-sm font-medium">Account created! Please sign in.</p>
-                        </div>
-                    )}
-
-                    {/* Error banner */}
-                    {error && (
-                        <div className="mb-6 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
-                            <p className="text-red-600 text-sm">{error}</p>
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-stone-700 mb-1.5">
-                                Email address
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                required
-                                autoComplete="email"
-                                className="w-full h-11 rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-900 placeholder:text-stone-400 outline-none transition-all focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
-                            />
+                        <div className="relative z-10">
+                            <p
+                                className={`${josefin.className} text-[32px] font-semibold leading-none text-white`}
+                            >
+                                MakeOver
+                            </p>
                         </div>
 
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-stone-700 mb-1.5">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="password"
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    required
-                                    autoComplete="current-password"
-                                    className="w-full h-11 rounded-xl border border-stone-200 bg-white px-4 pr-11 text-sm text-stone-900 placeholder:text-stone-400 outline-none transition-all focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword((p) => !p)}
-                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
-                                    tabIndex={-1}
-                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                        <div className="relative z-10 flex flex-1 items-center">
+                            <div className="max-w-[620px]">
+                                <h2
+                                    className={`${playfair.className} text-[44px] font-semibold capitalize leading-[1.15] text-white`}
                                 >
-                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                                    Step into your <span className="italic font-normal">signature era.</span>
+                                </h2>
+                                <p className="mt-4 max-w-[560px] text-[16px] leading-relaxed text-white/78">
+                                    Sign in to revisit past looks, continue your beauty journey, and secure your next polished appointment in seconds.
+                                </p>
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full h-11 rounded-xl bg-stone-900 text-white text-sm font-semibold tracking-wide transition-all hover:bg-stone-800 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {loading ? (
-                                <>
-                                    <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                                    Signing in…
-                                </>
-                            ) : "Sign in"}
-                        </button>
-                    </form>
+                        <div className="relative z-10 flex items-end justify-between gap-6">
+                            <div className="flex gap-8 text-white/80">
+                                <div>
+                                    <p className="text-[20px] font-semibold leading-none text-[#eccd80]">12K+</p>
+                                    <p className="mt-1 text-[10px] uppercase tracking-[0.14em]">Sessions Styled</p>
+                                </div>
+                                <div>
+                                    <p className="text-[20px] font-semibold leading-none text-[#eccd80]">98%</p>
+                                    <p className="mt-1 text-[10px] uppercase tracking-[0.14em]">Rebook Rate</p>
+                                </div>
+                            </div>
 
-                    <div className="mt-8 pt-6 border-t border-stone-200 text-center">
-                        <p className="text-stone-500 text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative flex w-full items-center justify-center px-6 py-6 sm:px-6 lg:w-[44%] lg:px-8 xl:px-11">
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(236,205,128,0.12),transparent_45%)]" />
+                    <div className="relative w-full max-w-[480px]">
+                        <div className="mb-5">
+                            <h1
+                                className={`${playfair.className} text-[32px] font-semibold leading-[1.08] text-white sm:text-[36px]`}
+                            >
+                                Sign <span className="italic font-normal">In</span>
+                            </h1>
+                            <p className="mt-1.5 max-w-[460px] text-[13px] leading-relaxed text-white/82">
+                                Sign in to book appointments, track your visit history, and manage your salon experience.
+                            </p>
+                            <div className="mt-3 h-px w-full bg-gradient-to-r from-[#eccd80]/70 via-white/20 to-transparent" />
+                        </div>
+
+                        {registered && (
+                            <div className="mb-6 border border-emerald-300/60 bg-emerald-500/10 px-4 py-3">
+                                <p className="text-sm font-medium text-emerald-200">Account created! Please sign in.</p>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="mb-6 border border-red-400/70 bg-red-500/10 px-4 py-3">
+                                <p className="text-sm text-red-200">{error}</p>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-3.5">
+                            <div className="space-y-2.5">
+                                <label htmlFor="email" className="text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90">
+                                    Email Address <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter email address"
+                                    required
+                                    autoComplete="email"
+                                    className="h-9 w-full border border-[#f2f2f2]/85 bg-transparent px-4 text-[13px] text-white placeholder:text-white/55 outline-none transition-all focus:border-[#eccd80] focus:shadow-[0_0_0_1px_rgba(236,205,128,0.38)]"
+                                />
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <label htmlFor="password" className="text-[13px] font-semibold uppercase tracking-[0.06em] text-white/90">
+                                    Password <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Enter password"
+                                        required
+                                        autoComplete="current-password"
+                                        className="h-9 w-full border border-[#f2f2f2]/85 bg-transparent px-4 pr-11 text-[13px] text-white placeholder:text-white/55 outline-none transition-all focus:border-[#eccd80] focus:shadow-[0_0_0_1px_rgba(236,205,128,0.38)]"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((p) => !p)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/65 transition-colors hover:text-white"
+                                        tabIndex={-1}
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <Link href="/forgot-password" className="text-[13px] text-white/60 underline underline-offset-4 transition-colors hover:text-[#eccd80]">
+                                    Forgot Password?
+                                </Link>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="flex h-9 w-full items-center justify-center bg-white px-8 text-[13px] font-semibold uppercase tracking-[0.1em] text-black transition-all hover:-translate-y-0.5 hover:bg-[#f5f5f5] hover:shadow-[0_24px_50px_-24px_rgba(255,255,255,0.95)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {loading ? "Signing In..." : "Sign In"}
+                            </button>
+                        </form>
+
+                        <p className="mt-5 text-[13px] text-white/92">
                             Don&apos;t have an account?{" "}
-                            <Link href="/register" className="font-semibold text-amber-600 hover:text-amber-700 transition-colors">
-                                Create one
+                            <Link href="/register" className="font-medium text-[#eccd80] underline underline-offset-4 transition-colors hover:text-[#f4dfa9]">
+                                Create Account
                             </Link>
                         </p>
                     </div>
