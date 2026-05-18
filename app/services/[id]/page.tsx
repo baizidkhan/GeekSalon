@@ -65,7 +65,7 @@ export default function ServiceDetailPage() {
     ]
 
     return (
-        <div className="min-h-screen bg-[#0b0b0b] text-white">
+        <div className="min-h-screen bg-[#111] text-white">
             <SiteHeader solid />
 
             {/* Hero Section with Image Background */}
@@ -83,38 +83,37 @@ export default function ServiceDetailPage() {
             </section>
 
             {/* Content Overlay Card */}
-            <main className="relative z-10 -mt-40 px-4 pb-20 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-5xl">
-                    <div className="bg-[#101010] border border-white/10 p-8 md:p-12 shadow-[0_40px_100px_rgba(0,0,0,0.5)]">
-                        <div className="grid gap-10 md:grid-cols-3">
+            <main className="relative z-10 -mt-32 px-4 pb-20 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-4xl">
+                    <div className="bg-[#111] border-none p-10 md:p-14 shadow-2xl">
+                        <div className="grid gap-12 md:grid-cols-[1.5fr_1fr]">
 
                             {/* Left Content */}
-                            <div className="md:col-span-2">
-                                <p className="mb-4 text-[10px] uppercase tracking-[0.5em] text-white/40">
-                                    {service.category} Services
+                            <div>
+                                <p className="mb-4 text-[9px] uppercase tracking-[0.3em] text-[#CDB37F]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                    {service.category} SERVICES
                                 </p>
-                                <h1 className="mb-6 text-4xl font-semibold leading-tight sm:text-5xl" style={{ fontFamily: 'Playfair Display, serif' }}>
+                                <h1 className="mb-6 text-3xl font-semibold leading-tight sm:text-[2.5rem] text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
                                     {service.name}
                                 </h1>
 
                                 {/* Stats/Info */}
-                                <div className="mb-8 flex flex-wrap gap-6 text-[11px] uppercase tracking-widest text-white/60">
-
+                                <div className="mb-8 flex flex-wrap gap-6 text-[9px] uppercase tracking-[0.2em] text-white/50">
                                     <div className="flex items-center gap-2">
-                                        <Clock className="h-3 w-3" />
+                                        <Clock className="h-3 w-3" strokeWidth={1.5} />
                                         <span>{service.duration} mins</span>
                                     </div>
                                 </div>
 
-                                <p className="mb-10 text-sm leading-8 text-white/60 max-w-2xl">
+                                <p className="mb-10 text-[11px] leading-7 text-white/60 max-w-xl" style={{ fontFamily: 'Inter, sans-serif' }}>
                                     {service.description || "Indulge in our signature treatment designed to revitalize your senses and enhance your natural beauty. Our expert artisans use only the finest techniques and products to ensure an unparalleled experience."}
                                 </p>
 
                                 {/* Features Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-2">
                                     {features.map((feature, index) => (
-                                        <div key={index} className="flex items-center gap-3 text-[11px] uppercase tracking-widest text-white/50">
-                                            <CheckCircle2 className="h-4 w-4 text-white/30" />
+                                        <div key={index} className="flex items-center gap-3 text-[10px] uppercase tracking-[0.15em] text-white/70 font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-white/50" strokeWidth={1.5} />
                                             <span>{feature}</span>
                                         </div>
                                     ))}
@@ -122,22 +121,23 @@ export default function ServiceDetailPage() {
                             </div>
 
                             {/* Right Side: Booking/Price */}
-                            <div className="flex flex-col justify-center border-t border-white/10 pt-10 md:border-t-0 md:border-l md:pl-10 md:pt-0">
-                                <div className="text-center">
-                                    <p className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/40">
-                                        Starting From
+                            <div className="flex flex-col justify-center border-t border-white/5 pt-10 md:border-t-0 md:border-l md:border-white/5 md:pl-12 md:pt-0">
+                                <div className="text-center md:text-left">
+                                    <p className="mb-2 text-[8px] uppercase tracking-[0.25em] text-[#CDB37F]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                        STARTING FROM
                                     </p>
-                                    <div className="mb-8 text-4xl font-light" style={{ fontFamily: 'Playfair Display, serif' }}>
-                                        {formatCurrency(service.price)}
+                                    <div className="mb-8 text-3xl font-normal text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
+                                        {formatCurrency(service.price).replace('Tk', '৳')}
                                     </div>
                                     <button
                                         onClick={() => openBooking(service)}
-                                        className="w-full bg-white text-black py-4 text-[11px] uppercase tracking-[0.3em] font-medium transition-all duration-300 hover:bg-stone-200"
+                                        className="w-full bg-white text-black py-3.5 text-[9px] uppercase tracking-[0.25em] font-semibold transition-all duration-300 hover:bg-white/90"
+                                        style={{ fontFamily: 'Inter, sans-serif' }}
                                     >
-                                        Book Now
+                                        BOOK NOW
                                     </button>
-                                    <p className="mt-6 text-[10px] text-white/30 tracking-widest uppercase">
-                                        Free consultation • Flexible scheduling
+                                    <p className="mt-5 text-[8px] text-white/30 tracking-[0.2em] uppercase text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                        FREE CONSULTATION - FLEXIBLE SCHEDULING
                                     </p>
                                 </div>
                             </div>
