@@ -1,5 +1,18 @@
 import api from '../base'
 import { CACHE, consumeStale, markStale } from '@admin/lib/cache'
+import axios from 'axios'
+
+const apiBaseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
+
+export async function uploadPackageImage(file: File): Promise<string> {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await axios.post(`${apiBaseURL}/makeover-packages/upload-image`, form, {
+    withCredentials: true,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data.imageUrl
+}
 
 const TTL = 5 * 60 * 1000 // 5 min
 

@@ -35,6 +35,7 @@ import {
   Check,
   X,
   Loader2,
+  ImagePlus,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -48,6 +49,7 @@ import {
   updatePackage,
   deletePackage,
   bookPackage,
+  uploadPackageImage,
 } from "@admin/api/packages/packages"
 import { toast } from "sonner"
 import { getClientByPhone } from "@admin/api/clients/clients"
@@ -63,6 +65,7 @@ interface Package {
   features: string[]
   position: number
   popular?: boolean
+  imageUrl?: string
 }
 
 export default function ManagePackagesPage() {
@@ -100,6 +103,11 @@ export default function ManagePackagesPage() {
   const [packageToEdit, setPackageToEdit] = useState<Package | null>(null)
   const [packageToDelete, setPackageToDelete] = useState<Package | null>(null)
   const [packageToBook, setPackageToBook] = useState<Package | null>(null)
+
+  const [newImageFile, setNewImageFile] = useState<File | null>(null)
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null)
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
 
   const fetchPackages = async () => {
     try {
@@ -146,6 +154,10 @@ export default function ManagePackagesPage() {
 
     try {
       setSubmitting(true)
+      let imageUrl: string | undefined
+      if (newImageFile) {
+        imageUrl = await uploadPackageImage(newImageFile)
+      }
       await createPackage({
         category: newPackage.category,
         title: newPackage.title,
@@ -154,6 +166,7 @@ export default function ManagePackagesPage() {
         description: newPackage.description,
         features: newPackage.features,
         position: parseInt(newPackage.position) || 0,
+        ...(imageUrl && { imageUrl }),
       })
       toast.success("Package created successfully")
       setNewPackage({
@@ -166,6 +179,8 @@ export default function ManagePackagesPage() {
         newFeature: "",
         position: "0",
       })
+      setNewImageFile(null)
+      setNewImagePreview(null)
       setErrors({})
       setIsAddDialogOpen(false)
       fetchPackages()
@@ -203,7 +218,10 @@ export default function ManagePackagesPage() {
 
     try {
       setSubmitting(true)
-      // Explicitly construct payload with only whitelisted fields for the backend
+      let imageUrl = packageToEdit.imageUrl
+      if (editImageFile) {
+        imageUrl = await uploadPackageImage(editImageFile)
+      }
       const payload = {
         title: packageToEdit.title,
         category: packageToEdit.category,
@@ -212,12 +230,15 @@ export default function ManagePackagesPage() {
         description: packageToEdit.description,
         features: packageToEdit.features,
         position: Number(packageToEdit.position) || 0,
+        imageUrl,
       }
 
       await updatePackage(packageToEdit.id, payload)
       toast.success("Package updated successfully")
       setErrors({})
       setPackageToEdit(null)
+      setEditImageFile(null)
+      setEditImagePreview(null)
       fetchPackages()
     } catch (error: any) {
       toast.error("Failed to update package")
@@ -457,6 +478,45 @@ export default function ManagePackagesPage() {
                     ))}
                   </div>
                 </div>
+                <div className="col-span-2">
+                  <Label>Cover Image <span className="text-muted-foreground text-[10px] font-normal">(shown as hero background on detail page)</span></Label>
+                  <label className="mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors overflow-hidden relative">
+                    {newImagePreview ? (
+                      <>
+                        <img src={newImagePreview} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <span className="text-white text-xs font-medium">Change Image</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <ImagePlus className="w-7 h-7" />
+                        <span className="text-xs">Click to upload image</span>
+                        <span className="text-[10px]">JPG, PNG or WebP · max 5 MB</span>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setNewImageFile(file)
+                        setNewImagePreview(URL.createObjectURL(file))
+                      }}
+                    />
+                  </label>
+                  {newImageFile && (
+                    <button
+                      type="button"
+                      onClick={() => { setNewImageFile(null); setNewImagePreview(null) }}
+                      className="mt-1 text-[10px] text-destructive hover:underline"
+                    >
+                      Remove image
+                    </button>
+                  )}
+                </div>
               </div>
             </ScrollArea>
             <DialogFooter>
@@ -690,7 +750,7 @@ export default function ManagePackagesPage() {
       </Dialog>
 
       {/* Edit Modal */}
-      <Dialog open={!!packageToEdit} onOpenChange={(open) => { if (!open) { setPackageToEdit(null); setErrors({}); } }}>
+      <Dialog open={!!packageToEdit} onOpenChange={(open) => { if (!open) { setPackageToEdit(null); setErrors({}); setEditImageFile(null); setEditImagePreview(null); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Edit Package</DialogTitle></DialogHeader>
           <ScrollArea className="max-h-[70vh] pr-4">
@@ -754,6 +814,52 @@ export default function ManagePackagesPage() {
                     value={packageToEdit.features.join(', ')}
                     onChange={(e) => setPackageToEdit({ ...packageToEdit, features: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '') })}
                   />
+                </div>
+                <div className="col-span-2">
+                  <Label>Cover Image <span className="text-muted-foreground text-[10px] font-normal">(shown as hero background on detail page)</span></Label>
+                  <label className="mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors overflow-hidden relative">
+                    {(() => {
+                      const preview = editImagePreview || (packageToEdit.imageUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/uploads/${packageToEdit.imageUrl}` : null)
+                      return preview ? (
+                        <>
+                          <img src={preview} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <span className="text-white text-xs font-medium">Change Image</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <ImagePlus className="w-7 h-7" />
+                          <span className="text-xs">Click to upload image</span>
+                          <span className="text-[10px]">JPG, PNG or WebP · max 5 MB</span>
+                        </div>
+                      )
+                    })()}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setEditImageFile(file)
+                        setEditImagePreview(URL.createObjectURL(file))
+                      }}
+                    />
+                  </label>
+                  {(editImageFile || packageToEdit.imageUrl) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditImageFile(null)
+                        setEditImagePreview(null)
+                        setPackageToEdit({ ...packageToEdit, imageUrl: undefined })
+                      }}
+                      className="mt-1 text-[10px] text-destructive hover:underline"
+                    >
+                      Remove image
+                    </button>
+                  )}
                 </div>
               </div>
             )}

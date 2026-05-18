@@ -2,11 +2,12 @@
 # Client — Local development (hot reload)
 #
 # Usage (from makeover-client/):
-#   docker compose -f docker-compose.local.yml up
+#   1. Create shared network once: docker network create geeksalon-dev
+#   2. Start server stack first:   cd ../makeover-server && docker compose -f docker-compose.local.yml up -d
+#   3. Start client:               docker compose -f docker-compose.local.yml up
 #
-# The server must be running separately (makeover-server/docker-compose.local.yml).
 # API calls from the browser go to http://localhost:4000.
-# SSR calls (server-side) go to http://host.docker.internal:4000.
+# SSR calls (server-side) go directly to the server container via geeksalon-dev network.
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -24,15 +25,15 @@ services:
              pnpm install --config.confirmModulesPurge=false &&
              pnpm run dev:docker"
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    networks:
+      - geeksalon-dev
     ports:
       - "3000:3000"
     environment:
       # Browser-side API URL — points to the host port exposed by the server stack.
       NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
-      # SSR-side API URL — reaches the server container via the host bridge.
-      INTERNAL_API_BASE_URL: http://host.docker.internal:4000
+      # SSR-side API URL — reaches the server container directly via shared Docker network.
+      INTERNAL_API_BASE_URL: http://makeover-server-dev:4000
       NEXT_TELEMETRY_DISABLED: "1"
       # File-watch polling required inside Docker on Linux.
       CHOKIDAR_USEPOLLING: "true"
@@ -49,6 +50,11 @@ services:
       timeout: 5s
       retries: 15
       start_period: 60s
+
+networks:
+  geeksalon-dev:
+    external: true
+    name: geeksalon-dev
 
 volumes:
   client_node_modules:
