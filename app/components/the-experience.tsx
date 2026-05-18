@@ -16,10 +16,10 @@ export function TheExperienceSection({ excellence }: { excellence: ExcellenceDat
     const formatTitle = (title: string) => {
         if (title.toLowerCase().includes('excellence')) {
             const parts = title.split(/(excellence)/i);
-            return parts.map((part, i) => 
-                part.toLowerCase() === 'excellence' 
-                ? <span key={i} className="italic">{part}</span> 
-                : part
+            return parts.map((part, i) =>
+                part.toLowerCase() === 'excellence'
+                    ? <span key={i} className="italic">{part}</span>
+                    : part
             );
         }
         return title;
@@ -41,7 +41,7 @@ export function TheExperienceSection({ excellence }: { excellence: ExcellenceDat
 
                         <Link
                             href="/services"
-                            className="inline-flex items-center gap-2 self-start border-t-2 border-l-2 border-b border-r border-solid border-white bg-transparent px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-black"
+                            className="inline-flex items-center gap-2 self-start border-t-3 border-l-3 border-b border-r border-solid border-white bg-transparent px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-black"
                             style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                         >
                             EXPLORE SERVICES <span className="text-lg leading-none mb-[2px]">→</span>
