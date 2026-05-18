@@ -141,6 +141,7 @@ export default function EmployeeAccountPage() {
 
     const filteredUsers = useMemo(() => {
         return users.filter((user) =>
+            user.role !== "customer" &&
             user.useremail.toLowerCase().includes(debouncedSearch.toLowerCase())
         )
     }, [users, debouncedSearch])

@@ -4,7 +4,15 @@ import { useState } from "react"
 import { useBusiness } from "@/context/BusinessContext"
 import { X, Phone, Mail, MapPin } from "lucide-react"
 
-export default function ContactSpecialistsModal() {
+interface ContactSpecialistsModalProps {
+  triggerLabel?: string
+  triggerClassName?: string
+}
+
+export default function ContactSpecialistsModal({
+  triggerLabel = "Contact our specialists",
+  triggerClassName = "inline-flex items-center gap-2 text-[#c4a484] text-xs font-bold tracking-widest uppercase hover:text-white transition-colors",
+}: ContactSpecialistsModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const { businessInfo } = useBusiness()
 
@@ -12,9 +20,9 @@ export default function ContactSpecialistsModal() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 text-[#c4a484] text-xs font-bold tracking-widest uppercase hover:text-white transition-colors"
+        className={triggerClassName}
       >
-        Contact our specialists <ArrowRight className="w-3.5 h-3.5" />
+        {triggerLabel} <ArrowRight className="w-3.5 h-3.5" />
       </button>
 
       {isOpen && (
@@ -35,7 +43,7 @@ export default function ContactSpecialistsModal() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            
+
             <div className="space-y-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-[#c4a484]/10 border border-[#c4a484]/20 flex items-center justify-center flex-shrink-0">
@@ -46,7 +54,7 @@ export default function ContactSpecialistsModal() {
                   <p className="text-[15px] font-medium text-white/90">{businessInfo?.phone || "+880 123456789"}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-[#c4a484]/10 border border-[#c4a484]/20 flex items-center justify-center flex-shrink-0">
                   <Mail className="w-5 h-5 text-[#c4a484]" />
@@ -67,7 +75,7 @@ export default function ContactSpecialistsModal() {
                 </div>
               </div>
             </div>
-            
+
             <button
               onClick={() => setIsOpen(false)}
               className="w-full mt-8 py-3.5 bg-white text-black text-xs font-bold tracking-[0.25em] uppercase hover:bg-[#c4a484] hover:text-white transition-all duration-300 rounded-sm"

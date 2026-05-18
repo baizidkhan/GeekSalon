@@ -62,6 +62,7 @@ interface Package {
   description: string
   features: string[]
   position: number
+  popular?: boolean
 }
 
 export default function ManagePackagesPage() {
@@ -238,6 +239,31 @@ export default function ManagePackagesPage() {
       } finally {
         setSubmitting(false)
       }
+    }
+  }
+
+  const handleMarkAsPopular = async (packageId: string, popular: boolean) => {
+    try {
+      setSubmitting(true)
+      const selectedPkg = packages.find(p => p.id === packageId)
+      if (selectedPkg) {
+        await updatePackage(packageId, {
+          title: selectedPkg.title,
+          category: selectedPkg.category,
+          price: Number(selectedPkg.price),
+          billingCycle: selectedPkg.billingCycle,
+          description: selectedPkg.description,
+          features: selectedPkg.features,
+          position: Number(selectedPkg.position) || 0,
+          popular,
+        })
+        toast.success(popular ? "Package marked as popular" : "Package removed from popular")
+        fetchPackages()
+      }
+    } catch (error) {
+      toast.error("Failed to update package")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -458,6 +484,7 @@ export default function ManagePackagesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">Popular</TableHead>
               <TableHead>Package Info</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
@@ -474,6 +501,15 @@ export default function ManagePackagesPage() {
             ) : (
               filteredPackages.map((pkg) => (
                 <TableRow key={pkg.id}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={pkg.popular === true}
+                      onChange={(e) => handleMarkAsPopular(pkg.id, e.target.checked)}
+                      disabled={submitting}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="font-medium">{pkg.title}</div>
                     <div className="text-xs text-muted-foreground truncate max-w-[200px]">{pkg.description}</div>
