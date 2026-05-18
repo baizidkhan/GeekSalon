@@ -54,7 +54,7 @@ export function CtaSection() {
                     <Link href="/packages">
                         <button
                             type="button"
-                            className="inline-flex items-center gap-2 border-t-2 border-l-2 border-b border-r border-solid border-white bg-transparent px-8 py-3.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-black"
+                            className="inline-flex items-center gap-2 border-t-[3px] border-l-[3px] border-b border-r border-solid border-white bg-transparent px-8 py-3.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-black"
                             style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                         >
                             EXPLORE OUR PACKAGES <span className="text-lg leading-none mb-[2px]">→</span>
