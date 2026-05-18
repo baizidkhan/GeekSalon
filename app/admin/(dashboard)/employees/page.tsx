@@ -86,6 +86,7 @@ interface Employee {
   id: string
   name: string
   role: EmployeeRole
+  customRole?: string | null
   phone: string
   email: string
   salary: number
@@ -117,6 +118,7 @@ export default function EmployeesPage() {
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     role: EmployeeRole.OTHER,
+    customRole: "",
     phone: "",
     email: "",
     salary: "0",
@@ -246,6 +248,7 @@ export default function EmployeesPage() {
         const payload: any = {
           name: newEmployee.name.trim(),
           role: newEmployee.role,
+          customRole: newEmployee.role === EmployeeRole.OTHER ? newEmployee.customRole.trim() : null,
           phone: cleanPhone,
           salary: parseFloat(newEmployee.salary) || 0,
           commission: parseFloat(newEmployee.commission) || 0,
@@ -275,6 +278,7 @@ export default function EmployeesPage() {
         setNewEmployee({
           name: "",
           role: EmployeeRole.OTHER,
+          customRole: "",
           phone: "",
           email: "",
           salary: "0",
@@ -312,6 +316,7 @@ export default function EmployeesPage() {
       const payload = {
         name: editDraft.name,
         role: editDraft.role,
+        customRole: editDraft.role === EmployeeRole.OTHER ? (editDraft.customRole?.trim() || null) : null,
         phone: cleanPhone,
         email: editDraft.email || undefined,
         salary: Number(editDraft.salary) || 0,
@@ -489,6 +494,16 @@ export default function EmployeesPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {newEmployee.role === EmployeeRole.OTHER && (
+                    <div>
+                      <Label>Custom Role <span className="text-destructive">*</span></Label>
+                      <Input
+                        value={newEmployee.customRole}
+                        onChange={(e) => setNewEmployee({ ...newEmployee, customRole: e.target.value })}
+                        placeholder="e.g. CEO, Founder, Co-Founder"
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label>Phone Number <span className="text-destructive">*</span></Label>
                     <Input
@@ -670,7 +685,9 @@ export default function EmployeesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{employee.role}</TableCell>
+                    <TableCell className="text-sm">
+                      {employee.role === EmployeeRole.OTHER ? (employee.customRole || employee.role) : employee.role}
+                    </TableCell>
                     <TableCell className="text-sm font-medium">{formatCurrency(employee.salary)}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-xs">
@@ -830,6 +847,16 @@ export default function EmployeesPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {editDraft.role === EmployeeRole.OTHER && (
+                    <div>
+                      <Label>Custom Role</Label>
+                      <Input
+                        value={editDraft.customRole || ""}
+                        onChange={(e) => setEditDraft({ ...editDraft, customRole: e.target.value })}
+                        placeholder="e.g. CEO, Founder, Co-Founder"
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label>Status</Label>
                     <Select
@@ -1015,7 +1042,9 @@ export default function EmployeesPage() {
                     </Avatar>
                     <div>
                       <h3 className="text-xl font-bold">{selectedEmployee.name}</h3>
-                      <p className="text-muted-foreground">{selectedEmployee.role} · {selectedEmployee.employmentType}</p>
+                      <p className="text-muted-foreground">
+                        {selectedEmployee.role === EmployeeRole.OTHER ? (selectedEmployee.customRole || selectedEmployee.role) : selectedEmployee.role} · {selectedEmployee.employmentType}
+                      </p>
                       <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedEmployee.status)}`}>
                         {selectedEmployee.status}
                       </span>
