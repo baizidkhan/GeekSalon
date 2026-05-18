@@ -58,7 +58,7 @@ export function HeroSection() {
                     </button>
                     <Link
                         href="/services"
-                        className="hero-btn inline-flex items-center justify-center gap-2 border border-white bg-transparent px-8 py-3.5 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-white/10"
+                        className="hero-btn inline-flex items-center justify-center gap-2 border-t-[3px] border-l-[3px] border-b border-r border-solid border-white bg-transparent px-8 py-3.5 text-[11px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-black"
                         style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                     >
                         EXPLORE OUR SERVICES <ArrowRight size={15} strokeWidth={2} />
