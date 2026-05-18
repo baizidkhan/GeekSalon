@@ -24,7 +24,28 @@ export function formatCurrency(value: number | string | null | undefined, symbol
 
 export function getMediaUrl(image?: string | null) {
   if (!image) return undefined;
-  if (image.startsWith('http') || image.startsWith('data:') || image.startsWith('blob:')) return image;
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-  return `${baseUrl}/uploads/${image}`;
+
+  const normalized = image.trim().replace(/\\/g, '/');
+  if (!normalized) return undefined;
+
+  if (
+    normalized.startsWith('http://') ||
+    normalized.startsWith('https://') ||
+    normalized.startsWith('data:') ||
+    normalized.startsWith('blob:')
+  ) {
+    return normalized;
+  }
+
+  const baseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000').replace(/\/$/, '');
+
+  // Handle legacy values like "/uploads/file.webp" or "uploads/file.webp".
+  if (normalized.startsWith('/uploads/')) return `${baseUrl}${normalized}`;
+  if (normalized.startsWith('uploads/')) return `${baseUrl}/${normalized}`;
+
+  // Keep local public assets untouched (e.g. "/login-cover.avif").
+  if (normalized.startsWith('/')) return normalized;
+
+  // Default: DB stores only filename (e.g. "uuid.webp").
+  return `${baseUrl}/uploads/${normalized}`;
 }
