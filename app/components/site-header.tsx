@@ -118,39 +118,50 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                             <div className="relative" ref={dropdownRef}>
                                 <button
                                     onClick={() => setDropdownOpen((o) => !o)}
-                                    className="flex items-center justify-center w-9 h-9 rounded-full border border-white/25 text-white/65 hover:border-white/50 hover:text-white transition-all duration-200"
+                                    className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/[0.04] text-white/70 shadow-[0_4px_18px_rgba(0,0,0,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#eccd80]/65 hover:bg-white/[0.08] hover:text-white"
                                     aria-label="User menu"
                                 >
-                                    <UserCircle size={20} strokeWidth={1.5} />
+                                    <UserCircle size={20} strokeWidth={1.5} className="transition-transform duration-300 group-hover:scale-105" />
                                 </button>
                                 {dropdownOpen && (
-                                    <div className="absolute right-0 top-12 w-56 bg-[#111] border border-white/12 shadow-2xl z-50">
-                                        {/* User info */}
-                                        <div className="px-4 py-3 border-b border-white/10">
-                                            <p className="text-[11px] text-white/90 font-medium truncate">{user.name || 'Guest'}</p>
-                                            <p className="text-[10px] text-white/40 truncate mt-0.5">{user.email}</p>
+                                    <div className="absolute right-0 top-14 z-50 w-72 overflow-hidden rounded-2xl border border-white/15 bg-[#111111]/95 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(236,205,128,0.22),transparent_45%)] pointer-events-none" />
+                                        <div className="relative border-b border-white/10 px-4 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#eccd80]/35 bg-[#eccd80]/10 text-[#eccd80]">
+                                                    <UserCircle size={18} strokeWidth={1.7} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-[12px] font-semibold text-white/95">{user.name || 'Guest'}</p>
+                                                    <p className="mt-0.5 truncate text-[10px] text-white/55">{user.email}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        {/* History — only for customers */}
-                                        {isCustomer && (
-                                            <Link
-                                                href="/customer-dashboard"
-                                                onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-2.5 px-4 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/55 hover:text-white hover:bg-white/5 transition-colors"
+                                        <div className="relative p-2">
+                                            {isCustomer && (
+                                                <Link
+                                                    href="/customer-dashboard"
+                                                    onClick={() => setDropdownOpen(false)}
+                                                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/70 transition-all duration-200 hover:bg-white/10 hover:text-white"
+                                                    style={{ fontFamily: 'Inter, sans-serif' }}
+                                                >
+                                                    <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white/80 transition-colors group-hover:border-[#eccd80]/50 group-hover:text-[#eccd80]">
+                                                        <History size={13} strokeWidth={1.7} />
+                                                    </span>
+                                                    History
+                                                </Link>
+                                            )}
+                                            <button
+                                                onClick={handleLogout}
+                                                className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[10.5px] uppercase tracking-[0.2em] text-white/55 transition-all duration-200 hover:bg-[#ff4f4f]/10 hover:text-white"
                                                 style={{ fontFamily: 'Inter, sans-serif' }}
                                             >
-                                                <History size={13} strokeWidth={1.5} />
-                                                History
-                                            </Link>
-                                        )}
-                                        {/* Sign out */}
-                                        <button
-                                            onClick={handleLogout}
-                                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[10.5px] uppercase tracking-[0.2em] text-white/40 hover:text-white hover:bg-white/5 transition-colors border-t border-white/10"
-                                            style={{ fontFamily: 'Inter, sans-serif' }}
-                                        >
-                                            <LogOut size={13} strokeWidth={1.5} />
-                                            Sign out
-                                        </button>
+                                                <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/12 bg-white/5 text-white/70 transition-colors group-hover:border-[#ff6b6b]/45 group-hover:text-[#ff6b6b]">
+                                                    <LogOut size={13} strokeWidth={1.7} />
+                                                </span>
+                                                Sign out
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
