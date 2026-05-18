@@ -36,7 +36,7 @@ export function SignatureExperiencesSection({ services }: { services: Service[] 
 
                     <Link
                         href="/services"
-                        className="inline-flex items-center gap-2 self-start border-t-2 border-l-2 border-b border-r border-solid border-white bg-transparent px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-black"
+                        className="inline-flex items-center gap-2 self-start border-t-3 border-l-3 border-b border-r border-solid border-white bg-transparent px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white hover:text-black"
                         style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                     >
                         VIEW ALL SERVICES <ArrowRight size={14} strokeWidth={2} />
@@ -97,7 +97,7 @@ export function SignatureExperiencesSection({ services }: { services: Service[] 
                                                 </button>
                                                 <Link
                                                     href={`/services/${item.id}`}
-                                                    className="flex-1 flex items-center justify-center border border-white bg-transparent px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:bg-white/10 text-center"
+                                                    className="flex-1 flex items-center justify-center border border-white bg-transparent px-4 py-3 text-[10px] font-bold uppercase tracking-widest border-t-[3px] border-l-[3px] border-b border-r border-solid text-white transition-all duration-300 hover:bg-white/10 text-center"
                                                     style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                                                 >
                                                     VIEW DETAILS
