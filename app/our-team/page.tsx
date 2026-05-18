@@ -111,7 +111,7 @@ export default async function OurTeamPage() {
                   </h3>
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#c4a484]">
-                      {member.role || "Specialist"}
+                      {member.role === 'Other' ? (member.customRole || member.role) : (member.role || "Specialist")}
                     </span>
                     <div className="h-px w-8 bg-white/10" />
                   </div>
