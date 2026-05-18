@@ -46,7 +46,7 @@ export function TeamMemberImage({
         />
       ) : (
         <span
-          className={`${initialsSize} font-serif tracking-tighter text-[#c4a484] opacity-60 select-none`}
+          className={`${initialsSize} font-serif tracking-tighter text-white opacity-60 select-none`}
         >
           {getInitials(name)}
         </span>
