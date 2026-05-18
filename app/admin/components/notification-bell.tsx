@@ -7,7 +7,7 @@ import { format } from 'date-fns'
 import Link from 'next/link'
 
 export function NotificationBell() {
-  const { notifications, unreadCount, markAllRead, clearAll } = useNotificationContext()
+  const { notifications, unreadCount, markAllRead, clearAll, removeNotification } = useNotificationContext()
   const [showDropdown, setShowDropdown] = useState(false)
 
   const toggleDropdown = () => {
@@ -70,35 +70,47 @@ export function NotificationBell() {
                 </div>
               ) : (
                 notifications.map((notif) => (
-                  <Link
-                    key={notif.id}
-                    href="/admin/appointments"
-                    onClick={() => setShowDropdown(false)}
-                    className="block p-4 hover:bg-blue-50/50 border-b border-[#f8f9fa] transition-colors last:border-0"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">New Appointment!</p>
-                        <div className="mt-1 space-y-0.5">
-                          <div className="flex items-center gap-1.5 text-[12px] text-slate-600">
-                            <User className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="font-medium text-slate-700 truncate">{notif.clientName}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
-                            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span>{notif.date} at {notif.time}</span>
-                          </div>
+                  <div key={notif.id} className="relative group border-b border-[#f8f9fa] last:border-0">
+                    <Link
+                      href="/admin/appointments"
+                      onClick={() => setShowDropdown(false)}
+                      className="block p-4 pr-10 hover:bg-blue-50/50 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                          <Calendar className="w-5 h-5 text-blue-600" />
                         </div>
-                        <p className="mt-1.5 text-[10px] text-slate-400">
-                          {format(new Date(notif.createdAt), 'MMM d, h:mm a')}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">New Appointment!</p>
+                          <div className="mt-1 space-y-0.5">
+                            <div className="flex items-center gap-1.5 text-[12px] text-slate-600">
+                              <User className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span className="font-medium text-slate-700 truncate">{notif.clientName}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                              <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span>{notif.date} at {notif.time}</span>
+                            </div>
+                          </div>
+                          <p className="mt-1.5 text-[10px] text-slate-400">
+                            {format(new Date(notif.createdAt), 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0" />
                       </div>
-                      <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0" />
-                    </div>
-                  </Link>
+                    </Link>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        e.preventDefault()
+                        removeNotification(notif.id)
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none"
+                      title="Remove notification"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 ))
               )}
             </div>
