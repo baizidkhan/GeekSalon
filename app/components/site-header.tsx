@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
 import { Menu, X, UserCircle, History, LogOut } from "lucide-react"
 import { useBusiness } from "@/context/BusinessContext"
@@ -8,7 +9,7 @@ import { useBusiness } from "@/context/BusinessContext"
 const navItems = [
     { label: "SERVICES", href: "/services" },
     { label: "PACKAGES", href: "/packages" },
-    { label: "ABOUT US", href: "/about" },
+    { label: "ABOUT US", href: "/about-us" },
 ]
 
 function getUserFromToken(token: string): { name?: string; email?: string; role?: string } | null {
@@ -37,6 +38,7 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
     const [user, setUser] = useState<{ name?: string; email?: string; role?: string } | null>(null)
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
+    const pathname = usePathname()
 
     useEffect(() => {
         const token = localStorage.getItem('accessToken')
@@ -89,16 +91,19 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
 
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex items-center justify-center gap-9 lg:gap-11">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            className="relative text-[11px] font-bold uppercase tracking-widest text-white/90 transition-colors duration-200 hover:text-white after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
-                            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
+                    {navItems.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                            <Link
+                                key={item.label}
+                                href={item.href}
+                                className={`relative text-[11px] font-bold uppercase tracking-widest transition-colors duration-200 after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:transition-all after:duration-300 hover:after:w-full ${isActive ? "text-[#CDB37F] after:bg-[#CDB37F]" : "text-white/90 hover:text-white after:bg-white"}`}
+                                style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                            >
+                                {item.label}
+                            </Link>
+                        )
+                    })}
                 </nav>
 
                 {/* Desktop CTA */}
