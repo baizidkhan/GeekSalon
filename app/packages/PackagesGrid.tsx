@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react"
 import { formatCurrency, getMediaUrl } from "@/lib/utils"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { formatCurrency } from "@/lib/utils"
 import PackageBookingModal from "./PackageBookingModal"
 
 interface Package {
@@ -20,6 +23,7 @@ interface Package {
 }
 
 export default function PackagesGrid({ initialPackages }: { initialPackages: Package[] }) {
+  const router = useRouter()
   const [showAll, setShowAll] = useState(false)
   const [bookingPkg, setBookingPkg] = useState<Package | null>(null)
 
@@ -50,7 +54,8 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
             return (
               <div
                 key={pkg.id}
-                className={`relative flex flex-col transition-all duration-700 ${isFeaturedCard
+                onClick={() => router.push(`/packages/${pkg.id}`)}
+                className={`relative flex flex-col cursor-pointer transition-all duration-700 ${isFeaturedCard
                   ? "z-0 scale-100 opacity-100 lg:z-10 lg:scale-[1.02] lg:shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
                   : "z-0 scale-100 opacity-100"
                   }`}
@@ -78,9 +83,11 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                         }`}>
                         {pkg.category || (i === 0 ? "Essential" : isFeaturedCard ? "Signature" : "Ultimate")}
                       </span>
-                      <h3 className={`${isFeaturedCard ? "text-[30px]" : "text-[28px] leading-[1.15]"} font-serif text-white tracking-tight`}>
-                        {pkg.title}
-                      </h3>
+                      <Link href={`/packages/${pkg.id}`}>
+                        <h3 className={`${isFeaturedCard ? "text-[30px]" : "text-[28px] leading-[1.15]"} font-serif text-white tracking-tight transition-colors hover:text-[#eccd80]`}>
+                          {pkg.title}
+                        </h3>
+                      </Link>
                     </div>
 
                     <p className={`${isFeaturedCard ? "text-[13px] text-white/40 font-light leading-[1.7]" : "text-[14px] text-white/72 font-normal leading-[1.65]"}`}>
@@ -96,7 +103,8 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
 
                     {!isFeaturedCard && (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation()
                           if (!localStorage.getItem('accessToken')) {
                             window.location.href = '/login'
                             return
@@ -127,7 +135,8 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                   {/* Action Button */}
                   {isFeaturedCard && (
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         if (!localStorage.getItem('accessToken')) {
                           window.location.href = '/login'
                           return

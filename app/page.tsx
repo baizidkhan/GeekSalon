@@ -18,15 +18,18 @@ export default async function Home() {
     const excellence = excellenceResult.status === 'fulfilled' ? excellenceResult.value : null;
     return (
         <div className="min-h-screen bg-[#f7f1eb] text-slate-900">
-            <div
-                className="relative overflow-hidden"
-                style={{
-                    backgroundImage: "url('/BannerImage.png')",
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center top',
-                    backgroundRepeat: 'no-repeat',
-                }}
-            >
+            <div className="relative overflow-hidden">
+                {/* Background image on its own layer so the Ken Burns zoom
+                    only scales the image, not the header/hero content */}
+                <div
+                    className="hero-bg-zoom absolute inset-0"
+                    style={{
+                        backgroundImage: "url('/BannerImage.png')",
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center top',
+                        backgroundRepeat: 'no-repeat',
+                    }}
+                />
                 <div className="absolute inset-0 bg-black/50" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/65" />
 
