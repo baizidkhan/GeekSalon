@@ -19,7 +19,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Check, ChevronLeft, ChevronRight, X, Clock, Calendar, User, Phone } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, X, Clock, Calendar, User, Phone, Info } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 
 const steps = [
@@ -219,28 +219,22 @@ export function BookingModal() {
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeBooking()}>
             <DialogContent
                 data-public-modal="true"
-                className="sm:max-w-[580px] max-h-[calc(100dvh-2rem)] flex flex-col bg-[#0c0c0c] border border-white/10 text-white p-0 overflow-hidden gap-0 [&>button]:hidden shadow-2xl"
+                className="sm:max-w-[580px] max-h-[calc(100dvh-2rem)] flex flex-col bg-[#111] border border-[#CDB37F]/50 text-white p-0 overflow-hidden gap-0 [&>button]:hidden shadow-2xl"
             >
                 {/* Top accent line */}
-                <div className="h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                <div className="h-px bg-gradient-to-r from-transparent via-[#CDB37F]/50 to-transparent" />
 
                 {/* Header */}
                 <div className="flex items-start justify-between px-8 pt-7 pb-0">
                     <div>
-                        <p
-                            className="mb-1.5 text-[9px] uppercase tracking-[0.5em] text-white"
+                        <DialogTitle
+                            className="text-2xl md:text-[1.8rem] font-semibold leading-tight text-white"
                             style={{ fontFamily: "Inter, sans-serif" }}
                         >
-                            Premium Salon
-                        </p>
-                        <DialogTitle
-                            className="text-[1.6rem] font-semibold leading-tight text-white"
-                            style={{ fontFamily: "Playfair Display, serif" }}
-                        >
-                            Book Your Experience
+                            Book Your <em className="italic font-light">Experience</em>
                         </DialogTitle>
                         <DialogDescription
-                            className="mt-1 text-[11px] text-white tracking-wide"
+                            className="mt-1.5 text-[11px] text-white/80 tracking-wide"
                             style={{ fontFamily: "Inter, sans-serif" }}
                         >
                             Complete the steps below to secure your appointment
@@ -248,40 +242,40 @@ export function BookingModal() {
                     </div>
                     <button
                         onClick={closeBooking}
-                        className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center border border-white/20 text-white transition-all duration-200 hover:border-white/50 hover:text-white"
+                        className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center bg-white text-black transition-all duration-200 hover:bg-white/90"
                     >
-                        <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        <X className="h-4 w-4" strokeWidth={1.5} />
                     </button>
                 </div>
 
                 {/* Step Tracker */}
-                <div className="px-8 pt-7">
+                <div className="px-8 pt-8">
                     <div className="relative flex items-start justify-between">
                         {/* Track line bg */}
-                        <div className="absolute left-4 right-4 top-[15px] h-px bg-white/8" />
+                        <div className="absolute left-6 right-6 top-[20px] border-t border-dashed border-white/20" />
                         {/* Track line fill */}
                         <div
-                            className="absolute left-4 top-[15px] h-px bg-white/35 transition-all duration-500 ease-out"
-                            style={{ width: `calc(${((step - 1) / 3) * 100}% - 2rem)` }}
+                            className="absolute left-6 top-[20px] border-t border-dashed border-white/60 transition-all duration-500 ease-out"
+                            style={{ width: `calc(${((step - 1) / 3) * 100}% - 3rem)` }}
                         />
                         {steps.map((s) => {
                             const done = step > s.id
                             const active = step === s.id
                             return (
-                                <div key={s.id} className="relative z-10 flex flex-col items-center gap-2">
-                                    <div className={`flex h-[30px] w-[30px] items-center justify-center border transition-all duration-300 ${done
-                                        ? "border-white bg-white text-black"
+                                <div key={s.id} className="relative z-10 flex flex-col items-center gap-3">
+                                    <div className={`flex h-[40px] w-[40px] items-center justify-center border transition-all duration-300 ${done
+                                        ? "border-white bg-[#111] text-white"
                                         : active
                                             ? "border-white bg-white text-black"
-                                            : "border-white/15 bg-[#0c0c0c] text-white/25"
+                                            : "border-white/30 bg-[#111] text-white/60"
                                         }`}>
                                         {done
-                                            ? <Check className="h-3 w-3" strokeWidth={3} />
-                                            : <span className="text-[11px] font-medium">{s.id}</span>
+                                            ? <Check className="h-4 w-4" strokeWidth={2.5} />
+                                            : <span className="text-sm font-medium">{s.id}</span>
                                         }
                                     </div>
                                     <span
-                                        className={`text-[9px] uppercase tracking-[0.22em] transition-colors duration-300 ${step >= s.id ? "text-white" : "text-white/45"
+                                        className={`text-[10px] uppercase tracking-[0.2em] transition-colors duration-300 ${step >= s.id ? "text-white" : "text-white/60"
                                             }`}
                                         style={{ fontFamily: "Inter, sans-serif" }}
                                     >
@@ -303,12 +297,12 @@ export function BookingModal() {
                         {/* ── Step 1: Services ── */}
                         {step === 1 && (
                             <div className="space-y-6">
-                                <div className="space-y-2.5">
+                                <div className="space-y-3">
                                     <Label
-                                        className="text-[10px] uppercase tracking-[0.28em] text-white"
+                                        className="text-[13px] uppercase tracking-[0.2em] text-white"
                                         style={{ fontFamily: "Inter, sans-serif" }}
                                     >
-                                        {selectedService ? "Your Service" : "Select Services"}
+                                        {selectedService ? "Your Service" : "Select Service"}
                                     </Label>
 
                                     {selectedService ? (
@@ -317,25 +311,25 @@ export function BookingModal() {
                                         </div>
                                     ) : (
                                         <div>
-                                            <div className="max-h-[180px] overflow-y-auto border border-white/10 bg-[#111]">
+                                            <div className="max-h-[220px] overflow-y-auto border border-white/10 bg-[#0a0a0a] [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#ECCD80]">
                                                 {availableServices.map((s) => {
                                                     const selected = selectedServiceIds.includes(s.id)
                                                     return (
                                                         <div
                                                             key={s.id}
                                                             onClick={() => toggleService(s.id)}
-                                                            className={`group flex cursor-pointer items-center justify-between border-b border-white/5 px-4 py-3 last:border-0 transition-all duration-200 ${selected ? "bg-white text-black" : "hover:bg-white/5 text-white"
+                                                            className={`group flex cursor-pointer items-center justify-between border-b border-white/5 px-4 py-3.5 last:border-0 transition-all duration-200 ${selected ? "bg-white/[0.03]" : "hover:bg-white/5 text-white/90"
                                                                 }`}
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                <div className={`flex h-4 w-4 shrink-0 items-center justify-center border transition-all duration-200 ${selected ? "border-black/30 bg-transparent" : "border-white/20"
+                                                                <div className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center border transition-all duration-200 ${selected ? "border-white bg-white text-black" : "border-white/40"
                                                                     }`}>
-                                                                    {selected && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+                                                                    {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
                                                                 </div>
                                                                 <span className="text-[12.5px] font-medium">{s.name}</span>
                                                             </div>
-                                                            <span className={`font-mono text-[11px] ${selected ? "text-black/50" : "text-white"}`}>
-                                                                {formatCurrency(s.price)}
+                                                            <span className={`font-mono text-[11.5px] ${selected ? "text-white" : "text-white/80"}`}>
+                                                                {formatCurrency(s.price).replace('Tk', '৳')}
                                                             </span>
                                                         </div>
                                                     )
@@ -344,16 +338,19 @@ export function BookingModal() {
                                             {errors.serviceId && (
                                                 <p className="mt-1.5 text-[10px] tracking-wider text-red-400">{errors.serviceId}</p>
                                             )}
-                                            <p className="mt-2 text-[10px] italic text-white" style={{ fontFamily: "Inter, sans-serif" }}>
-                                                You may select multiple services for a complete experience.
-                                            </p>
+                                            <div className="mt-3 flex items-start gap-2 px-1">
+                                                <Info className="h-[15px] w-[15px] text-white/70 mt-[1px] shrink-0" />
+                                                <p className="text-[12px] text-white/90" style={{ fontFamily: "Inter, sans-serif" }}>
+                                                    You may select multiple services for a complete experience.
+                                                </p>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="space-y-2.5">
+                                <div className="space-y-2.5 pt-2">
                                     <Label
-                                        className="text-[10px] uppercase tracking-[0.28em] text-white"
+                                        className="text-[11px] tracking-wide text-white font-medium"
                                         style={{ fontFamily: "Inter, sans-serif" }}
                                     >
                                         Preferred Stylist
@@ -585,11 +582,10 @@ export function BookingModal() {
                             <button
                                 onClick={handleNext}
                                 disabled={step === 1 && selectedServiceIds.length === 0}
-                                className="flex h-12 flex-1 items-center justify-center gap-2 bg-white text-[10px] uppercase tracking-[0.25em] text-black transition-all duration-300 hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-30"
+                                className={`flex h-12 flex-1 items-center justify-center gap-2 text-[11px] uppercase tracking-[0.2em] font-medium transition-all duration-300 ${step === 1 && selectedServiceIds.length === 0 ? "bg-[#333] text-white/40 cursor-not-allowed" : "bg-white text-black hover:bg-white/90"}`}
                                 style={{ fontFamily: "Inter, sans-serif" }}
                             >
                                 Continue
-                                <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
                             </button>
                         ) : (
                             <button
