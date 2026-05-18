@@ -95,7 +95,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
             {/* Header section */}
             <div>
               <span className="text-[#c4a484] text-xs font-bold tracking-[0.3em] uppercase block mb-4">
-                {employee.role || "Specialist"}
+                {employee.role === 'Other' ? (employee.customRole || employee.role) : (employee.role || "Specialist")}
               </span>
               <h1 className="text-5xl md:text-7xl font-serif mb-6 leading-tight">
                 {employee.name}
