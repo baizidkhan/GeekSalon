@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Client — Local development (hot reload)
+#
+# Usage (from makeover-client/):
+#   docker compose -f docker-compose.local.yml up
+#
+# The server must be running separately (makeover-server/docker-compose.local.yml).
+# API calls from the browser go to http://localhost:4000.
+# SSR calls (server-side) go to http://host.docker.internal:4000.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  makeover-client:
+    image: node:22-alpine
+    container_name: makeover-client-dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - client_node_modules:/app/node_modules
+      - client_next:/app/.next
+    command: >
+      sh -c "corepack enable &&
+             corepack prepare pnpm@11.1.2 --activate &&
+             pnpm install --config.confirmModulesPurge=false &&
+             pnpm run dev:docker"
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3000:3000"
+    environment:
+      # Browser-side API URL — points to the host port exposed by the server stack.
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+      # SSR-side API URL — reaches the server container via the host bridge.
+      INTERNAL_API_BASE_URL: http://host.docker.internal:4000
+      NEXT_TELEMETRY_DISABLED: "1"
+      # File-watch polling required inside Docker on Linux.
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "800"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3000', (res) => process.exit(res.statusCode >= 200 && res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+
+volumes:
+  client_node_modules:
+  client_next:

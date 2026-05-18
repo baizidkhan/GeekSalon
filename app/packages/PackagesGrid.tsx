@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { formatCurrency, getMediaUrl } from "@/lib/utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { formatCurrency } from "@/lib/utils"
@@ -47,7 +48,8 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
         <div className="grid w-full grid-cols-1 items-stretch gap-8 md:grid-cols-2 lg:grid-cols-3 lg:gap-10 max-w-7xl mx-auto">
           {displayedPackages.map((pkg, i) => {
             const isFeaturedCard = pkg.popular === true
-            const packageImage = pkg.imageUrl || pkg.image || pkg.coverImage || "/login-cover.avif"
+            const packageImageRaw = pkg.imageUrl || pkg.image || pkg.coverImage
+            const packageImage = packageImageRaw ? (getMediaUrl(packageImageRaw) || "/login-cover.avif") : "/login-cover.avif"
 
             return (
               <div

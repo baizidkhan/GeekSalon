@@ -1,0 +1,58 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Client — Production
+#
+# Prerequisites:
+#   1. Traefik is running with the `makeover-client` entrypoint on port 3000
+#      (traefik/docker-compose.traefik.yml already up).
+#   2. Copy .env.example → .env and set NEXT_PUBLIC_API_BASE_URL.
+#      NOTE: this variable is baked into the JS bundle at build time.
+#      Rebuild the image whenever the server IP/port changes.
+#   3. makeover-server stack must be running (for INTERNAL_API_BASE_URL to resolve).
+#
+# Usage (from makeover-client/):
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# Access: http://YOUR_SERVER_IP:3000/
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  makeover-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Baked into the bundle — set in .env before building.
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+    image: makeover-client:prod
+    container_name: makeover-client
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      # SSR calls stay on the Docker network — resolves to the server container.
+      INTERNAL_API_BASE_URL: http://makeover-server:4000
+    networks:
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.makeover-client.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.makeover-client.entrypoints=makeover-client"
+      - "traefik.http.services.makeover-client.loadbalancer.server.port=3000"
+      - "traefik.http.routers.makeover-client.middlewares=compress@file"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3000', (res) => process.exit(res.statusCode >= 200 && res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  traefik_proxy:
+    external: true
