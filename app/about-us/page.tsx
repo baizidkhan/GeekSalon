@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import Link from "next/link"
 import api from "@admin/api/base"
 import { SiteHeader } from "@/app/components/site-header"
