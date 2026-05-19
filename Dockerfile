@@ -1,10 +1,12 @@
 # ── Stage 1: Install dependencies ─────────────────────────────────────────────
 # Uses pnpm@11 to match the project's pnpm-lock.yaml (lockfileVersion: 9.0)
 FROM node:22-alpine AS deps
+RUN apk add --no-cache libc6-compat
 RUN corepack enable && corepack prepare pnpm@11 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm config set ignore-scripts false
+RUN pnpm install --frozen-lockfile
 
 # ── Stage 2: Build ─────────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
