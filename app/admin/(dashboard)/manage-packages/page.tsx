@@ -145,6 +145,9 @@ export default function ManagePackagesPage() {
       newErrors.price = "Price must be a positive number"
     }
     if (!newPackage.billingCycle) newErrors.billingCycle = "Billing cycle is required"
+    if (!newPackage.description.trim()) newErrors.description = "Description is required"
+    if (newPackage.features.length === 0) newErrors.features = "At least one feature is required"
+    if (!newImageFile) newErrors.coverImage = "Cover image is required"
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
@@ -209,6 +212,9 @@ export default function ManagePackagesPage() {
     if (!packageToEdit.title) newErrors.title = "Title is required"
     if (!packageToEdit.category) newErrors.category = "Category is required"
     if (!packageToEdit.price || packageToEdit.price <= 0) newErrors.price = "Price must be a positive number"
+    if (!packageToEdit.description.trim()) newErrors.description = "Description is required"
+    if (packageToEdit.features.length === 0) newErrors.features = "At least one feature is required"
+    if (!editImageFile && !packageToEdit.imageUrl) newErrors.coverImage = "Cover image is required"
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
@@ -354,6 +360,7 @@ export default function ManagePackagesPage() {
         features: [...newPackage.features, newPackage.newFeature.trim()],
         newFeature: "",
       })
+      if (errors.features) setErrors(prev => ({ ...prev, features: "" }))
     }
   }
 
@@ -385,8 +392,8 @@ export default function ManagePackagesPage() {
             <DialogHeader>
               <DialogTitle>Create New Package</DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-4">
-              <div className="grid grid-cols-2 gap-4 py-4">
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="grid grid-cols-2 gap-4 py-4 pb-4">
                 <div className="col-span-2">
                   <Label className={errors.title ? "text-destructive" : ""}>Title <span className="text-destructive">*</span></Label>
                   <Input
@@ -451,15 +458,20 @@ export default function ManagePackagesPage() {
                   <p className="text-[10px] text-muted-foreground mt-1">Lower numbers appear first</p>
                 </div>
                 <div className="col-span-2">
-                  <Label>Description</Label>
+                  <Label className={errors.description ? "text-destructive" : ""}>Description <span className="text-destructive">*</span></Label>
                   <Textarea
                     placeholder="Describe the package benefits..."
                     value={newPackage.description}
-                    onChange={(e) => setNewPackage({ ...newPackage, description: e.target.value })}
+                    onChange={(e) => {
+                      setNewPackage({ ...newPackage, description: e.target.value })
+                      if (errors.description) setErrors(prev => ({ ...prev, description: "" }))
+                    }}
+                    className={errors.description ? "border-destructive" : ""}
                   />
+                  {errors.description && <p className="text-[10px] text-destructive mt-1">{errors.description}</p>}
                 </div>
                 <div className="col-span-2 space-y-4">
-                  <Label>Features</Label>
+                  <Label className={errors.features ? "text-destructive" : ""}>Features <span className="text-destructive">*</span></Label>
                   <div className="flex gap-2">
                     <Input
                       placeholder="Add a feature..."
@@ -469,6 +481,7 @@ export default function ManagePackagesPage() {
                     />
                     <Button type="button" variant="secondary" onClick={addFeature}>Add</Button>
                   </div>
+                  {errors.features && <p className="text-[10px] text-destructive mt-1">{errors.features}</p>}
                   <div className="flex flex-wrap gap-2">
                     {newPackage.features.map((feature, i) => (
                       <span key={i} className="flex items-center gap-1 px-3 py-1 bg-secondary rounded-full text-xs">
@@ -479,8 +492,8 @@ export default function ManagePackagesPage() {
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <Label>Cover Image <span className="text-muted-foreground text-[10px] font-normal">(shown as hero background on detail page)</span></Label>
-                  <label className="mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors overflow-hidden relative">
+                  <Label className={errors.coverImage ? "text-destructive" : ""}>Cover Image <span className="text-destructive">*</span> <span className="text-muted-foreground text-[10px] font-normal">(shown as hero background on detail page)</span></Label>
+                  <label className={cn("mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer transition-colors overflow-hidden relative", errors.coverImage ? "border-destructive hover:border-destructive/80" : "border-border hover:border-primary/50")}>
                     {newImagePreview ? (
                       <>
                         <img src={newImagePreview} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
@@ -504,6 +517,7 @@ export default function ManagePackagesPage() {
                         if (!file) return
                         setNewImageFile(file)
                         setNewImagePreview(URL.createObjectURL(file))
+                        if (errors.coverImage) setErrors(prev => ({ ...prev, coverImage: "" }))
                       }}
                     />
                   </label>
@@ -516,15 +530,16 @@ export default function ManagePackagesPage() {
                       Remove image
                     </button>
                   )}
+                  {errors.coverImage && <p className="text-[10px] text-destructive mt-1">{errors.coverImage}</p>}
                 </div>
               </div>
+              <div className="pt-4 pb-4 mt-2 border-t border-border/50">
+                <Button onClick={handleAddPackage} className="w-full" disabled={submitting}>
+                  {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Create Package
+                </Button>
+              </div>
             </ScrollArea>
-            <DialogFooter>
-              <Button onClick={handleAddPackage} className="w-full" disabled={submitting}>
-                {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Create Package
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -753,9 +768,9 @@ export default function ManagePackagesPage() {
       <Dialog open={!!packageToEdit} onOpenChange={(open) => { if (!open) { setPackageToEdit(null); setErrors({}); setEditImageFile(null); setEditImagePreview(null); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Edit Package</DialogTitle></DialogHeader>
-          <ScrollArea className="max-h-[70vh] pr-4">
+          <ScrollArea className="max-h-[60vh] pr-4">
             {packageToEdit && (
-              <div className="grid grid-cols-2 gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4 py-4 pb-4">
                 <div className="col-span-2">
                   <Label className={errors.title ? "text-destructive" : ""}>Title <span className="text-destructive">*</span></Label>
                   <Input
@@ -802,22 +817,33 @@ export default function ManagePackagesPage() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label>Description</Label>
+                  <Label className={errors.description ? "text-destructive" : ""}>Description <span className="text-destructive">*</span></Label>
                   <Textarea
                     value={packageToEdit.description}
-                    onChange={(e) => setPackageToEdit({ ...packageToEdit, description: e.target.value })}
+                    onChange={(e) => {
+                      setPackageToEdit({ ...packageToEdit, description: e.target.value })
+                      if (errors.description) setErrors(prev => ({ ...prev, description: "" }))
+                    }}
+                    className={errors.description ? "border-destructive" : ""}
                   />
+                  {errors.description && <p className="text-[10px] text-destructive mt-1">{errors.description}</p>}
                 </div>
                 <div className="col-span-2 space-y-4">
-                  <Label>Features (Comma separated)</Label>
+                  <Label className={errors.features ? "text-destructive" : ""}>Features (Comma separated) <span className="text-destructive">*</span></Label>
                   <Textarea
                     value={packageToEdit.features.join(', ')}
-                    onChange={(e) => setPackageToEdit({ ...packageToEdit, features: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '') })}
+                    onChange={(e) => {
+                      const features = e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')
+                      setPackageToEdit({ ...packageToEdit, features })
+                      if (features.length > 0 && errors.features) setErrors(prev => ({ ...prev, features: "" }))
+                    }}
+                    className={errors.features ? "border-destructive" : ""}
                   />
+                  {errors.features && <p className="text-[10px] text-destructive mt-1">{errors.features}</p>}
                 </div>
                 <div className="col-span-2">
-                  <Label>Cover Image <span className="text-muted-foreground text-[10px] font-normal">(shown as hero background on detail page)</span></Label>
-                  <label className="mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors overflow-hidden relative">
+                  <Label className={errors.coverImage ? "text-destructive" : ""}>Cover Image <span className="text-destructive">*</span> <span className="text-muted-foreground text-[10px] font-normal">(shown as hero background on detail page)</span></Label>
+                  <label className={cn("mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer transition-colors overflow-hidden relative", errors.coverImage ? "border-destructive hover:border-destructive/80" : "border-border hover:border-primary/50")}>
                     {(() => {
                       const preview = editImagePreview || (packageToEdit.imageUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/uploads/${packageToEdit.imageUrl}` : null)
                       return preview ? (
@@ -844,6 +870,7 @@ export default function ManagePackagesPage() {
                         if (!file) return
                         setEditImageFile(file)
                         setEditImagePreview(URL.createObjectURL(file))
+                        if (errors.coverImage) setErrors(prev => ({ ...prev, coverImage: "" }))
                       }}
                     />
                   </label>
@@ -860,16 +887,17 @@ export default function ManagePackagesPage() {
                       Remove image
                     </button>
                   )}
+                  {errors.coverImage && <p className="text-[10px] text-destructive mt-1">{errors.coverImage}</p>}
                 </div>
               </div>
             )}
+            <div className="pt-4 pb-4 mt-2 border-t border-border/50">
+              <Button className="w-full" onClick={handleUpdatePackage} disabled={submitting}>
+                {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
+            </div>
           </ScrollArea>
-          <DialogFooter>
-            <Button className="w-full" onClick={handleUpdatePackage} disabled={submitting}>
-              {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Save Changes
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

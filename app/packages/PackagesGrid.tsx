@@ -4,7 +4,6 @@ import { useMemo, useState } from "react"
 import { formatCurrency, getMediaUrl } from "@/lib/utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { formatCurrency } from "@/lib/utils"
 import PackageBookingModal from "./PackageBookingModal"
 
 interface Package {
