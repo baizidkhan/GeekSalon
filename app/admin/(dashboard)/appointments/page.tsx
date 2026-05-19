@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useRouter, useSearchParams } from "next/navigation"
 import { format } from "date-fns"
@@ -476,7 +476,7 @@ const emptyForm = {
 
 type NewAppointmentField = "phone" | "client" | "services" | "employee" | "date" | "time"
 
-export default function AppointmentsPage() {
+function AppointmentsContent() {
   const { user, loading: authLoading } = useAuth()
   const isStylistUser = user?.role === "stylist"
   const stylistName = (user?.employeeName ?? "").trim()
@@ -1899,5 +1899,13 @@ export default function AppointmentsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function AppointmentsPage() {
+  return (
+    <Suspense>
+      <AppointmentsContent />
+    </Suspense>
   )
 }

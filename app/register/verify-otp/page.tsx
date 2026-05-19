@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Inter, Josefin_Sans, Playfair_Display } from "next/font/google"
@@ -18,7 +18,7 @@ type PendingSignup = {
     password: string
 }
 
-export default function VerifyOtpPage() {
+function VerifyOtpContent() {
     const { businessName } = useBusiness()
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -220,5 +220,13 @@ export default function VerifyOtpPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function VerifyOtpPage() {
+    return (
+        <Suspense>
+            <VerifyOtpContent />
+        </Suspense>
     )
 }
