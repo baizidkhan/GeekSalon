@@ -11,13 +11,13 @@ interface BusinessContextValue {
 
 const BusinessContext = createContext<BusinessContextValue>({
   businessInfo: null,
-  businessName: "GeekSalon",
+  businessName: "MakeOver",
   refresh: async () => {},
 })
 
 export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null)
-  const [businessName, setBusinessName] = useState("GeekSalon")
+  const [businessName, setBusinessName] = useState("MakeOver")
 
   const refresh = useCallback(async () => {
     try {

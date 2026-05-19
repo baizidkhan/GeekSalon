@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { getMediaUrl } from "@/lib/utils"
 
 const stats = [
@@ -10,8 +10,17 @@ const stats = [
     { value: "45+", label: "Signature Services" },
 ]
 
+function parseStat(value: string): { num: number; suffix: string } {
+    const match = value.match(/^(\d+)(.*)$/)
+    if (!match) return { num: 0, suffix: value }
+    return { num: parseInt(match[1]), suffix: match[2] }
+}
+
 export function WhyChooseUsSection() {
     const [images, setImages] = useState<(string | null)[]>([null, null, null, null])
+    const [counts, setCounts] = useState(stats.map(() => 0))
+    const [started, setStarted] = useState(false)
+    const statsRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -34,6 +43,32 @@ export function WhyChooseUsSection() {
         fetchImages()
     }, [])
 
+    useEffect(() => {
+        const el = statsRef.current
+        if (!el) return
+        const observer = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) setStarted(true) },
+            { threshold: 0.3 }
+        )
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [])
+
+    useEffect(() => {
+        if (!started) return
+        const targets = stats.map(s => parseStat(s.value).num)
+        const duration = 2000
+        const startTime = performance.now()
+        const animate = (now: number) => {
+            const progress = Math.min((now - startTime) / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            setCounts(targets.map(t => Math.floor(eased * t)))
+            if (progress < 1) requestAnimationFrame(animate)
+            else setCounts(targets)
+        }
+        requestAnimationFrame(animate)
+    }, [started])
+
     const placeholderTones = [
         "from-stone-200 via-stone-300 to-stone-400",
         "from-zinc-200 via-zinc-300 to-zinc-400",
@@ -54,23 +89,26 @@ export function WhyChooseUsSection() {
                         Where Luxury Meets <span className="italic">Artistry</span>
                     </h2>
                     <p className="mx-auto max-w-3xl text-[13px] leading-relaxed text-gray-600" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
-                        Every visit to PrivéforYou is a journey through refined luxury. From our curated environments to our bespoke treatments, we create moments that transcend the ordinary.
+                        Every visit to makeover is a journey through refined luxury. From our curated environments to our bespoke treatments, we create moments that transcend the ordinary.
                     </p>
                 </div>
 
                 <div className="grid items-center gap-16 lg:grid-cols-2">
                     {/* Left: Stats Grid */}
-                    <div className="grid grid-cols-2 gap-x-12 gap-y-14 pr-4 lg:pr-8">
-                        {stats.map((stat) => (
-                            <div key={stat.label}>
-                                <p className="text-[2.75rem] font-semibold text-black leading-none" style={{ fontFamily: 'Playfair Display, serif' }}>
-                                    {stat.value}
-                                </p>
-                                <p className="mt-4 pb-3 text-[11px] font-bold text-gray-500 border-b border-[#d4af37] w-[90%]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
-                                    {stat.label}
-                                </p>
-                            </div>
-                        ))}
+                    <div ref={statsRef} className="grid grid-cols-2 gap-x-12 gap-y-14 pr-4 lg:pr-8">
+                        {stats.map((stat, i) => {
+                            const { suffix } = parseStat(stat.value)
+                            return (
+                                <div key={stat.label}>
+                                    <p className="text-[2.75rem] font-semibold text-black leading-none" style={{ fontFamily: 'Playfair Display, serif' }}>
+                                        {counts[i]}{suffix}
+                                    </p>
+                                    <p className="mt-4 pb-3 text-[11px] font-bold text-gray-500 border-b border-[#d4af37] w-[90%]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                                        {stat.label}
+                                    </p>
+                                </div>
+                            )
+                        })}
                     </div>
 
                     {/* Right: Image grid */}

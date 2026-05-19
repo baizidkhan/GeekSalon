@@ -9,7 +9,7 @@ interface ExcellenceData {
 
 export function TheExperienceSection({ excellence }: { excellence: ExcellenceData | null }) {
     const displayTitle = excellence?.title || "Crafted For Those Who Appreciate Excellence";
-    const displayDescription = excellence?.description || "Every visit to PrivéforYou is a journey through refined luxury. From our curated environments to our bespoke treatments, we create moments that transcend the ordinary.";
+    const displayDescription = excellence?.description || "Every visit to makeover is a journey through refined luxury. From our curated environments to our bespoke treatments, we create moments that transcend the ordinary.";
     const videoUrl = excellence?.videoUrl;
 
     // Split title to style "Excellence" as italic if it matches the default format

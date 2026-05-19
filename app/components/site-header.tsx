@@ -85,7 +85,7 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
                             letterSpacing: 'normal'
                         }}
                     >
-                        {businessName || "Makeover"}
+                        {businessName || "MakeOver"}
                     </span>
                 </Link>
 
