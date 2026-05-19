@@ -96,7 +96,7 @@ export function TestimonialsSection() {
                 </div>
 
                 <div
-                    className="mt-16 w-full overflow-hidden"
+                    className="mt-16 w-full overflow-hidden pt-8"
                     onMouseEnter={() => setIsPaused(true)}
                     onMouseLeave={() => setIsPaused(false)}
                 >
@@ -112,10 +112,15 @@ export function TestimonialsSection() {
                                         key={`${item.name}-${cardIndex}`}
                                         className="testimonial-card relative flex min-h-[264px] flex-1 flex-col justify-between border border-[#eccd80] px-8 pb-10 pt-12 text-left sm:px-10 lg:px-16"
                                     >
-                                        <div className="absolute -top-7 left-6 bg-[#1a1a1a] px-2 sm:left-8 sm:px-4">
-                                            <svg className="testimonial-quote h-14 w-14 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                                            </svg>
+                                        <div className="absolute left-0 top-0 h-px w-full bg-[#eccd80]" />
+                                        <div className="absolute -top-[22px] left-10 bg-[#1a1a1a] px-2 sm:left-12 sm:px-3 lg:left-14">
+                                            <span
+                                                className="testimonial-quote block text-[108px] font-semibold leading-[0.8] text-white"
+                                                style={{ fontFamily: 'Playfair Display, serif' }}
+                                                aria-hidden="true"
+                                            >
+                                                “
+                                            </span>
                                         </div>
 
                                         <p className="max-w-[370px] text-[18px] leading-[1.52] text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
