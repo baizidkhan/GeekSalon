@@ -43,7 +43,7 @@ export default function ServicesPage() {
     return (
         <div className="min-h-screen bg-[#070707]">
             {/* Hero Section Container */}
-            <div className="relative min-h-[50vh] flex flex-col bg-black/60">
+            <div className="relative h-[520px] flex flex-col bg-black/60">
                 {/* Background image & overlays */}
                 <div 
                     className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 grayscale"
@@ -58,7 +58,7 @@ export default function ServicesPage() {
 
                 {/* Hero Content */}
                 <div className="relative z-10 mx-auto max-w-4xl px-4 text-center flex-grow flex flex-col items-center justify-center py-20">
-                    <h1 className="mb-6 text-5xl font-semibold leading-tight text-white sm:text-7xl" style={{ fontFamily: 'Playfair Display, serif' }}>
+                    <h1 className="mb-6 text-[1.9rem] font-semibold leading-tight text-white sm:text-5xl lg:text-7xl" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Bespoke Beauty
                         <br />
                         <em className="italic font-light text-[#CDB37F]">Experiences</em>
@@ -77,7 +77,7 @@ export default function ServicesPage() {
                         <p className="mb-3 text-[12px] font-medium uppercase tracking-widest text-[#CDB37F]" style={{ fontFamily: 'Inter, sans-serif' }}>
                             OUR EXPERTISE
                         </p>
-                        <h2 className="mb-5 text-4xl font-semibold text-white sm:text-5xl" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        <h2 className="mb-5 text-[1.75rem] font-semibold text-white sm:text-4xl lg:text-5xl" style={{ fontFamily: 'Playfair Display, serif' }}>
                             Signature <em className="italic font-light text-white">Experiences</em>
                         </h2>
                         <p className="mx-auto max-w-2xl text-xs leading-6 text-white/80" style={{ fontFamily: 'Inter, sans-serif' }}>
