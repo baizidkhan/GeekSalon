@@ -179,126 +179,153 @@ export default function CustomerDashboard() {
         <div className="min-h-screen bg-[#0b0b0b] text-white" style={{ fontFamily: "Manrope, Inter, sans-serif" }}>
             <SiteHeader solid />
 
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14">
+
                 {/* Page header */}
-                <div className="mb-8">
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-white/35 mb-1">My Account</p>
-                    <h1
-                        className="text-2xl font-semibold text-white/90"
-                        style={{ fontFamily: "var(--font-serif, Georgia, serif)" }}
-                    >
-                        {data.name}
-                    </h1>
-                    <p className="text-xs text-white/35 mt-0.5">{data.email} · {data.phone}</p>
+                <div className="mb-10 flex items-end justify-between gap-4 flex-wrap">
+                    <div>
+                        <p className="text-[10px] uppercase tracking-[0.35em] text-[#eccd80] mb-2">My Account</p>
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-0.5 bg-gradient-to-b from-[#eccd80] to-[#eccd80]/20 rounded-full" />
+                            <div>
+                                <h1
+                                    className="text-2xl font-semibold text-white"
+                                    style={{ fontFamily: "var(--font-serif, Georgia, serif)" }}
+                                >
+                                    {data.name}
+                                </h1>
+                                <p className="text-[11px] text-white/60 mt-0.5">{data.email}{data.phone ? ` · ${data.phone}` : ""}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-[#eccd80]">Booking History</p>
+                        <p className="text-xl font-semibold text-[#eccd80] mt-0.5">{bookings.length}</p>
+                    </div>
                 </div>
 
                 {/* Bookings table */}
                 {bookings.length === 0 ? (
-                    <div className="border border-white/10 rounded-sm py-16 text-center">
-                        <p className="text-white/30 text-sm tracking-widest uppercase">No bookings yet</p>
+                    <div className="border border-[#eccd80]/15 rounded-sm py-20 text-center bg-[#eccd80]/[0.02]">
+                        <div className="h-px w-16 bg-gradient-to-r from-transparent via-[#eccd80]/30 to-transparent mx-auto mb-6" />
+                        <p className="text-white/30 text-[11px] tracking-[0.4em] uppercase">No bookings yet</p>
+                        <div className="h-px w-16 bg-gradient-to-r from-transparent via-[#eccd80]/30 to-transparent mx-auto mt-6" />
                     </div>
                 ) : (
-                    <div className="overflow-x-auto border border-white/10 rounded-sm">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-white/10">
-                                    {["Date", "Time", "Services", "Stylist", "Amount", "Status", ""].map((h) => (
-                                        <th
-                                            key={h}
-                                            className="px-4 py-3 text-left text-[10px] uppercase tracking-[0.2em] text-white/35 font-medium whitespace-nowrap"
-                                        >
-                                            {h}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {bookings.map((b, i) => (
-                                    <tr
-                                        key={b.id}
-                                        className={`border-b border-white/5 transition-colors hover:bg-white/[0.03] ${i === bookings.length - 1 ? "border-b-0" : ""}`}
-                                    >
-                                        {/* Date */}
-                                        <td className="px-4 py-3.5 text-white/70 whitespace-nowrap text-xs">
-                                            {b.date ? formatDate(b.date) : "—"}
-                                        </td>
+                    <div className="rounded-sm border border-[#eccd80]/20 overflow-hidden shadow-[0_0_40px_rgba(236,205,128,0.04)]">
+                        {/* Golden top accent line */}
+                        <div className="h-px bg-gradient-to-r from-transparent via-[#eccd80]/50 to-transparent" />
 
-                                        {/* Time */}
-                                        <td className="px-4 py-3.5 text-white/50 whitespace-nowrap text-xs">
-                                            {b.time ? formatTime(b.time) : "—"}
-                                        </td>
-
-                                        {/* Services */}
-                                        <td className="px-4 py-3.5 text-white/70 text-xs max-w-[200px]">
-                                            {b.services?.length
-                                                ? b.services.join(", ")
-                                                : <span className="text-white/25">—</span>}
-                                        </td>
-
-                                        {/* Stylist */}
-                                        <td className="px-4 py-3.5 text-white/50 text-xs whitespace-nowrap">
-                                            {b.staff
-                                                ? b.staff.toLowerCase() === "any"
-                                                    ? <span className="text-white/40 italic">Any</span>
-                                                    : b.staff
-                                                : <span className="text-white/20">—</span>}
-                                        </td>
-
-                                        {/* Amount */}
-                                        <td className="px-4 py-3.5 text-xs whitespace-nowrap font-medium">
-                                            {b.total != null
-                                                ? b.invoiceId
-                                                    ? <span className="text-white/80">{`৳${Number(b.total).toFixed(2)}`}</span>
-                                                    : <span className="text-white/40" title="Estimated based on selected services">{`~৳${Number(b.total).toFixed(2)}`}</span>
-                                                : <span className="text-white/20">—</span>}
-                                        </td>
-
-                                        {/* Status */}
-                                        <td className="px-4 py-3.5 whitespace-nowrap">
-                                            {b.invoiceStatus ? (
-                                                <span className={`inline-block text-[10px] uppercase tracking-[0.15em] px-2 py-0.5 rounded-sm font-medium ${b.invoiceStatus === "Paid"
-                                                        ? "bg-emerald-500/15 text-emerald-400"
-                                                        : b.invoiceStatus === "Partial"
-                                                            ? "bg-amber-500/15 text-amber-400"
-                                                            : "bg-white/8 text-white/40"
-                                                    }`}>
-                                                    {b.invoiceStatus}
-                                                </span>
-                                            ) : (
-                                                <span className="text-[10px] uppercase tracking-[0.15em] text-white/20">
-                                                    {b.appointmentStatus}
-                                                </span>
-                                            )}
-                                        </td>
-
-                                        {/* Download */}
-                                        <td className="px-4 py-3.5 text-right">
-                                            {b.invoiceId ? (
-                                                <button
-                                                    onClick={() => handleDownload(b)}
-                                                    disabled={downloading === b.id}
-                                                    className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] text-white/40 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                                    title="Download invoice"
-                                                >
-                                                    {downloading === b.id ? (
-                                                        <span className="h-3.5 w-3.5 rounded-full border border-white/30 border-t-white animate-spin" />
-                                                    ) : (
-                                                        <Download size={13} strokeWidth={1.5} />
-                                                    )}
-                                                    <span className="hidden sm:inline">PDF</span>
-                                                </button>
-                                            ) : (
-                                                <span className="text-white/15 text-xs">—</span>
-                                            )}
-                                        </td>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-[#eccd80]/12 bg-[#eccd80]/[0.04]">
+                                        {["Date", "Time", "Services", "Stylist", "Amount", "Status", ""].map((h) => (
+                                            <th
+                                                key={h}
+                                                className="px-4 py-3.5 text-left text-[10px] uppercase tracking-[0.25em] text-[#eccd80] font-semibold whitespace-nowrap"
+                                            >
+                                                {h}
+                                            </th>
+                                        ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {bookings.map((b, i) => (
+                                        <tr
+                                            key={b.id}
+                                            className={`border-b border-white/[0.05] transition-colors duration-150 hover:bg-[#eccd80]/[0.03] ${i === bookings.length - 1 ? "border-b-0" : ""}`}
+                                        >
+                                            {/* Date */}
+                                            <td className="px-4 py-4 text-white whitespace-nowrap text-xs font-medium">
+                                                {b.date ? formatDate(b.date) : "—"}
+                                            </td>
+
+                                            {/* Time */}
+                                            <td className="px-4 py-4 text-white whitespace-nowrap text-xs">
+                                                {b.time ? formatTime(b.time) : "—"}
+                                            </td>
+
+                                            {/* Services */}
+                                            <td className="px-4 py-4 text-white text-xs max-w-[200px]">
+                                                {b.services?.length
+                                                    ? b.services.join(", ")
+                                                    : <span className="text-white/30">—</span>}
+                                            </td>
+
+                                            {/* Stylist */}
+                                            <td className="px-4 py-4 text-white text-xs whitespace-nowrap">
+                                                {b.staff
+                                                    ? b.staff.toLowerCase() === "any"
+                                                        ? <span className="text-white/50 italic">Any</span>
+                                                        : b.staff
+                                                    : <span className="text-white/30">—</span>}
+                                            </td>
+
+                                            {/* Amount */}
+                                            <td className="px-4 py-4 text-xs whitespace-nowrap font-semibold">
+                                                {b.total != null
+                                                    ? b.invoiceId
+                                                        ? <span className="text-[#eccd80]">{`৳${Number(b.total).toFixed(2)}`}</span>
+                                                        : <span className="text-white/70" title="Estimated based on selected services">{`~৳${Number(b.total).toFixed(2)}`}</span>
+                                                    : <span className="text-white/30">—</span>}
+                                            </td>
+
+                                            {/* Status */}
+                                            <td className="px-4 py-4 whitespace-nowrap">
+                                                {b.invoiceStatus ? (
+                                                    <span className={`inline-flex items-center text-[10px] uppercase tracking-[0.18em] px-2.5 py-1 rounded-sm font-semibold border ${
+                                                        b.invoiceStatus === "Paid"
+                                                            ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                                                            : b.invoiceStatus === "Partial"
+                                                                ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                                                                : "bg-white/8 text-white/60 border-white/15"
+                                                    }`}>
+                                                        {b.invoiceStatus}
+                                                    </span>
+                                                ) : (
+                                                    <span className={`inline-flex items-center text-[10px] uppercase tracking-[0.18em] px-2.5 py-1 rounded-sm font-semibold border ${
+                                                        b.appointmentStatus?.toLowerCase() === "confirmed"
+                                                            ? "bg-[#eccd80]/12 text-[#eccd80] border-[#eccd80]/35"
+                                                            : "bg-white/8 text-white/55 border-white/15"
+                                                    }`}>
+                                                        {b.appointmentStatus || "—"}
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            {/* Download */}
+                                            <td className="px-4 py-4 text-right">
+                                                {b.invoiceId ? (
+                                                    <button
+                                                        onClick={() => handleDownload(b)}
+                                                        disabled={downloading === b.id}
+                                                        className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] text-[#eccd80]/70 hover:text-[#eccd80] border border-[#eccd80]/30 hover:border-[#eccd80]/70 rounded-sm px-2.5 py-1 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                        title="Download invoice"
+                                                    >
+                                                        {downloading === b.id ? (
+                                                            <span className="h-3 w-3 rounded-full border border-[#eccd80]/50 border-t-[#eccd80] animate-spin" />
+                                                        ) : (
+                                                            <Download size={11} strokeWidth={1.7} />
+                                                        )}
+                                                        <span className="hidden sm:inline">PDF</span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-white/25 text-xs">—</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Golden bottom accent line */}
+                        <div className="h-px bg-gradient-to-r from-transparent via-[#eccd80]/30 to-transparent" />
                     </div>
                 )}
 
-                <p className="mt-6 text-[10px] text-white/20 tracking-widest uppercase text-right">
+                <p className="mt-5 text-[10px] text-[#eccd80]/60 tracking-[0.3em] uppercase text-right">
                     {bookings.length} booking{bookings.length !== 1 ? "s" : ""} total
                 </p>
             </div>
