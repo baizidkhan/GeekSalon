@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 import { Inter, Josefin_Sans, Playfair_Display } from "next/font/google"
-import api from "@admin/api/base"
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"] })
 const josefin = Josefin_Sans({ subsets: ["latin"], weight: ["600"] })
@@ -22,7 +21,6 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [phoneError, setPhoneError] = useState("")
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
 
   const BD_PHONE = /^(?:(?:\+?88)?01[3-9]\d{8}|1[3-9]\d{8})$/
 
@@ -35,7 +33,7 @@ export default function RegisterPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (password !== confirmPassword) {
       setError("Passwords do not match.")
@@ -46,31 +44,16 @@ export default function RegisterPage() {
       return
     }
     setError("")
-    setLoading(true)
-    try {
-      await api.post("/auth/send-signup-code", { email })
-
-      sessionStorage.setItem(
-        "pendingSignup",
-        JSON.stringify({
-          name,
-          email,
-          phone,
-          password,
-        }),
-      )
-
-      router.push(`/register/verify-otp?email=${encodeURIComponent(email)}`)
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to send OTP. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+    sessionStorage.setItem(
+      "pendingSignup",
+      JSON.stringify({ name, email, phone, password }),
+    )
+    router.push(`/register/verify-otp?email=${encodeURIComponent(email)}`)
   }
 
   return (
     <div className={`${inter.className} min-h-screen bg-black text-white`}>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full flex-col lg:flex-row">
         <div
           className="relative hidden overflow-hidden border-r border-[#eccd80]/25 lg:flex lg:w-[56%]"
           style={{
@@ -117,7 +100,38 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="relative flex w-full items-center justify-center px-6 py-6 sm:px-6 lg:w-[44%] lg:px-8 xl:px-11">
+        {/* Mobile / Tablet Hero Banner */}
+        <div
+          className="relative overflow-hidden lg:hidden"
+          style={{
+            backgroundImage: "url('/login-cover.avif')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <div className="absolute inset-0 bg-black/65" />
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black to-transparent" />
+          <div className="relative z-10 flex flex-col gap-5 px-6 py-8 sm:px-10 sm:py-10">
+            <p className={`${josefin.className} text-[26px] font-semibold leading-none text-white`}>
+              MakeOver
+            </p>
+            <h2 className={`${playfair.className} text-[28px] sm:text-[34px] font-semibold capitalize leading-[1.15] text-white`}>
+              Build your beauty profile in <span className="italic font-normal">moments.</span>
+            </h2>
+            <div className="flex gap-8 text-white/80">
+              <div>
+                <p className="text-[18px] font-semibold leading-none text-[#eccd80]">24/7</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.14em]">Online Booking</p>
+              </div>
+              <div>
+                <p className="text-[18px] font-semibold leading-none text-[#eccd80]">1 Min</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.14em]">Quick Sign-Up</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative flex w-full items-center justify-center px-6 py-10 sm:px-10 sm:py-12 lg:w-[44%] lg:px-8 lg:py-6 xl:px-11">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(236,205,128,0.12),transparent_45%)]" />
           <div className="relative w-full max-w-[480px]">
             <div className="mb-5">
@@ -247,10 +261,9 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                disabled={loading}
-                className="flex h-9 w-full items-center justify-center bg-white px-8 text-[13px] font-semibold uppercase tracking-[0.1em] text-black transition-all hover:-translate-y-0.5 hover:bg-[#f5f5f5] hover:shadow-[0_24px_50px_-24px_rgba(255,255,255,0.95)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-9 w-full items-center justify-center bg-white px-8 text-[13px] font-semibold uppercase tracking-[0.1em] text-black transition-all hover:-translate-y-0.5 hover:bg-[#f5f5f5] hover:shadow-[0_24px_50px_-24px_rgba(255,255,255,0.95)]"
               >
-                {loading ? "Sending OTP..." : "Create Account"}
+                Create Account
               </button>
             </form>
 
