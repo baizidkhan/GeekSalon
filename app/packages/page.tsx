@@ -30,7 +30,7 @@ export default async function PackagesPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <div
-        className="relative flex min-h-[550px] w-full flex-col"
+        className="relative flex h-[520px] w-full flex-col"
         style={{
           backgroundImage: "url('/login-cover.avif')",
           backgroundSize: "cover",
@@ -38,13 +38,13 @@ export default async function PackagesPage() {
         }}
       >
         <div className="absolute inset-0 bg-black/72" />
-        <div className="relative z-10">
+        <div className="relative z-20">
           <SiteHeader />
         </div>
         <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-20">
           <div className="flex flex-col items-center gap-6 text-center max-w-[769px]">
             <div className="flex flex-col items-center">
-              <h1 className={`${playfair.className} text-[56px] font-semibold leading-[1.2] text-white sm:text-[64px]`}>
+              <h1 className={`${playfair.className} text-[1.9rem] font-semibold leading-[1.2] text-white sm:text-[44px] lg:text-[56px]`}>
                 Luxury Experiences
                 <br />
                 <span className="italic font-normal text-[#eccd80]">Bundled for You</span>
@@ -56,11 +56,11 @@ export default async function PackagesPage() {
           </div>
         </div>
       </div>
-      <main className="max-w-7xl mx-auto px-6 py-24">
+      <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 sm:py-16 lg:py-24">
         <section className="bg-[#0a0a0a] py-10 sm:py-14 lg:py-20">
           <div className="mx-auto max-w-5xl text-center">
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.5em] text-[#eccd80]">Packages</p>
-            <h2 className={`${playfair.className} text-[34px] font-semibold leading-tight text-white sm:text-[44px] lg:text-[56px]`}>
+            <h2 className={`${playfair.className} text-[1.75rem] font-semibold leading-tight text-white sm:text-[34px] lg:text-[44px]`}>
               Premium Beauty <span className="italic text-[#eccd80]">Experiences</span>
             </h2>
             <p className="mx-auto mt-5 max-w-3xl text-[13px] leading-7 text-white/55 sm:text-[15px]">
@@ -95,7 +95,7 @@ export default async function PackagesPage() {
               <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.5em] text-[#f1d58d] drop-shadow-sm">
                 Custom Package
               </p>
-              <h2 className={`${playfair.className} text-[34px] font-semibold leading-tight text-white drop-shadow-sm sm:text-[44px] lg:text-[56px]`}>
+              <h2 className={`${playfair.className} text-[1.75rem] font-semibold leading-tight text-white drop-shadow-sm sm:text-[34px] lg:text-[44px]`}>
                 Need A Custom <span className="italic text-[#f1d58d]">Package?</span>
               </h2>
               <p className="mx-auto mt-5 max-w-2xl text-[13px] leading-7 text-white/90 sm:text-[15px]">
