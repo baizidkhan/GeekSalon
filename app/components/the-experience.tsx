@@ -32,7 +32,7 @@ export function TheExperienceSection({ excellence }: { excellence: ExcellenceDat
 
                     {/* Left: Text content */}
                     <div className="max-w-xl">
-                        <h2 className="mb-6 text-[2.75rem] leading-tight text-white sm:text-[3.25rem]" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        <h2 className="mb-6 text-[1.75rem] leading-tight text-white sm:text-[2.75rem] lg:text-[3.25rem]" style={{ fontFamily: 'Playfair Display, serif' }}>
                             {formatTitle(displayTitle)}
                         </h2>
                         <p className="mb-12 text-[13px] leading-relaxed text-gray-300" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
