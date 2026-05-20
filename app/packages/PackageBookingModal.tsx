@@ -42,6 +42,17 @@ function normalizePhone(value: string) {
   return digits
 }
 
+function getProfileFromToken(): { name: string; phone: string } {
+  try {
+    const token = localStorage.getItem('accessToken')
+    if (!token) return { name: "", phone: "" }
+    const payload = token.split('.')[1]
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    const phone = localStorage.getItem('userPhone') || decoded.phone || ""
+    return { name: decoded.clientName || decoded.name || "", phone }
+  } catch { return { name: "", phone: "" } }
+}
+
 const MIN_DATE = (() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
@@ -101,12 +112,13 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
       .catch(() => { })
   }, [])
 
-  // Reset form when pkg changes
+  // Reset form and auto-fill profile when pkg changes
   useEffect(() => {
     if (pkg) {
+      const { name: loggedInName, phone: loggedInPhone } = getProfileFromToken()
       setStep(1)
-      setPhone("")
-      setClientName("")
+      setClientName(loggedInName)
+      setPhone(loggedInPhone)
       setDate("")
       setTime("")
       setNotes("")
@@ -137,8 +149,8 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
         }
       }
     } else if (currentStep === 3) {
-      if (!clientName.trim()) e.clientName = "Name is required."
-      if (!phone.trim()) e.phone = "Phone is required."
+      if (!clientName.trim()) e.clientName = "Name is missing from your account."
+      if (!phone.trim()) e.phone = "Phone number is missing from your account."
       else if (!/^\d{11}$/.test(normalizePhone(phone))) e.phone = "Please enter a valid Bangladeshi Phone Number."
     }
     setErrors(e)
@@ -354,9 +366,9 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
                         <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                         <Input
                           value={clientName}
-                          onChange={(e) => setClientName(e.target.value)}
-                          placeholder="Your full name"
-                          className={`h-14 rounded-none border-white/10 bg-transparent pl-11 text-white placeholder:text-white/20 focus-visible:ring-[#c4a484]/20 ${errors.clientName ? "border-red-500/70" : ""}`}
+                          readOnly
+                          tabIndex={-1}
+                          className={`h-14 rounded-none border-white/8 bg-white/[0.03] pl-11 text-white/60 cursor-default select-none focus-visible:ring-0 focus-visible:border-white/8 ${errors.clientName ? "border-red-500/70" : ""}`}
                         />
                       </div>
                       {errors.clientName && <p className="text-[10px] text-red-400 uppercase tracking-widest">{errors.clientName}</p>}
@@ -368,13 +380,17 @@ export default function PackageBookingModal({ pkg, onClose }: PackageBookingModa
                         <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                         <Input
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="017XXXXXXXX"
-                          className={`h-14 rounded-none border-white/10 bg-transparent pl-11 text-white placeholder:text-white/20 focus-visible:ring-[#c4a484]/20 ${errors.phone ? "border-red-500/70" : ""}`}
+                          readOnly
+                          tabIndex={-1}
+                          className={`h-14 rounded-none border-white/8 bg-white/[0.03] pl-11 text-white/60 cursor-default select-none focus-visible:ring-0 focus-visible:border-white/8 ${errors.phone ? "border-red-500/70" : ""}`}
                         />
                       </div>
                       {errors.phone && <p className="text-[10px] text-red-400 uppercase tracking-widest">{errors.phone}</p>}
                     </div>
+
+                    <p className="text-center text-[10px] text-white/30 uppercase tracking-[0.2em]">
+                      To update your details, visit your profile settings.
+                    </p>
 
                     <div className="space-y-3">
                       <Label className="text-[10px] uppercase tracking-[0.28em] text-white/50">Special Notes (Optional)</Label>
