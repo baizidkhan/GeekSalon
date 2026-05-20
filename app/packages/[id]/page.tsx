@@ -81,20 +81,20 @@ export default function PackageDetailPage() {
         <div className="min-h-screen bg-[#0a0a0a]">
 
             {/* ── Hero ── */}
-            <div className="relative h-[560px] w-full overflow-hidden">
+            <div className="relative h-[280px] sm:h-[400px] lg:h-[560px] w-full overflow-hidden">
                 <img
                     src={coverImage}
                     alt={pkg.title}
                     className="absolute inset-0 h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/45" />
-                <div className="relative z-10">
+                <div className="relative z-20">
                     <SiteHeader />
                 </div>
             </div>
 
             {/* ── Info card — overlaps hero bottom ── */}
-            <div className="relative z-10 mx-auto -mt-[220px] max-w-[1170px] px-4 sm:px-6 lg:px-8">
+            <div className="relative z-10 mx-auto mt-0 sm:-mt-[120px] lg:-mt-[220px] max-w-[1170px] px-4 sm:px-6 lg:px-8">
                 <div className="border border-[#eccd80]/60 bg-[#0d0d0d]" style={{ boxShadow: '0 0 0 1px rgba(236,205,128,0.15)' }}>
                     <div className="flex flex-col lg:flex-row">
 
