@@ -46,6 +46,7 @@ export function UnlinkedFingerprintModal() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
   const [newEmpName, setNewEmpName] = useState("")
   const [newEmpPhone, setNewEmpPhone] = useState("")
+  const [newEmpPhoneError, setNewEmpPhoneError] = useState("")
   const [newEmpRole, setNewEmpRole] = useState("")
   const [isLinking, startLinkTransition] = useTransition()
 
@@ -81,6 +82,7 @@ export function UnlinkedFingerprintModal() {
     setSelectedEmployeeId("")
     setNewEmpName("")
     setNewEmpPhone("")
+    setNewEmpPhoneError("")
     setNewEmpRole("")
 
     if (employees.length === 0) {
@@ -281,8 +283,21 @@ export function UnlinkedFingerprintModal() {
                 id="uf-emp-phone"
                 placeholder="e.g. 01712345678"
                 value={newEmpPhone}
-                onChange={(e) => setNewEmpPhone(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setNewEmpPhone(val)
+                  const stripped = val.replace(/[\s-]/g, "")
+                  if (val.trim() && !/^(?:\+88|88)?01[3-9]\d{8}$/.test(stripped)) {
+                    setNewEmpPhoneError("Enter a valid Bangladeshi phone number (e.g. 01712345678)")
+                  } else {
+                    setNewEmpPhoneError("")
+                  }
+                }}
+                className={newEmpPhoneError ? "border-destructive focus-visible:ring-destructive" : ""}
               />
+              {newEmpPhoneError && (
+                <p className="text-xs text-destructive">{newEmpPhoneError}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="uf-emp-role">
@@ -320,7 +335,7 @@ export function UnlinkedFingerprintModal() {
             disabled={
               isLinking ||
               (linkMode === "existing" && !selectedEmployeeId) ||
-              (linkMode === "create" && (!newEmpName.trim() || !newEmpPhone.trim()))
+              (linkMode === "create" && (!newEmpName.trim() || !newEmpPhone.trim() || !!newEmpPhoneError))
             }
           >
             {isLinking ? (
