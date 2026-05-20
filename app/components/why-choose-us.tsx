@@ -77,7 +77,7 @@ export function WhyChooseUsSection() {
     ]
 
     return (
-        <section className="bg-transparent px-4 py-24 sm:px-6 lg:px-8">
+        <section className="bg-transparent px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
             <div className="mx-auto w-full max-w-6xl">
                 
                 {/* Center Header */}
@@ -85,7 +85,7 @@ export function WhyChooseUsSection() {
                     <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-[#d4af37]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
                         WHY CHOOSE US
                     </p>
-                    <h2 className="mb-6 text-[2.75rem] leading-tight text-black sm:text-[3.25rem]" style={{ fontFamily: 'Playfair Display, serif' }}>
+                    <h2 className="mb-6 text-[1.75rem] leading-tight text-black sm:text-[2.75rem] lg:text-[3.25rem]" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Where Luxury Meets <span className="italic">Artistry</span>
                     </h2>
                     <p className="mx-auto max-w-3xl text-[13px] leading-relaxed text-gray-600" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -93,7 +93,7 @@ export function WhyChooseUsSection() {
                     </p>
                 </div>
 
-                <div className="grid items-center gap-16 lg:grid-cols-2">
+                <div className="grid items-center gap-10 sm:gap-14 lg:gap-16 lg:grid-cols-2">
                     {/* Left: Stats Grid */}
                     <div ref={statsRef} className="grid grid-cols-2 gap-x-12 gap-y-14 pr-4 lg:pr-8">
                         {stats.map((stat, i) => {
