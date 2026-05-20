@@ -3,11 +3,11 @@ import { CACHE, consumeStale, markStale } from '@admin/lib/cache'
 
 const TTL = 10 * 60 * 1000 // 10 min — services rarely change
 
-export async function getServices(filters?: { name?: string; category?: string; sortPrice?: string }) {
-  const override = consumeStale(CACHE.SERVICES)
+export async function getServices(filters?: { name?: string; category?: string; sortPrice?: string }, noCache = false) {
+  const override = noCache || consumeStale(CACHE.SERVICES)
   const { data } = await api.get('/service', {
     params: filters,
-    cache: { ttl: TTL, override },
+    cache: noCache ? false : { ttl: TTL, override },
   })
   return data
 }
