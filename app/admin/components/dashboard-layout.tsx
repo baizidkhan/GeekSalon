@@ -7,6 +7,7 @@ import { NotificationProvider } from "@admin/context/notification-context"
 import { NotificationBell } from "./notification-bell"
 import { Menu, Sparkles } from "lucide-react"
 import { useBusiness } from "@/context/BusinessContext"
+import Link from "next/link"
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -134,20 +135,22 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
         <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile top bar */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border md:hidden sticky top-0 z-30">
+          <div className="flex items-center gap-3 px-4 py-3 bg-[#3b82f6] border-b border-[#2563eb] md:hidden sticky top-0 z-30 shadow-sm">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-white hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2.5 flex-1">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-sidebar-primary">
-                <Sparkles className="w-3.5 h-3.5 text-sidebar-primary-foreground fill-sidebar-primary-foreground/30" />
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20">
+                <Sparkles className="w-3.5 h-3.5 text-white fill-white/30" />
               </div>
-              <span className="font-semibold text-sidebar-foreground text-sm tracking-wide">
-                {businessName}
-              </span>
+              <Link href="/">
+                <span className="font-semibold text-white text-sm tracking-wide">
+                  {businessName}
+                </span>
+              </Link>
             </div>
             <NotificationBell />
           </div>

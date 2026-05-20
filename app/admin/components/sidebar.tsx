@@ -150,9 +150,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-blue-500 text-[15px] leading-tight tracking-wide whitespace-nowrap">
-              {businessName || "Salonbos"}
-            </h1>
+            <Link href="/">
+              <h1 className="font-bold text-blue-500 text-[15px] leading-tight tracking-wide whitespace-nowrap">
+                {businessName || "Salonbos"}
+              </h1>
+            </Link>
             <p className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Business os</p>
           </div>
           <button
