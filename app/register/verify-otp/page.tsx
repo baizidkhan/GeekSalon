@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Inter, Josefin_Sans, Playfair_Display } from "next/font/google"
@@ -30,6 +30,8 @@ function VerifyOtpContent() {
     const [info, setInfo] = useState("")
     const [loading, setLoading] = useState(false)
     const [resending, setResending] = useState(false)
+    const [countdown, setCountdown] = useState(60)
+    const hasSentOtp = useRef(false)
 
     useEffect(() => {
         const raw = sessionStorage.getItem("pendingSignup")
@@ -51,10 +53,26 @@ function VerifyOtpContent() {
             }
 
             setPendingSignup(parsed)
+
+            // Fire OTP send in the background — do not block navigation
+            // Guard against React StrictMode double-invocation
+            if (!hasSentOtp.current) {
+                hasSentOtp.current = true
+                api.post("/auth/send-signup-code", { email: parsed.email }).catch(() => {
+                    setError("Failed to send OTP automatically. Use \"Resend OTP\" below.")
+                })
+            }
         } catch {
             router.replace("/register")
         }
     }, [emailFromQuery, router])
+
+    // 60-second countdown — ticks every second until it reaches 0
+    useEffect(() => {
+        if (countdown <= 0) return
+        const timer = setTimeout(() => setCountdown((c) => c - 1), 1000)
+        return () => clearTimeout(timer)
+    }, [countdown])
 
     const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -92,6 +110,7 @@ function VerifyOtpContent() {
         try {
             const { data } = await api.post("/auth/send-signup-code", { email: pendingSignup.email })
             setInfo(data?.otp ? `A new OTP was sent. (Testing OTP: ${data.otp})` : "A new OTP was sent to your email")
+            setCountdown(60)
         } catch (err: any) {
             setError(err.response?.data?.message || "Failed to resend OTP. Please try again.")
         } finally {
@@ -206,10 +225,14 @@ function VerifyOtpContent() {
                             <button
                                 type="button"
                                 onClick={handleResendOtp}
-                                disabled={resending || loading}
+                                disabled={resending || loading || countdown > 0}
                                 className="text-[13px] text-white/75 underline underline-offset-4 transition-colors hover:text-[#eccd80] disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {resending ? "Resending..." : "Resend OTP"}
+                                {resending
+                                    ? "Resending..."
+                                    : countdown > 0
+                                        ? `Resend OTP (${String(Math.floor(countdown / 60)).padStart(2, "0")}:${String(countdown % 60).padStart(2, "0")})`
+                                        : "Resend OTP"}
                             </button>
 
                             <Link href="/register" className="text-[13px] text-white/75 underline underline-offset-4 transition-colors hover:text-[#eccd80]">
