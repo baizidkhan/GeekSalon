@@ -64,7 +64,7 @@ export default async function AboutUsPage() {
         <div className="min-h-screen bg-[#070707] text-white">
 
             {/* Hero Section */}
-            <div className="relative min-h-[75vh] flex flex-col bg-black">
+            <div className="relative h-[520px] flex flex-col bg-black">
                 {/* Background image & overlays */}
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat grayscale opacity-60"
@@ -79,7 +79,7 @@ export default async function AboutUsPage() {
 
                 {/* Hero Content */}
                 <div className="relative z-10 flex-grow flex flex-col items-center justify-center px-4 py-20 text-center">
-                    <h1 className="mb-6 text-5xl sm:text-7xl font-normal leading-tight text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
+                    <h1 className="mb-6 text-[1.9rem] sm:text-5xl lg:text-7xl font-normal leading-tight text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Welcome To <em className="italic font-light">Makeover</em>
                     </h1>
                     <p className="mx-auto max-w-3xl text-[13px] text-white/80 leading-relaxed tracking-wide" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -89,13 +89,13 @@ export default async function AboutUsPage() {
             </div>
 
             {/* Salon Vision Section */}
-            <section className="bg-[#070707] py-24 px-6 sm:px-12 lg:px-24">
-                <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-20 w-full">
+            <section className="bg-[#070707] py-14 px-6 sm:py-20 sm:px-12 lg:py-24 lg:px-24">
+                <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-20 w-full">
                     <div className="flex-1 max-w-lg">
                         <p className="text-[12px] font-normal uppercase tracking-[0.15em] text-[#CDB37F] mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
                             OUR MISSION & VISSION
                         </p>
-                        <h2 className="text-4xl sm:text-[3rem] text-white mb-8" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        <h2 className="text-[1.75rem] sm:text-4xl lg:text-[3rem] text-white mb-8" style={{ fontFamily: 'Playfair Display, serif' }}>
                             Where Beauty <em className="italic font-light">Begins</em>
                         </h2>
                         <p className="text-[14px] text-gray-300 leading-relaxed mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -116,12 +116,12 @@ export default async function AboutUsPage() {
             </section>
 
             {/* Meet Our Expert Team Section */}
-            <section className="bg-[#0b0b0b] py-28 px-6 sm:px-12 lg:px-24">
+            <section className="bg-[#0b0b0b] py-16 px-6 sm:py-20 sm:px-12 lg:py-28 lg:px-24">
                 <div className="text-center mb-20">
                     <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#CDB37F] mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
                         THE ARTISTS
                     </p>
-                    <h2 className="text-4xl sm:text-[2.75rem] text-white mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>
+                    <h2 className="text-[1.75rem] sm:text-4xl lg:text-[2.75rem] text-white mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Meet Our <em className="italic font-light">Expert Team</em>
                     </h2>
                     <p className="text-[13px] text-white/80 max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
