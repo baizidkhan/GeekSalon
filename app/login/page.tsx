@@ -54,7 +54,7 @@ function LoginForm() {
 
     return (
         <div className={`${inter.className} min-h-screen bg-black text-white`}>
-            <div className="flex min-h-screen w-full">
+            <div className="flex min-h-screen w-full flex-col lg:flex-row">
                 <div
                     className="relative hidden overflow-hidden border-r border-[#eccd80]/25 lg:flex lg:w-[56%]"
                     style={{
@@ -105,7 +105,38 @@ function LoginForm() {
                     </div>
                 </div>
 
-                <div className="relative flex w-full items-center justify-center px-6 py-6 sm:px-6 lg:w-[44%] lg:px-8 xl:px-11">
+                {/* Mobile / Tablet Hero Banner */}
+                <div
+                    className="relative overflow-hidden lg:hidden"
+                    style={{
+                        backgroundImage: "url('/login-cover.avif')",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                    }}
+                >
+                    <div className="absolute inset-0 bg-black/65" />
+                    <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black to-transparent" />
+                    <div className="relative z-10 flex flex-col gap-5 px-6 py-8 sm:px-10 sm:py-10">
+                        <p className={`${josefin.className} text-[26px] font-semibold leading-none text-white`}>
+                            MakeOver
+                        </p>
+                        <h2 className={`${playfair.className} text-[28px] sm:text-[34px] font-semibold capitalize leading-[1.15] text-white`}>
+                            Step into your <span className="italic font-normal">signature era.</span>
+                        </h2>
+                        <div className="flex gap-8 text-white/80">
+                            <div>
+                                <p className="text-[18px] font-semibold leading-none text-[#eccd80]">12K+</p>
+                                <p className="mt-1 text-[10px] uppercase tracking-[0.14em]">Sessions Styled</p>
+                            </div>
+                            <div>
+                                <p className="text-[18px] font-semibold leading-none text-[#eccd80]">98%</p>
+                                <p className="mt-1 text-[10px] uppercase tracking-[0.14em]">Rebook Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative flex w-full items-center justify-center px-6 py-10 sm:px-10 sm:py-12 lg:w-[44%] lg:px-8 lg:py-6 xl:px-11">
                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(236,205,128,0.12),transparent_45%)]" />
                     <div className="relative w-full max-w-[480px]">
                         <div className="mb-5">
