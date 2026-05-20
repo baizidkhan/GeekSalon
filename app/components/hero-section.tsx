@@ -21,7 +21,7 @@ export function HeroSection() {
 
                 {/* Headline */}
                 <h1
-                    className="mx-auto max-w-6xl text-[2.6rem] font-semibold leading-[1.1] sm:text-[4rem] lg:text-[5.5rem]"
+                    className="mx-auto max-w-6xl text-[2rem] font-semibold leading-[1.1] sm:text-[3.2rem] lg:text-[5.5rem]"
                     style={{ fontFamily: 'Playfair Display, serif' }}
                 >
                     <span className="block">
