@@ -27,7 +27,7 @@ export function CtaSection() {
 
     return (
         <section
-            className="relative overflow-hidden px-4 py-32 sm:px-6 lg:px-8 bg-cover bg-center bg-no-repeat"
+            className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url('${bgImage}')` }}
         >
             {/* Dark Overlays */}
@@ -40,7 +40,7 @@ export function CtaSection() {
                     BEGIN YOUR JOURNEY
                 </p>
 
-                <h2 className="mb-6 text-[2.75rem] font-medium leading-[1.2] text-white sm:text-[3.5rem]" style={{ fontFamily: 'Playfair Display, serif' }}>
+                <h2 className="mb-6 text-[1.75rem] font-medium leading-[1.2] text-white sm:text-[2.75rem] lg:text-[3.5rem]" style={{ fontFamily: 'Playfair Display, serif' }}>
                     Ready To Experience
                     <br />
                     True <span className="italic">Luxury?</span>
