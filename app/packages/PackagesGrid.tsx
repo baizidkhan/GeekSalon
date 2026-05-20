@@ -55,13 +55,13 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                 key={pkg.id}
                 onClick={() => router.push(`/packages/${pkg.id}`)}
                 className={`relative flex flex-col cursor-pointer transition-all duration-700 ${isFeaturedCard
-                  ? "z-0 scale-100 opacity-100 lg:z-10 lg:scale-[1.02] lg:shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+                  ? "order-first lg:order-none z-0 scale-100 opacity-100 lg:z-10 lg:scale-[1.02] lg:shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
                   : "z-0 scale-100 opacity-100"
                   }`}
               >
                 {/* Most Popular Header for Middle Card */}
                 {isFeaturedCard && (
-                  <div className="hidden lg:flex items-center justify-center bg-[#eccd80] py-2.5">
+                  <div className="flex items-center justify-center bg-[#eccd80] py-2.5">
                     <span className="text-black text-[10px] font-bold tracking-[0.35em] uppercase">
                       Popular
                     </span>
@@ -110,12 +110,9 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                           }
                           setBookingPkg(pkg)
                         }}
-                        className={`w-full ${isFeaturedCard ? "py-4 text-[10px]" : "py-2.5 text-[13px]"} font-bold tracking-[0.2em] uppercase transition-all duration-500 flex items-center justify-center gap-2 group/btn ${isFeaturedCard
-                          ? "bg-transparent text-white border border-white/10 hover:border-white/40 lg:bg-white lg:text-black lg:border-transparent lg:hover:bg-[#c4a484] lg:hover:text-white"
-                          : "bg-white text-black hover:bg-[#c4a484] hover:text-white"
-                          }`}
+                        className="w-full py-2.5 text-[13px] font-bold tracking-[0.2em] uppercase transition-all duration-500 flex items-center justify-center gap-2 group/btn bg-white text-black hover:bg-[#c4a484] hover:text-white"
                       >
-                        {isFeaturedCard ? "Book This Package" : "Book Now"}
+                        Book Now
                       </button>
                     )}
 
@@ -142,9 +139,9 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                         }
                         setBookingPkg(pkg)
                       }}
-                      className="w-full py-4 font-bold tracking-[0.2em] text-[10px] uppercase transition-all duration-500 flex items-center justify-center gap-2 group/btn bg-transparent text-white border border-white/10 hover:border-white/40 lg:bg-white lg:text-black lg:border-transparent lg:hover:bg-[#c4a484] lg:hover:text-white"
+                      className="w-full py-2.5 font-bold tracking-[0.2em] text-[13px] uppercase transition-all duration-500 flex items-center justify-center gap-2 group/btn bg-white text-black hover:bg-[#c4a484] hover:text-white"
                     >
-                      Book This Package
+                      Book Now
                     </button>
                   )}
                 </div>
