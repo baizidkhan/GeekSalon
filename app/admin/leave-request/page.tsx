@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { format } from "date-fns"
+import { Calendar as DateCalendar } from "@/components/ui/calendar"
 import { DashboardLayout } from "@admin/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,7 +32,12 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Plus, CheckCircle, XCircle, Search, Trash2 } from "lucide-react"
+import { Plus, CheckCircle, XCircle, Search, Trash2, Calendar as CalendarIcon } from "lucide-react"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 import { toast } from "sonner"
 import { useAuth } from "@admin/hooks/use-auth"
 import {
@@ -50,6 +57,8 @@ export default function LeaveRequestsPage() {
     const [search, setSearch] = useState("")
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [requestToDelete, setRequestToDelete] = useState<LeaveRequest | null>(null)
+    const [startDateOpen, setStartDateOpen] = useState(false)
+    const [endDateOpen, setEndDateOpen] = useState(false)
 
     // Form state
     const [newRequest, setNewRequest] = useState({
@@ -232,19 +241,53 @@ export default function LeaveRequestsPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label>Start Date</Label>
-                                        <Input
-                                            type="date"
-                                            value={newRequest.startDate}
-                                            onChange={(e) => setNewRequest({ ...newRequest, startDate: e.target.value })}
-                                        />
+                                        <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal">
+                                                    <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                                    <span className={newRequest.startDate ? "text-foreground" : "text-muted-foreground"}>
+                                                        {newRequest.startDate ? format(new Date(`${newRequest.startDate}T00:00:00`), "PPP") : "Pick a date"}
+                                                    </span>
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                                                <DateCalendar
+                                                    mode="single"
+                                                    selected={newRequest.startDate ? new Date(`${newRequest.startDate}T00:00:00`) : undefined}
+                                                    onSelect={(selected) => {
+                                                        if (!selected) return
+                                                        setNewRequest({ ...newRequest, startDate: format(selected, "yyyy-MM-dd") })
+                                                        setStartDateOpen(false)
+                                                    }}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                     <div className="space-y-2">
                                         <Label>End Date</Label>
-                                        <Input
-                                            type="date"
-                                            value={newRequest.endDate}
-                                            onChange={(e) => setNewRequest({ ...newRequest, endDate: e.target.value })}
-                                        />
+                                        <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal">
+                                                    <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                                    <span className={newRequest.endDate ? "text-foreground" : "text-muted-foreground"}>
+                                                        {newRequest.endDate ? format(new Date(`${newRequest.endDate}T00:00:00`), "PPP") : "Pick a date"}
+                                                    </span>
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                                                <DateCalendar
+                                                    mode="single"
+                                                    selected={newRequest.endDate ? new Date(`${newRequest.endDate}T00:00:00`) : undefined}
+                                                    onSelect={(selected) => {
+                                                        if (!selected) return
+                                                        setNewRequest({ ...newRequest, endDate: format(selected, "yyyy-MM-dd") })
+                                                        setEndDateOpen(false)
+                                                    }}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                 </div>
                                 <div className="space-y-2 max-w-full">
