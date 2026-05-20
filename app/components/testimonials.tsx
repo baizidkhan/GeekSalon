@@ -81,13 +81,13 @@ export function TestimonialsSection() {
     }
 
     return (
-        <section className="testimonial-alive bg-[#1a1a1a] px-4 py-16 sm:px-6 lg:px-[135px] lg:py-16">
+        <section className="testimonial-alive bg-[#1a1a1a] px-4 py-12 sm:px-6 sm:py-16 lg:px-[135px] lg:py-16">
             <div className="mx-auto flex w-full max-w-[1150px] flex-col items-center text-center">
                 <div className="testimonial-intro max-w-[770px]">
                     <p className="mb-4 text-[15px] font-medium uppercase tracking-[0.45em] text-[#eccd80]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
                         TESTIMONIAL
                     </p>
-                    <h2 className="text-[48px] leading-none text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
+                    <h2 className="text-[1.75rem] leading-none text-white sm:text-[2.5rem] lg:text-[48px]" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Our Happy Client <span className="italic">Review</span>
                     </h2>
                     <p className="mx-auto mt-5 max-w-[720px] text-[14px] leading-[1.5] text-white" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -113,9 +113,9 @@ export function TestimonialsSection() {
                                         className="testimonial-card relative flex min-h-[264px] flex-1 flex-col justify-between border border-[#eccd80] px-8 pb-10 pt-12 text-left sm:px-10 lg:px-16"
                                     >
                                         <div className="absolute left-0 top-0 h-px w-full bg-[#eccd80]" />
-                                        <div className="absolute -top-[22px] left-10 bg-[#1a1a1a] px-2 sm:left-12 sm:px-3 lg:left-14">
+                                        <div className="absolute -top-[10px] left-10 bg-[#1a1a1a] px-2 sm:left-12 sm:px-3 lg:left-14">
                                             <span
-                                                className="testimonial-quote block text-[108px] font-semibold leading-[0.8] text-white"
+                                                className="testimonial-quote block text-[108px] font-semibold leading-[0.5] text-white"
                                                 style={{ fontFamily: 'Playfair Display, serif' }}
                                                 aria-hidden="true"
                                             >
