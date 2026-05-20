@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
+import { format } from "date-fns"
+import { Calendar as DateCalendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -28,7 +30,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Plus, Download, User, UserCheck, Receipt, MinusCircle, Zap, Loader2, MoreHorizontal, Pencil, ChevronLeft, ChevronRight, Users } from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Plus, Download, User, UserCheck, Receipt, MinusCircle, Zap, Loader2, MoreHorizontal, Pencil, ChevronLeft, ChevronRight, Users, Calendar as CalendarIcon } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,6 +115,8 @@ export default function HRPayrollPage() {
   const [editForm, setEditForm] = useState<CreatePayrollDto>(EMPTY_FORM)
   const [editSaving, setEditSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [addPayDateOpen, setAddPayDateOpen] = useState(false)
+  const [editPayDateOpen, setEditPayDateOpen] = useState(false)
   const { businessName } = useBusiness()
 
   // Auto-calculate netSalary for Create Form
@@ -668,15 +677,33 @@ export default function HRPayrollPage() {
                   </div>
                   <div>
                     <Label className={errors.payDate ? "text-destructive" : ""}>Pay Date {form.status === "Paid" && <span className="text-destructive">*</span>}</Label>
-                    <Input
-                      className={errors.payDate ? "border-destructive" : ""}
-                      type="date"
-                      value={form.payDate}
-                      onChange={(e) => {
-                        setForm({ ...form, payDate: e.target.value })
-                        if (errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
-                      }}
-                    />
+                    <Popover open={addPayDateOpen} onOpenChange={setAddPayDateOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={`w-full justify-start px-3 font-normal${errors.payDate ? " border-destructive" : ""}`}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span className={form.payDate ? "text-foreground" : "text-muted-foreground"}>
+                            {form.payDate ? format(new Date(`${form.payDate}T00:00:00`), "PPP") : "Pick a date"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                        <DateCalendar
+                          mode="single"
+                          selected={form.payDate ? new Date(`${form.payDate}T00:00:00`) : undefined}
+                          onSelect={(selected) => {
+                            if (!selected) return
+                            setForm({ ...form, payDate: format(selected, "yyyy-MM-dd") })
+                            if (errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
+                            setAddPayDateOpen(false)
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     {errors.payDate && <p className="text-[10px] text-destructive mt-1">{errors.payDate}</p>}
                   </div>
                 </div>
@@ -938,15 +965,33 @@ export default function HRPayrollPage() {
               </div>
               <div>
                 <Label className={errors.payDate ? "text-destructive" : ""}>Pay Date {editForm.status === "Paid" && <span className="text-destructive">*</span>}</Label>
-                <Input
-                  className={errors.payDate ? "border-destructive" : ""}
-                  type="date"
-                  value={editForm.payDate}
-                  onChange={(e) => {
-                    setEditForm({ ...editForm, payDate: e.target.value })
-                    if (errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
-                  }}
-                />
+                <Popover open={editPayDateOpen} onOpenChange={setEditPayDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={`w-full justify-start px-3 font-normal${errors.payDate ? " border-destructive" : ""}`}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <span className={editForm.payDate ? "text-foreground" : "text-muted-foreground"}>
+                        {editForm.payDate ? format(new Date(`${editForm.payDate}T00:00:00`), "PPP") : "Pick a date"}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                    <DateCalendar
+                      mode="single"
+                      selected={editForm.payDate ? new Date(`${editForm.payDate}T00:00:00`) : undefined}
+                      onSelect={(selected) => {
+                        if (!selected) return
+                        setEditForm({ ...editForm, payDate: format(selected, "yyyy-MM-dd") })
+                        if (errors.payDate) setErrors(prev => ({ ...prev, payDate: "" }))
+                        setEditPayDateOpen(false)
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 {errors.payDate && <p className="text-[10px] text-destructive mt-1">{errors.payDate}</p>}
               </div>
             </div>

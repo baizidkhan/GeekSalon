@@ -1,7 +1,14 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { format } from "date-fns"
 import { useDebounce } from "@/hooks/use-debounce"
+import { Calendar as DateCalendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -28,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Search, AlertTriangle, Package, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2, Calendar, Globe, Zap, UserCheck, Receipt, Loader2 } from "lucide-react"
+import { Plus, Search, AlertTriangle, Package, MoreHorizontal, ArrowUpDown, Eye, Pencil, Trash2, Calendar, CalendarIcon, Globe, Zap, UserCheck, Receipt, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,16 +77,18 @@ export default function InventoryPage() {
 
   const [viewItem, setViewItem] = useState<InventoryItem | null>(null)
   const [editItem, setEditItem] = useState<InventoryItem | null>(null)
+  const [addExpiryOpen, setAddExpiryOpen] = useState(false)
+  const [editExpiryOpen, setEditExpiryOpen] = useState(false)
   const [deleteItem, setDeleteItem] = useState<InventoryItem | null>(null)
 
-  const fetchInventory = useCallback(async () => {
+  const fetchInventory = useCallback(async (noCache = false) => {
     try {
       setLoading(true)
       const res = await getInventory({
         name: debouncedSearch || undefined,
         sortStock: stockSort !== "none" ? (stockSort as 'asc' | 'desc') : undefined,
         limit: 100,
-      })
+      }, noCache)
       const list: InventoryItem[] = res?.data ?? res ?? []
       setInventory(list)
     } catch (err) {
@@ -118,7 +127,7 @@ export default function InventoryPage() {
       })
       setNewItem(emptyForm)
       setIsDialogOpen(false)
-      fetchInventory()
+      fetchInventory(true)
       toast.success("Item added successfully")
     } catch (err) {
       console.error("Failed to create inventory item", err)
@@ -142,7 +151,7 @@ export default function InventoryPage() {
         expiryDate: editItem.expiryDate,
       })
       setEditItem(null)
-      fetchInventory()
+      fetchInventory(true)
       toast.success("Item updated successfully")
     } catch (err) {
       console.error("Failed to update inventory item", err)
@@ -158,7 +167,7 @@ export default function InventoryPage() {
       setSubmitting(true)
       await deleteInventoryItem(deleteItem.id)
       setDeleteItem(null)
-      fetchInventory()
+      fetchInventory(true)
       toast.success("Item deleted successfully")
     } catch (err) {
       console.error("Failed to delete inventory item", err)
@@ -169,8 +178,14 @@ export default function InventoryPage() {
   }
 
   const lowStockCount = inventory.filter((item) => item.stockQty <= item.minStockLevel).length
-  const totalItems = inventory.reduce((sum, item) => sum + item.stockQty, 0)
   const totalValue = inventory.reduce((sum, item) => sum + item.stockQty * item.unitPrice, 0)
+  const expiringSoonCount = inventory.filter((item) => {
+    if (!item.expiryDate) return false
+    const expiry = new Date(item.expiryDate)
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const in30Days = new Date(today); in30Days.setDate(today.getDate() + 30)
+    return expiry >= today && expiry <= in30Days
+  }).length
 
   return (
     <>
@@ -200,7 +215,7 @@ export default function InventoryPage() {
                 <div>
                   <Label>Category</Label>
                   <Select value={newItem.category} onValueChange={(value) => setNewItem({ ...newItem, category: value })}>
-                    <SelectTrigger className="cursor-pointer"><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectTrigger className="w-full cursor-pointer"><SelectValue placeholder="Select category" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem className="cursor-pointer" value="Hair Products">Hair Products</SelectItem>
                       <SelectItem className="cursor-pointer" value="Skin Products">Skin Products</SelectItem>
@@ -212,7 +227,32 @@ export default function InventoryPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><Label>Price (৳)</Label><Input type="number" value={newItem.unitPrice} onChange={(e) => setNewItem({ ...newItem, unitPrice: e.target.value })} placeholder="0" /></div>
-                  <div><Label>Expiry Date</Label><Input type="date" value={newItem.expiryDate} onChange={(e) => setNewItem({ ...newItem, expiryDate: e.target.value })} /></div>
+                  <div>
+                    <Label>Expiry Date</Label>
+                    <Popover open={addExpiryOpen} onOpenChange={setAddExpiryOpen}>
+                      <PopoverTrigger asChild>
+                        <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal mt-1">
+                          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span className={newItem.expiryDate ? "text-foreground" : "text-muted-foreground"}>
+                            {newItem.expiryDate ? format(new Date(`${newItem.expiryDate}T00:00:00`), "PPP") : "Pick a date"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                        <DateCalendar
+                          mode="single"
+                          selected={newItem.expiryDate ? new Date(`${newItem.expiryDate}T00:00:00`) : undefined}
+                          onSelect={(selected) => {
+                            if (!selected) return
+                            setNewItem({ ...newItem, expiryDate: format(selected, "yyyy-MM-dd") })
+                            setAddExpiryOpen(false)
+                          }}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><Label>Quantity</Label><Input type="number" value={newItem.stockQty} onChange={(e) => setNewItem({ ...newItem, stockQty: e.target.value })} placeholder="0" /></div>
@@ -235,10 +275,10 @@ export default function InventoryPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-card rounded-xl p-5 border border-border">
             <div className="flex items-center gap-3">
-              <Package className="w-8 h-8 text-primary" />
+              <Receipt className="w-8 h-8 text-muted-foreground" />
               <div>
-                <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-2xl font-semibold text-foreground">{totalItems}</p>
+                <p className="text-sm text-muted-foreground">Total Value</p>
+                <p className="text-2xl font-semibold text-foreground">{formatCurrency(totalValue)}</p>
               </div>
             </div>
           </div>
@@ -261,8 +301,14 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="bg-card rounded-xl p-5 border border-border">
-            <p className="text-sm text-muted-foreground">Total Value</p>
-            <p className="text-2xl font-semibold text-foreground">{formatCurrency(totalValue)}</p>
+            <div className="flex items-center gap-3">
+              <Calendar className={`w-8 h-8 ${expiringSoonCount > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+              <div>
+                <p className="text-sm text-muted-foreground">Expiring Soon</p>
+                <p className={`text-2xl font-semibold ${expiringSoonCount > 0 ? "text-orange-500" : "text-foreground"}`}>{expiringSoonCount}</p>
+                <p className="text-[11px] text-muted-foreground">within 30 days</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -416,7 +462,32 @@ export default function InventoryPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Price (৳)</Label><Input type="number" value={editItem.unitPrice.toString()} onChange={(e) => setEditItem({ ...editItem, unitPrice: parseFloat(e.target.value) || 0 })} /></div>
-                <div><Label>Expiry Date</Label><Input type="date" value={editItem.expiryDate?.toString().split('T')[0] ?? ""} onChange={(e) => setEditItem({ ...editItem, expiryDate: e.target.value })} /></div>
+                <div>
+                  <Label>Expiry Date</Label>
+                  <Popover open={editExpiryOpen} onOpenChange={setEditExpiryOpen}>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal mt-1">
+                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className={editItem.expiryDate ? "text-foreground" : "text-muted-foreground"}>
+                          {editItem.expiryDate ? format(new Date(`${editItem.expiryDate.toString().split('T')[0]}T00:00:00`), "PPP") : "Pick a date"}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                      <DateCalendar
+                        mode="single"
+                        selected={editItem.expiryDate ? new Date(`${editItem.expiryDate.toString().split('T')[0]}T00:00:00`) : undefined}
+                        onSelect={(selected) => {
+                          if (!selected) return
+                          setEditItem({ ...editItem, expiryDate: format(selected, "yyyy-MM-dd") })
+                          setEditExpiryOpen(false)
+                        }}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
               <div><Label>Supplier</Label><Input value={editItem.supplier} onChange={(e) => setEditItem({ ...editItem, supplier: e.target.value })} /></div>
               <Button className="w-full" onClick={handleEditSave} disabled={submitting}>

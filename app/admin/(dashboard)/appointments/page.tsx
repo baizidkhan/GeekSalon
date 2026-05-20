@@ -500,6 +500,8 @@ function AppointmentsContent() {
   const [customDateFrom, setCustomDateFrom] = useState("")
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
+  const [apptFromOpen, setApptFromOpen] = useState(false)
+  const [apptToOpen, setApptToOpen] = useState(false)
   const [sourceFilter, setSourceFilter] = useState("All Sources")
   const [statusFilter, setStatusFilter] = useState("All Status")
   const [currentPage, setCurrentPage] = useState(1)
@@ -956,8 +958,17 @@ function AppointmentsContent() {
                     onChange={(e) => {
                       const nextPhone = e.target.value
                       setNewAppointment({ ...newAppointment, phone: nextPhone })
-                      if (nextPhone.trim()) clearNewAppointmentError("phone")
                       syncClientFromPhone(nextPhone)
+                      if (!nextPhone.trim()) {
+                        clearNewAppointmentError("phone")
+                      } else {
+                        const stripped = nextPhone.replace(/[\s-]/g, "")
+                        if (/^(?:\+88|88)?01[3-9]\d{8}$/.test(stripped)) {
+                          clearNewAppointmentError("phone")
+                        } else {
+                          setNewAppointmentErrors((prev) => ({ ...prev, phone: "Enter a valid Bangladeshi phone number (e.g. 01712345678)" }))
+                        }
+                      }
                     }}
                     placeholder="Enter phone number"
                   />
@@ -1264,15 +1275,57 @@ function AppointmentsContent() {
                   </Select>
                 </div>
               </PopoverTrigger>
-              <PopoverContent className="w-72 p-4">
+              <PopoverContent className="w-auto p-4">
                 <div className="space-y-3">
                   <div>
                     <Label className="text-xs">From</Label>
-                    <Input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} />
+                    <Popover open={apptFromOpen} onOpenChange={setApptFromOpen}>
+                      <PopoverTrigger asChild>
+                        <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span className={customDateFrom ? "text-foreground" : "text-muted-foreground"}>
+                            {customDateFrom ? format(new Date(`${customDateFrom}T00:00:00`), "PPP") : "Pick a date"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                        <DateCalendar
+                          mode="single"
+                          selected={customDateFrom ? new Date(`${customDateFrom}T00:00:00`) : undefined}
+                          onSelect={(selected) => {
+                            if (!selected) return
+                            setCustomDateFrom(format(selected, "yyyy-MM-dd"))
+                            setApptFromOpen(false)
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div>
                     <Label className="text-xs">To</Label>
-                    <Input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} />
+                    <Popover open={apptToOpen} onOpenChange={setApptToOpen}>
+                      <PopoverTrigger asChild>
+                        <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span className={customDateTo ? "text-foreground" : "text-muted-foreground"}>
+                            {customDateTo ? format(new Date(`${customDateTo}T00:00:00`), "PPP") : "Pick a date"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                        <DateCalendar
+                          mode="single"
+                          selected={customDateTo ? new Date(`${customDateTo}T00:00:00`) : undefined}
+                          onSelect={(selected) => {
+                            if (!selected) return
+                            setCustomDateTo(format(selected, "yyyy-MM-dd"))
+                            setApptToOpen(false)
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <Button size="sm" className="w-full" onClick={() => setShowCustomDate(false)}>Apply</Button>
                 </div>

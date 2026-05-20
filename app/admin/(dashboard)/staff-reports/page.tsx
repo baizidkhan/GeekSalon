@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
+import { format } from "date-fns"
+import { Calendar as DateCalendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,7 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Download, User, UserCheck, Zap, Calendar, Receipt, Clock } from "lucide-react"
+import { Download, User, UserCheck, Zap, Calendar, Calendar as CalendarIcon, Receipt, Clock } from "lucide-react"
 import { getStaffReports } from "@admin/api/staff-reports/staff-reports"
 import { StatCard } from "@admin/components/stat-card"
 import { formatCurrency } from "@/lib/utils"
@@ -90,6 +92,8 @@ export default function StaffReportsPage() {
   const [customFrom, setCustomFrom] = useState("")
   const [customTo, setCustomTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
+  const [staffFromOpen, setStaffFromOpen] = useState(false)
+  const [staffToOpen, setStaffToOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [data, setData] = useState<StaffReportData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -174,10 +178,58 @@ export default function StaffReportsPage() {
                 </Select>
               </div>
             </PopoverTrigger>
-            <PopoverContent className="w-72 p-4">
+            <PopoverContent className="w-auto p-4">
               <div className="space-y-3">
-                <div><Label className="text-xs">From</Label><Input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} /></div>
-                <div><Label className="text-xs">To</Label><Input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} /></div>
+                <div>
+                  <Label className="text-xs">From</Label>
+                  <Popover open={staffFromOpen} onOpenChange={setStaffFromOpen}>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className={customFrom ? "text-foreground" : "text-muted-foreground"}>
+                          {customFrom ? format(new Date(`${customFrom}T00:00:00`), "PPP") : "Pick a date"}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                      <DateCalendar
+                        mode="single"
+                        selected={customFrom ? new Date(`${customFrom}T00:00:00`) : undefined}
+                        onSelect={(selected) => {
+                          if (!selected) return
+                          setCustomFrom(format(selected, "yyyy-MM-dd"))
+                          setStaffFromOpen(false)
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label className="text-xs">To</Label>
+                  <Popover open={staffToOpen} onOpenChange={setStaffToOpen}>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className={customTo ? "text-foreground" : "text-muted-foreground"}>
+                          {customTo ? format(new Date(`${customTo}T00:00:00`), "PPP") : "Pick a date"}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                      <DateCalendar
+                        mode="single"
+                        selected={customTo ? new Date(`${customTo}T00:00:00`) : undefined}
+                        onSelect={(selected) => {
+                          if (!selected) return
+                          setCustomTo(format(selected, "yyyy-MM-dd"))
+                          setStaffToOpen(false)
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
                 <Button size="sm" className="w-full cursor-pointer" onClick={handleCustomApply}>Apply</Button>
               </div>
             </PopoverContent>

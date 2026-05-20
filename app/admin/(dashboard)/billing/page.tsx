@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { format } from "date-fns"
+import { Calendar as DateCalendar } from "@/components/ui/calendar"
 import { useDebounce } from "@/hooks/use-debounce"
 import { getInvoices, updateInvoice, deleteInvoice } from "@admin/api/billing/billing"
 import { useBusiness } from "@/context/BusinessContext"
@@ -35,7 +37,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Plus, Search, Receipt, Printer, MoreHorizontal, Download, Eye, Pencil, Trash2, User, UserCheck, Scissors, Calendar, Globe, Zap, Phone } from "lucide-react"
+import { Plus, Search, Receipt, Printer, MoreHorizontal, Download, Eye, Pencil, Trash2, User, UserCheck, Scissors, Calendar, Calendar as CalendarIcon, Globe, Zap, Phone } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -104,6 +106,8 @@ export default function BillingPage() {
   const [customDateFrom, setCustomDateFrom] = useState("")
   const [customDateTo, setCustomDateTo] = useState("")
   const [showCustomDate, setShowCustomDate] = useState(false)
+  const [billingFromOpen, setBillingFromOpen] = useState(false)
+  const [billingToOpen, setBillingToOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
 
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
@@ -403,10 +407,58 @@ export default function BillingPage() {
                     </Select>
                   </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 p-4">
+                <PopoverContent className="w-auto p-4">
                   <div className="space-y-3">
-                    <div><Label className="text-xs">From</Label><Input type="date" value={customDateFrom} onChange={(e) => setCustomDateFrom(e.target.value)} /></div>
-                    <div><Label className="text-xs">To</Label><Input type="date" value={customDateTo} onChange={(e) => setCustomDateTo(e.target.value)} /></div>
+                    <div>
+                      <Label className="text-xs">From</Label>
+                      <Popover open={billingFromOpen} onOpenChange={setBillingFromOpen}>
+                        <PopoverTrigger asChild>
+                          <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal">
+                            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <span className={customDateFrom ? "text-foreground" : "text-muted-foreground"}>
+                              {customDateFrom ? format(new Date(`${customDateFrom}T00:00:00`), "PPP") : "Pick a date"}
+                            </span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                          <DateCalendar
+                            mode="single"
+                            selected={customDateFrom ? new Date(`${customDateFrom}T00:00:00`) : undefined}
+                            onSelect={(selected) => {
+                              if (!selected) return
+                              setCustomDateFrom(format(selected, "yyyy-MM-dd"))
+                              setBillingFromOpen(false)
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div>
+                      <Label className="text-xs">To</Label>
+                      <Popover open={billingToOpen} onOpenChange={setBillingToOpen}>
+                        <PopoverTrigger asChild>
+                          <Button type="button" variant="outline" className="w-full justify-start px-3 font-normal">
+                            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <span className={customDateTo ? "text-foreground" : "text-muted-foreground"}>
+                              {customDateTo ? format(new Date(`${customDateTo}T00:00:00`), "PPP") : "Pick a date"}
+                            </span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                          <DateCalendar
+                            mode="single"
+                            selected={customDateTo ? new Date(`${customDateTo}T00:00:00`) : undefined}
+                            onSelect={(selected) => {
+                              if (!selected) return
+                              setCustomDateTo(format(selected, "yyyy-MM-dd"))
+                              setBillingToOpen(false)
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <Button size="sm" className="w-full" onClick={() => setShowCustomDate(false)}>Apply</Button>
                   </div>
                 </PopoverContent>

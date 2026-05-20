@@ -119,10 +119,10 @@ export default function ServicesPage() {
   };
 
 
-  const fetchServices = async () => {
+  const fetchServices = async (noCache = false) => {
     try {
       setLoading(true)
-      const data = await getServices()
+      const data = await getServices(undefined, noCache)
       const mappedServices = data.map((s: any) => ({
         ...s,
         price: parseFloat(s.price) || 0,
@@ -199,7 +199,7 @@ export default function ServicesPage() {
         toast.success("Service added successfully")
         setNewService({ name: "", category: "", duration: "", price: "", commission: "", description: "", imageUrl: "", imageFile: null, previewUrl: "" })
         setIsDialogOpen(false)
-        fetchServices()
+        fetchServices(true)
       } catch (error) {
         console.error("Failed to add service:", error)
         toast.error("Failed to add service")
@@ -241,7 +241,7 @@ export default function ServicesPage() {
 
         toast.success("Service updated successfully")
         setServiceToEdit(null)
-        fetchServices()
+        fetchServices(true)
       } catch (error) {
         console.error("Failed to update service:", error)
         toast.error("Failed to update service")
@@ -257,7 +257,7 @@ export default function ServicesPage() {
         await deleteService(serviceToDelete.id)
         toast.success("Service deleted successfully")
         setServiceToDelete(null)
-        fetchServices()
+        fetchServices(true)
       } catch (error) {
         console.error("Failed to delete service:", error)
         toast.error("Failed to delete service")
@@ -273,7 +273,7 @@ export default function ServicesPage() {
 
       await updateService(id, formData)
       toast.success(`Service ${!currentStatus ? 'activated' : 'deactivated'}`)
-      fetchServices()
+      fetchServices(true)
     } catch (error) {
       console.error("Failed to toggle service status:", error)
       toast.error("Failed to update status")
@@ -315,7 +315,7 @@ export default function ServicesPage() {
                     value={newService.category}
                     onValueChange={(value) => setNewService({ ...newService, category: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -605,7 +605,7 @@ export default function ServicesPage() {
               <div>
                 <Label>Category</Label>
                 <Select value={serviceToEdit.category} onValueChange={(v) => setServiceToEdit({ ...serviceToEdit, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>{CATEGORIES.filter(c => c !== "All").map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent>
                 </Select>
               </div>

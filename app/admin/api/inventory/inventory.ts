@@ -22,11 +22,11 @@ export async function getInventory(filters?: {
   page?: number
   limit?: number
   sortStock?: 'asc' | 'desc'
-}) {
-  const override = consumeStale(CACHE.INVENTORY)
+}, noCache = false) {
+  const override = noCache || consumeStale(CACHE.INVENTORY)
   const { data } = await api.get('/inventory', {
     params: filters,
-    cache: { ttl: TTL, override },
+    cache: noCache ? false : { ttl: TTL, override },
   })
   return data
 }

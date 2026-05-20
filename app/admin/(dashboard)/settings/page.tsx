@@ -355,7 +355,17 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setBusinessSettings({ ...businessSettings, phone: e.target.value })
                   }
+                  className={
+                    businessSettings.phone?.trim() &&
+                    !/^(?:\+88|88)?01[3-9]\d{8}$/.test(businessSettings.phone.replace(/[\s-]/g, ""))
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                 />
+                {businessSettings.phone?.trim() &&
+                  !/^(?:\+88|88)?01[3-9]\d{8}$/.test(businessSettings.phone.replace(/[\s-]/g, "")) && (
+                  <p className="text-xs text-destructive mt-1">Enter a valid Bangladeshi phone number (e.g. 01712345678)</p>
+                )}
               </div>
               <div>
                 <Label>Business Address</Label>

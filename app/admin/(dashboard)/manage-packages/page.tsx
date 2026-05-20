@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { format } from "date-fns"
+import { Calendar as DateCalendar } from "@/components/ui/calendar"
 import { useDebounce } from "@/hooks/use-debounce"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -24,6 +26,13 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Plus,
   Search,
   MoreHorizontal,
@@ -32,11 +41,17 @@ import {
   Eye,
   Sparkles,
   Calendar,
+  Calendar as CalendarIcon,
   Check,
   X,
   Loader2,
   ImagePlus,
 } from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -104,6 +119,7 @@ export default function ManagePackagesPage() {
   const [packageToDelete, setPackageToDelete] = useState<Package | null>(null)
   const [packageToBook, setPackageToBook] = useState<Package | null>(null)
 
+  const [bookingDateOpen, setBookingDateOpen] = useState(false)
   const [newImageFile, setNewImageFile] = useState<File | null>(null)
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null)
   const [editImageFile, setEditImageFile] = useState<File | null>(null)
@@ -409,15 +425,25 @@ export default function ManagePackagesPage() {
                 </div>
                 <div>
                   <Label className={errors.category ? "text-destructive" : ""}>Category <span className="text-destructive">*</span></Label>
-                  <Input
-                    placeholder="e.g. SPECIAL"
+                  <Select
                     value={newPackage.category}
-                    onChange={(e) => {
-                      setNewPackage({ ...newPackage, category: e.target.value })
+                    onValueChange={(val) => {
+                      setNewPackage({ ...newPackage, category: val })
                       if (errors.category) setErrors(prev => ({ ...prev, category: "" }))
                     }}
-                    className={errors.category ? "border-destructive" : ""}
-                  />
+                  >
+                    <SelectTrigger className={cn("w-full", errors.category ? "border-destructive" : "")}>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SPECIAL">Special</SelectItem>
+                      <SelectItem value="SIGNATURE">Signature</SelectItem>
+                      <SelectItem value="BRIDAL">Bridal</SelectItem>
+                      <SelectItem value="PREMIUM">Premium</SelectItem>
+                      <SelectItem value="BASIC">Basic</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {errors.category && <p className="text-[10px] text-destructive mt-1">{errors.category}</p>}
                 </div>
                 <div>
@@ -434,17 +460,26 @@ export default function ManagePackagesPage() {
                   />
                   {errors.price && <p className="text-[10px] text-destructive mt-1">{errors.price}</p>}
                 </div>
-                <div className="col-span-2">
+                <div>
                   <Label className={errors.billingCycle ? "text-destructive" : ""}>Billing Cycle <span className="text-destructive">*</span></Label>
-                  <Input
-                    placeholder="e.g. package, session"
+                  <Select
                     value={newPackage.billingCycle}
-                    onChange={(e) => {
-                      setNewPackage({ ...newPackage, billingCycle: e.target.value })
+                    onValueChange={(val) => {
+                      setNewPackage({ ...newPackage, billingCycle: val })
                       if (errors.billingCycle) setErrors(prev => ({ ...prev, billingCycle: "" }))
                     }}
-                    className={errors.billingCycle ? "border-destructive" : ""}
-                  />
+                  >
+                    <SelectTrigger className={cn("w-full", errors.billingCycle ? "border-destructive" : "")}>
+                      <SelectValue placeholder="Select billing cycle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="package">Package</SelectItem>
+                      <SelectItem value="session">Per Session</SelectItem>
+                      <SelectItem value="per visit">Per Visit</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {errors.billingCycle && <p className="text-[10px] text-destructive mt-1">{errors.billingCycle}</p>}
                 </div>
                 <div>
@@ -492,7 +527,7 @@ export default function ManagePackagesPage() {
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <Label className={errors.coverImage ? "text-destructive" : ""}>Cover Image <span className="text-destructive">*</span> <span className="text-muted-foreground text-[10px] font-normal">(shown as hero background on detail page)</span></Label>
+                  <Label className={errors.coverImage ? "text-destructive" : ""}>Cover Image <span className="text-destructive">*</span> <span className="text-muted-foreground text-[10px] font-normal">(JPG, PNG or WebP · max 5 MB)</span></Label>
                   <label className={cn("mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer transition-colors overflow-hidden relative", errors.coverImage ? "border-destructive hover:border-destructive/80" : "border-border hover:border-primary/50")}>
                     {newImagePreview ? (
                       <>
@@ -515,6 +550,11 @@ export default function ManagePackagesPage() {
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (!file) return
+                        if (file.size > 5 * 1024 * 1024) {
+                          setErrors(prev => ({ ...prev, coverImage: "Image must be under 5 MB" }))
+                          e.target.value = ""
+                          return
+                        }
                         setNewImageFile(file)
                         setNewImagePreview(URL.createObjectURL(file))
                         if (errors.coverImage) setErrors(prev => ({ ...prev, coverImage: "" }))
@@ -680,15 +720,33 @@ export default function ManagePackagesPage() {
               </div>
               <div>
                 <Label className={errors.date ? "text-destructive" : ""}>Date <span className="text-destructive">*</span></Label>
-                <Input
-                  type="date"
-                  value={bookingData.date}
-                  onChange={(e) => {
-                    setBookingData({ ...bookingData, date: e.target.value })
-                    if (errors.date) setErrors(prev => ({ ...prev, date: "" }))
-                  }}
-                  className={errors.date ? "border-destructive" : ""}
-                />
+                <Popover open={bookingDateOpen} onOpenChange={setBookingDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={`w-full justify-start px-3 font-normal${errors.date ? " border-destructive" : ""}`}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <span className={bookingData.date ? "text-foreground" : "text-muted-foreground"}>
+                        {bookingData.date ? format(new Date(`${bookingData.date}T00:00:00`), "PPP") : "Pick a date"}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                    <DateCalendar
+                      mode="single"
+                      selected={bookingData.date ? new Date(`${bookingData.date}T00:00:00`) : undefined}
+                      onSelect={(selected) => {
+                        if (!selected) return
+                        setBookingData({ ...bookingData, date: format(selected, "yyyy-MM-dd") })
+                        if (errors.date) setErrors(prev => ({ ...prev, date: "" }))
+                        setBookingDateOpen(false)
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 {errors.date && <p className="text-[10px] text-destructive mt-1">{errors.date}</p>}
               </div>
               <div>
@@ -785,14 +843,25 @@ export default function ManagePackagesPage() {
                 </div>
                 <div>
                   <Label className={errors.category ? "text-destructive" : ""}>Category <span className="text-destructive">*</span></Label>
-                  <Input
+                  <Select
                     value={packageToEdit.category}
-                    onChange={(e) => {
-                      setPackageToEdit({ ...packageToEdit, category: e.target.value })
+                    onValueChange={(val) => {
+                      setPackageToEdit({ ...packageToEdit, category: val })
                       if (errors.category) setErrors(prev => ({ ...prev, category: "" }))
                     }}
-                    className={errors.category ? "border-destructive" : ""}
-                  />
+                  >
+                    <SelectTrigger className={cn("w-full", errors.category ? "border-destructive" : "")}>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SPECIAL">Special</SelectItem>
+                      <SelectItem value="SIGNATURE">Signature</SelectItem>
+                      <SelectItem value="BRIDAL">Bridal</SelectItem>
+                      <SelectItem value="PREMIUM">Premium</SelectItem>
+                      <SelectItem value="BASIC">Basic</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {errors.category && <p className="text-[10px] text-destructive mt-1">{errors.category}</p>}
                 </div>
                 <div>
@@ -815,6 +884,24 @@ export default function ManagePackagesPage() {
                     value={packageToEdit.position}
                     onChange={(e) => setPackageToEdit({ ...packageToEdit, position: parseInt(e.target.value) || 0 })}
                   />
+                </div>
+                <div className="col-span-2">
+                  <Label>Billing Cycle</Label>
+                  <Select
+                    value={packageToEdit.billingCycle}
+                    onValueChange={(val) => setPackageToEdit({ ...packageToEdit, billingCycle: val })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select billing cycle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="package">Package</SelectItem>
+                      <SelectItem value="session">Per Session</SelectItem>
+                      <SelectItem value="per visit">Per Visit</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="col-span-2">
                   <Label className={errors.description ? "text-destructive" : ""}>Description <span className="text-destructive">*</span></Label>
@@ -842,7 +929,7 @@ export default function ManagePackagesPage() {
                   {errors.features && <p className="text-[10px] text-destructive mt-1">{errors.features}</p>}
                 </div>
                 <div className="col-span-2">
-                  <Label className={errors.coverImage ? "text-destructive" : ""}>Cover Image <span className="text-destructive">*</span> <span className="text-muted-foreground text-[10px] font-normal">(shown as hero background on detail page)</span></Label>
+                  <Label className={errors.coverImage ? "text-destructive" : ""}>Cover Image <span className="text-destructive">*</span> <span className="text-muted-foreground text-[10px] font-normal">(JPG, PNG or WebP · max 5 MB)</span></Label>
                   <label className={cn("mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer transition-colors overflow-hidden relative", errors.coverImage ? "border-destructive hover:border-destructive/80" : "border-border hover:border-primary/50")}>
                     {(() => {
                       const preview = editImagePreview || (packageToEdit.imageUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/uploads/${packageToEdit.imageUrl}` : null)
@@ -868,6 +955,11 @@ export default function ManagePackagesPage() {
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (!file) return
+                        if (file.size > 5 * 1024 * 1024) {
+                          setErrors(prev => ({ ...prev, coverImage: "Image must be under 5 MB" }))
+                          e.target.value = ""
+                          return
+                        }
                         setEditImageFile(file)
                         setEditImagePreview(URL.createObjectURL(file))
                         if (errors.coverImage) setErrors(prev => ({ ...prev, coverImage: "" }))

@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { format } from "date-fns"
 import { Loader2, Link2Off } from "lucide-react"
+import { Calendar as DateCalendar } from "@/components/ui/calendar"
 import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -35,7 +38,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Search, Phone, MoreHorizontal, Pencil, Trash2, Eye, User, UserCheck, Scissors, Zap, ChevronDown, Fingerprint, Receipt } from "lucide-react"
+import { Plus, Search, Phone, MoreHorizontal, Pencil, Trash2, Eye, User, UserCheck, Scissors, Zap, ChevronDown, Fingerprint, Receipt, Camera, Calendar as CalendarIcon } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,6 +144,8 @@ export default function EmployeesPage() {
   // Delete dialog
   const [serviceToDelete, setServiceToDelete] = useState<Employee | null>(null)
 
+  const [joinDatePickerOpen, setJoinDatePickerOpen] = useState(false)
+  const [editJoinDatePickerOpen, setEditJoinDatePickerOpen] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [editImageFile, setEditImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -148,6 +153,8 @@ export default function EmployeesPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [newEmpPhoneError, setNewEmpPhoneError] = useState("")
+  const [editEmpPhoneError, setEditEmpPhoneError] = useState("")
 
   const compressToWebP = (file: File): Promise<File> => {
     return new Promise((resolve) => {
@@ -218,6 +225,7 @@ export default function EmployeesPage() {
   const openModal = (employee: Employee, editMode = false) => {
     setSelectedEmployee(employee)
     setEditDraft({ ...employee })
+    setEditEmpPhoneError("")
     setModalEditMode(editMode)
     setShowUnlinkConfirm(false)
     setEditImageFile(null)
@@ -291,6 +299,7 @@ export default function EmployeesPage() {
           about: "",
         })
         setIsAddDialogOpen(false)
+        setNewEmpPhoneError("")
         setImageFile(null)
         setImagePreview(null)
         fetchEmployees()
@@ -440,175 +449,248 @@ export default function EmployeesPage() {
                 Add Employee
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh]">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Add New Employee</DialogTitle>
               </DialogHeader>
-              <ScrollArea className="pr-4 py-2 h-[60vh]">
-                <div className="grid grid-cols-2 gap-4 mt-4 pb-2">
-                  <div className="col-span-2">
-                    <Label>Full Name <span className="text-destructive">*</span></Label>
-                    <Input
-                      value={newEmployee.name}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                      placeholder="Enter full name"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label>Profile Image</Label>
-                    <div className="flex items-center gap-4 mt-2">
-                      <Avatar className="h-20 w-20">
-                        {imagePreview
-                          ? <AvatarImage src={imagePreview} alt="Preview" className="object-cover" />
-                          : null
-                        }
-                        <AvatarFallback className="bg-primary/10 text-primary text-xl">
+              <ScrollArea className="h-[65vh] pr-4">
+                <div className="py-2 space-y-6">
+
+                  {/* Profile Photo */}
+                  <div className="flex flex-col items-center gap-1.5 pt-1">
+                    <label className="relative cursor-pointer group">
+                      <Avatar className="h-24 w-24 ring-2 ring-border">
+                        {imagePreview && <AvatarImage src={imagePreview} alt="Preview" className="object-cover" />}
+                        <AvatarFallback className="bg-muted text-2xl font-medium text-muted-foreground">
                           {newEmployee.name ? getInitials(newEmployee.name) : <User className="h-8 w-8" />}
                         </AvatarFallback>
                       </Avatar>
-                      <Input
+                      <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera className="w-5 h-5 text-white" />
+                      </div>
+                      <input
                         type="file"
                         accept="image/*"
+                        className="sr-only"
                         onChange={(e) => {
                           const file = e.target.files?.[0]
-                          if (file) {
-                            setImageFile(file)
-                            setImagePreview(URL.createObjectURL(file))
-                          }
+                          if (file) { setImageFile(file); setImagePreview(URL.createObjectURL(file)) }
                         }}
-                        className="max-w-[250px]"
                       />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Role <span className="text-destructive">*</span></Label>
-                    <Select
-                      value={newEmployee.role}
-                      onValueChange={(value) => setNewEmployee({ ...newEmployee, role: value as EmployeeRole })}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
-                      <SelectContent>
-                        {Object.values(EmployeeRole).map(role => (
-                          <SelectItem key={role} value={role}>{role}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newEmployee.role === EmployeeRole.OTHER && (
-                    <div>
-                      <Label>Custom Role <span className="text-destructive">*</span></Label>
-                      <Input
-                        value={newEmployee.customRole}
-                        onChange={(e) => setNewEmployee({ ...newEmployee, customRole: e.target.value })}
-                        placeholder="e.g. CEO, Founder, Co-Founder"
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <Label>Phone Number <span className="text-destructive">*</span></Label>
-                    <Input
-                      value={newEmployee.phone}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
-                      placeholder="017XXXXXXXX"
-                    />
-                  </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      value={newEmployee.email}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                      placeholder="email@example.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>Join Date</Label>
-                    <Input
-                      type="date"
-                      value={newEmployee.joinDate}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, joinDate: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Salary (৳) <span className="text-destructive">*</span></Label>
-                    <Input
-                      type="number"
-                      value={newEmployee.salary}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Commission (%)</Label>
-                    <Input
-                      type="number"
-                      value={newEmployee.commission}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, commission: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Shift</Label>
-                    <Input
-                      value={newEmployee.shift}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, shift: e.target.value })}
-                      placeholder="Morning, Day, etc."
-                    />
-                  </div>
-                  <div>
-                    <Label>Experience (years)</Label>
-                    <Input
-                      type="number"
-                      value={newEmployee.experience}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, experience: e.target.value })}
-                    />
+                    </label>
+                    <p className="text-xs text-muted-foreground">Click to upload photo</p>
                   </div>
 
-                  <div className="col-span-2">
-                    <Label>About Yourself</Label>
-                    <Input
-                      value={newEmployee.about}
-                      onChange={(e) => setNewEmployee({ ...newEmployee, about: e.target.value })}
-                      placeholder="Write a short bio..."
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label>Specializations</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  {/* Basic Information */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">Basic Information</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <Label>Full Name <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={newEmployee.name}
+                          onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                          placeholder="Enter full name"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Role <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={newEmployee.role}
+                          onValueChange={(value) => setNewEmployee({ ...newEmployee, role: value as EmployeeRole, customRole: "" })}
                         >
-                          <span className={newEmployee.specializations.length === 0 ? "text-muted-foreground" : "text-foreground"}>
-                            {newEmployee.specializations.length === 0
-                              ? "Select services"
-                              : newEmployee.specializations.join(", ")}
-                          </span>
-                          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
-                        {serviceOptions.map((service) => (
-                          <div
-                            key={service}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
-                            onClick={() => {
-                              const selected = newEmployee.specializations
-                              const next = selected.includes(service)
-                                ? selected.filter((x) => x !== service)
-                                : [...selected, service]
-                              setNewEmployee({ ...newEmployee, specializations: next })
-                            }}
-                          >
-                            <Checkbox checked={newEmployee.specializations.includes(service)} />
-                            <span className="text-sm">{service}</span>
-                          </div>
-                        ))}
-                      </PopoverContent>
-                    </Popover>
+                          <SelectTrigger className="w-full mt-1">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(EmployeeRole).map(role => (
+                              <SelectItem key={role} value={role}>{role}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className={newEmployee.role !== EmployeeRole.OTHER ? "text-muted-foreground" : ""}>
+                          Custom Role {newEmployee.role === EmployeeRole.OTHER && <span className="text-destructive">*</span>}
+                        </Label>
+                        <Input
+                          value={newEmployee.customRole}
+                          onChange={(e) => setNewEmployee({ ...newEmployee, customRole: e.target.value })}
+                          placeholder="e.g. CEO, Founder..."
+                          disabled={newEmployee.role !== EmployeeRole.OTHER}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Contact */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">Contact</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Phone <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={newEmployee.phone}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setNewEmployee({ ...newEmployee, phone: val })
+                            const stripped = val.replace(/[\s-]/g, "")
+                            if (val.trim() && !/^(?:\+88|88)?01[3-9]\d{8}$/.test(stripped)) {
+                              setNewEmpPhoneError("Enter a valid Bangladeshi phone number (e.g. 01712345678)")
+                            } else {
+                              setNewEmpPhoneError("")
+                            }
+                          }}
+                          placeholder="017XXXXXXXX"
+                          className={`mt-1${newEmpPhoneError ? " border-destructive focus-visible:ring-destructive" : ""}`}
+                        />
+                        {newEmpPhoneError && (
+                          <p className="text-xs text-destructive mt-1">{newEmpPhoneError}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input
+                          type="email"
+                          value={newEmployee.email}
+                          onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                          placeholder="email@example.com"
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Employment */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">Employment</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Salary (৳) <span className="text-destructive">*</span></Label>
+                        <Input
+                          type="number"
+                          value={newEmployee.salary}
+                          onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Commission (%)</Label>
+                        <Input
+                          type="number"
+                          value={newEmployee.commission}
+                          onChange={(e) => setNewEmployee({ ...newEmployee, commission: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Shift</Label>
+                        <Input
+                          value={newEmployee.shift}
+                          onChange={(e) => setNewEmployee({ ...newEmployee, shift: e.target.value })}
+                          placeholder="e.g. Morning"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Experience (years)</Label>
+                        <Input
+                          type="number"
+                          value={newEmployee.experience}
+                          onChange={(e) => setNewEmployee({ ...newEmployee, experience: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Join Date</Label>
+                        <Popover open={joinDatePickerOpen} onOpenChange={setJoinDatePickerOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full justify-start px-3 font-normal mt-1"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                              <span className={newEmployee.joinDate ? "text-foreground" : "text-muted-foreground"}>
+                                {newEmployee.joinDate ? format(new Date(`${newEmployee.joinDate}T00:00:00`), "PPP") : "Pick a date"}
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                            <DateCalendar
+                              mode="single"
+                              selected={newEmployee.joinDate ? new Date(`${newEmployee.joinDate}T00:00:00`) : undefined}
+                              onSelect={(selected) => {
+                                if (!selected) return
+                                setNewEmployee({ ...newEmployee, joinDate: format(selected, "yyyy-MM-dd") })
+                                setJoinDatePickerOpen(false)
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Profile */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">Profile</p>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>About</Label>
+                        <Textarea
+                          value={newEmployee.about}
+                          onChange={(e) => setNewEmployee({ ...newEmployee, about: e.target.value })}
+                          placeholder="Write a short bio..."
+                          className="mt-1 resize-none"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label>Specializations</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="mt-1 w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            >
+                              <span className={newEmployee.specializations.length === 0 ? "text-muted-foreground" : "text-foreground truncate"}>
+                                {newEmployee.specializations.length === 0
+                                  ? "Select services..."
+                                  : newEmployee.specializations.join(", ")}
+                              </span>
+                              <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+                            {serviceOptions.map((service) => (
+                              <div
+                                key={service}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                                onClick={() => {
+                                  const selected = newEmployee.specializations
+                                  const next = selected.includes(service)
+                                    ? selected.filter((x) => x !== service)
+                                    : [...selected, service]
+                                  setNewEmployee({ ...newEmployee, specializations: next })
+                                }}
+                              >
+                                <Checkbox checked={newEmployee.specializations.includes(service)} />
+                                <span className="text-sm">{service}</span>
+                              </div>
+                            ))}
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </ScrollArea>
-              <DialogFooter>
+              <div className="pt-3 border-t border-border">
                 <Button onClick={handleAddEmployee} className="w-full" disabled={isAdding}>
                   {isAdding ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Adding Employee...</>
@@ -616,7 +698,7 @@ export default function EmployeesPage() {
                     "Add Employee"
                   )}
                 </Button>
-              </DialogFooter>
+              </div>
             </DialogContent>
           </Dialog>
 
@@ -889,8 +971,21 @@ export default function EmployeesPage() {
                     <Label>Phone Number</Label>
                     <Input
                       value={editDraft.phone || ""}
-                      onChange={(e) => setEditDraft({ ...editDraft, phone: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setEditDraft({ ...editDraft, phone: val })
+                        const stripped = val.replace(/[\s-]/g, "")
+                        if (val.trim() && !/^(?:\+88|88)?01[3-9]\d{8}$/.test(stripped)) {
+                          setEditEmpPhoneError("Enter a valid Bangladeshi phone number (e.g. 01712345678)")
+                        } else {
+                          setEditEmpPhoneError("")
+                        }
+                      }}
+                      className={editEmpPhoneError ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
+                    {editEmpPhoneError && (
+                      <p className="text-xs text-destructive mt-1">{editEmpPhoneError}</p>
+                    )}
                   </div>
                   <div>
                     <Label>Email</Label>
@@ -933,11 +1028,32 @@ export default function EmployeesPage() {
                   </div>
                   <div>
                     <Label>Join Date</Label>
-                    <Input
-                      type="date"
-                      value={editDraft.joinDate || ""}
-                      onChange={(e) => setEditDraft({ ...editDraft, joinDate: e.target.value })}
-                    />
+                    <Popover open={editJoinDatePickerOpen} onOpenChange={setEditJoinDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full justify-start px-3 font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span className={editDraft.joinDate ? "text-foreground" : "text-muted-foreground"}>
+                            {editDraft.joinDate ? format(new Date(`${editDraft.joinDate}T00:00:00`), "PPP") : "Pick a date"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 shadow-xl" align="start">
+                        <DateCalendar
+                          mode="single"
+                          selected={editDraft.joinDate ? new Date(`${editDraft.joinDate}T00:00:00`) : undefined}
+                          onSelect={(selected) => {
+                            if (!selected) return
+                            setEditDraft({ ...editDraft, joinDate: format(selected, "yyyy-MM-dd") })
+                            setEditJoinDatePickerOpen(false)
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="col-span-2">
                     <Label>About</Label>
