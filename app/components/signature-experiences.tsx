@@ -29,7 +29,7 @@ export function SignatureExperiencesSection({ services }: { services: Service[] 
                         <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#d4af37]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
                             OUR EXPERTISE
                         </p>
-                        <h2 className="text-[2.5rem] leading-none text-white sm:text-[3rem]" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        <h2 className="text-[1.75rem] leading-none text-white sm:text-[2.5rem] lg:text-[3rem]" style={{ fontFamily: 'Playfair Display, serif' }}>
                             <span className="font-semibold">Signature</span> <span className="italic">Experiences</span>
                         </h2>
                     </div>
