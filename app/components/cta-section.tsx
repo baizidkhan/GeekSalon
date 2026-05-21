@@ -6,7 +6,7 @@ import { getBeginYourJourney } from "@admin/api/settings/settings";
 import { getMediaUrl } from "@/lib/utils";
 
 export function CtaSection() {
-    const [bgImage, setBgImage] = useState<string>("/BeginYourJourney.png");
+    const [bgImage, setBgImage] = useState<string>("/BeginYourJourney.avif");
 
     useEffect(() => {
         const fetchJourneyData = async () => {
