@@ -198,12 +198,12 @@ export function Footer() {
                 <div className="border-t border-white/10 mt-20 mb-8" />
 
                 {/* Bottom Bar */}
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col items-center text-center gap-6 sm:flex-row sm:items-center sm:justify-between sm:text-left">
                     <p
                         className="text-[11px] text-gray-500"
                         style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                     >
-                        © 2026 {businessInfo?.businessName || "Makeover"} All Rights Reserved. Developed by <a href="https://www.geekssort.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>GeeksSort</a>
+                        © 2026 {businessInfo?.businessName || "Makeover"} All Rights Reserved. <span className="block sm:inline">Developed by <a href="https://www.geekssort.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>GeeksSort</a></span>
                     </p>
                     <div className="flex gap-8 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                         <Link href="/" className="hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
