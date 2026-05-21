@@ -21,11 +21,11 @@ export function NotificationBell() {
     <div className="relative">
       <button
         onClick={toggleDropdown}
-        className="relative h-14 w-14 rounded-full border border-[#f2f2f2] bg-[#fafafa] flex items-center justify-center hover:bg-slate-50 transition-colors focus:outline-none"
+        className="relative h-9 w-9 rounded-full border border-[#f2f2f2] bg-[#fafafa] flex items-center justify-center hover:bg-slate-50 transition-colors focus:outline-none"
       >
-        <Bell className="w-5 h-5 text-slate-600" />
+        <Bell className="w-4 h-4 text-slate-600" />
         {unreadCount > 0 && (
-          <span className="absolute top-2.5 right-3 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white px-0.5">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center border-2 border-white px-0.5">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
