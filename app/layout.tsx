@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Manrope, Playfair_Display, Inter, Josefin_Sans } from 'next/font/google'
 import './globals.css'
 
-const manrope = Manrope({ subsets: ["latin"] });
+const manrope = Manrope({ subsets: ["latin"], display: "swap" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const josefin = Josefin_Sans({ subsets: ["latin"], variable: "--font-josefin", display: "swap" });

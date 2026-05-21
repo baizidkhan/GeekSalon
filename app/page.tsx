@@ -17,6 +17,9 @@ export default async function Home() {
     const services = servicesResult.status === 'fulfilled' ? servicesResult.value : [];
     const excellence = excellenceResult.status === 'fulfilled' ? excellenceResult.value : null;
     return (
+        <>
+        {/* Preload hero background so browser discovers it before CSS is parsed */}
+        <link rel="preload" as="image" href="/BannerImage.avif" type="image/avif" fetchPriority="high" />
         <div className="min-h-screen bg-[#f7f1eb] text-slate-900">
             <div className="relative overflow-hidden">
                 {/* Background image on its own layer so the Ken Burns zoom
@@ -45,5 +48,6 @@ export default async function Home() {
             <CtaSection />
             <Footer />
         </div>
+        </>
     )
 }
