@@ -14,6 +14,7 @@ COPY . .
 ARG NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
+# prebuild script (convert-images.mjs) runs automatically before next build
 RUN npm run build
 
 # ── Stage 3: Run ───────────────────────────────────────────────────────────────
@@ -29,6 +30,11 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static    ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public          ./public
+
+# sharp native bindings are needed for Next.js image optimisation at runtime.
+# The standalone tracer does not always include .node binary files, so we copy explicitly.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@img  ./node_modules/@img
 
 USER nextjs
 EXPOSE 3000
