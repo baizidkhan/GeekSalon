@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from "next/link"
+import Image from "next/image"
 import api from "@admin/api/base"
 import { SiteHeader } from "@/app/components/site-header"
 import { Footer } from "@/app/components/footer"
@@ -68,7 +69,7 @@ export default async function AboutUsPage() {
                 {/* Background image & overlays */}
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat grayscale opacity-60"
-                    style={{ backgroundImage: "url('/BannerImage.png')" }}
+                    style={{ backgroundImage: "image-set(url('/BannerImage.avif') type('image/avif'), url('/BannerImage.webp') type('image/webp'), url('/BannerImage.png') type('image/png'))" }}
                 />
                 <div className="absolute inset-0 z-0 bg-black/70" />
 
@@ -107,8 +108,10 @@ export default async function AboutUsPage() {
                     </div>
                     <div className="flex-1 w-full">
                         <img
-                            src="/our-mission.png"
+                            src="/our-mission.avif"
                             alt="Salon Vision"
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover border-[8px] border-white shadow-2xl"
                         />
                     </div>
@@ -142,10 +145,13 @@ export default async function AboutUsPage() {
                                     <div key={member.id} className="text-left group cursor-pointer">
                                         <div className="w-full aspect-square bg-[#1c1c1c] mb-4 overflow-hidden relative">
                                             {member.image ? (
-                                                <img
-                                                    src={getMediaUrl(member.image)}
+                                                <Image
+                                                    src={getMediaUrl(member.image) || ""}
                                                     alt={member.name}
-                                                    className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                                                    fill
+                                                    className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                                    loading="lazy"
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-gradient-to-br from-[#1c1c1c] to-[#121212] border border-[#CDB37F]/10 flex items-center justify-center select-none group-hover:border-[#CDB37F]/30 transition-all duration-500">
@@ -172,10 +178,13 @@ export default async function AboutUsPage() {
                                     <div key={member.id} className="text-left group cursor-pointer">
                                         <div className="w-full aspect-square bg-[#1c1c1c] mb-4 overflow-hidden relative">
                                             {member.image ? (
-                                                <img
-                                                    src={getMediaUrl(member.image)}
+                                                <Image
+                                                    src={getMediaUrl(member.image) || ""}
                                                     alt={member.name}
-                                                    className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                                                    fill
+                                                    className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                                                    loading="lazy"
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-gradient-to-br from-[#1c1c1c] to-[#121212] border border-[#CDB37F]/10 flex items-center justify-center select-none group-hover:border-[#CDB37F]/30 transition-all duration-500">
