@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { formatCurrency, getMediaUrl } from "@/lib/utils"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import PackageBookingModal from "./PackageBookingModal"
 
@@ -68,10 +69,16 @@ export default function PackagesGrid({ initialPackages }: { initialPackages: Pac
                   </div>
                 )}
 
-                <div
-                  className="h-[180px] w-full bg-cover bg-center bg-no-repeat lg:h-[190px]"
-                  style={{ backgroundImage: `url('${packageImage}')` }}
-                />
+                <div className="relative h-[180px] w-full overflow-hidden lg:h-[190px]">
+                  <Image
+                    src={packageImage}
+                    alt={pkg.title}
+                    fill
+                    className="object-cover object-center"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                  />
+                </div>
 
                 <div className={`flex-grow border border-white/10 bg-[#1a1a1a] flex flex-col ${isFeaturedCard ? "p-10 lg:border-white/20 space-y-8" : "px-6 pb-6 pt-6 space-y-6"
                   }`}>
