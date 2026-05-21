@@ -6,6 +6,7 @@ import { Footer } from "../components/footer"
 import { CtaSection } from "../components/cta-section"
 import { Service, ServiceCategory } from "@/lib/types"
 import Link from "next/link"
+import Image from "next/image"
 import { useBooking } from "@/context/BookingContext"
 import { formatCurrency, getMediaUrl } from "@/lib/utils"
 
@@ -45,9 +46,9 @@ export default function ServicesPage() {
             {/* Hero Section Container */}
             <div className="relative h-[520px] flex flex-col bg-black/60">
                 {/* Background image & overlays */}
-                <div 
+                <div
                     className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 grayscale"
-                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=2070&auto=format&fit=crop')" }}
+                    style={{ backgroundImage: "image-set(url('/hero-bg.avif') type('image/avif'), url('/hero-bg.webp') type('image/webp'), url('/hero-bg.jpg') type('image/jpeg'))" }}
                 />
                 <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/50 via-transparent to-[#070707]" />
                 
@@ -120,12 +121,15 @@ export default function ServicesPage() {
                                         className="group w-full max-w-[380px] flex flex-col border border-white/5 bg-[#111] text-white transition-all duration-500 hover:-translate-y-1 hover:border-[#CDB37F]/40"
                                     >
                                         {/* Image */}
-                                        <div className={`relative aspect-[4/3] overflow-hidden bg-neutral-900 shrink-0`}>
+                                        <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900 shrink-0">
                                             {item.imageUrl ? (
-                                                <img
-                                                    src={getMediaUrl(item.imageUrl)}
+                                                <Image
+                                                    src={getMediaUrl(item.imageUrl) || ""}
                                                     alt={item.name}
-                                                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                                    fill
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                                    loading="lazy"
                                                 />
                                             ) : (
                                                 <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#111] to-black text-white/20">
