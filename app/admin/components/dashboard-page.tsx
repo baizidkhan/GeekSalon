@@ -126,7 +126,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-[#fafafa] p-4 sm:p-6 md:p-8 font-sans">
       {/* Header */}
       <div className="bg-white border border-[#f2f2f2] rounded-[8px] px-8 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-4">
         <div className="leading-[normal]">
@@ -141,7 +141,9 @@ export function DashboardPage() {
             <Plus className="w-4 h-4" />
             New Appointment
           </Link>
-          <NotificationBell />
+          <div className="hidden md:block">
+            <NotificationBell />
+          </div>
         </div>
       </div>
 

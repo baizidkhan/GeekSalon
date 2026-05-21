@@ -193,11 +193,12 @@ export default function ReportsPage() {
 
   return (
     <div className="premium-page p-4 sm:p-6 md:p-8 bg-[#fdfdfd]">
-      <div className="flex flex-wrap gap-3 items-start justify-between mb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-[#1e88e5] mb-1">Report and Analysis</h1>
-          <p className="text-slate-500 text-sm">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} Here's your salon today
+          <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Analytics</p>
+          <h1 className="text-2xl font-semibold text-foreground">Report and Analysis</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} — Here&apos;s your salon today
           </p>
         </div>
         <div className="flex items-center gap-3">

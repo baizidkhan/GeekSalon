@@ -131,18 +131,16 @@ export default function NewsLetterSubscribersPage() {
   }
 
   return (
-    <div className="premium-page p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="premium-page p-4 sm:p-6 md:p-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-            <Mail className="w-6 h-6 text-primary" />
-            Newsletter Subscribers
-          </h1>
-          <p className="text-muted-foreground">Manage public newsletter email subscriptions</p>
+          <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Marketing</p>
+          <h1 className="text-2xl font-semibold text-foreground">Newsletter Subscribers</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Manage public newsletter email subscriptions</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add Subscriber
             </Button>

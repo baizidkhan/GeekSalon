@@ -204,17 +204,14 @@ export default function DeviceUsersPage() {
   }
 
   return (
-    <div className="premium-page p-6 space-y-6">
+    <div className="premium-page p-4 sm:p-6 md:p-8 space-y-6">
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Unlinked Users</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            <span>Dashboard</span>
-            <span className="mx-1">/</span>
-            <span className="text-foreground">Unlinked Users</span>
-          </p>
+          <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Biometric</p>
+          <h1 className="text-2xl font-semibold text-foreground">Unlinked Users</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage fingerprint device users</p>
         </div>
         <div className="flex items-center gap-2">
           {deviceConnected !== null && (

@@ -499,7 +499,7 @@ export default function SettingsPage() {
 
         <TabsContent value="whychooseus">
           <div className="bg-card rounded-xl border border-border p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
               <div>
                 <h3 className="font-medium text-foreground">Why Choose Us Images</h3>
                 <p className="text-sm text-muted-foreground">Upload up to 4 images for your signature experience section</p>
@@ -660,7 +660,7 @@ export default function SettingsPage() {
 
         <TabsContent value="journey">
           <div className="bg-card rounded-xl border border-border p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
               <div>
                 <h3 className="font-medium text-foreground">Begin Your Journey Settings</h3>
                 <p className="text-sm text-muted-foreground">Upload or update the background image for the Begin Your Journey section on your home page</p>

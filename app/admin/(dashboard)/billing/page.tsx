@@ -322,7 +322,7 @@ export default function BillingPage() {
   return (
     <>
       <div className="premium-page p-4 sm:p-6 md:p-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
             <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Finance</p>
             <h1 className="text-2xl font-semibold text-foreground">Billing / POS</h1>

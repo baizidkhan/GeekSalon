@@ -221,6 +221,14 @@ export default function AttendancePage() {
   // date view (main page)
   const [pickerDate, setPickerDate] = useState<string | null>(null)
   const [pickerDateRecords, setPickerDateRecords] = useState<AttendanceRecord[]>([])
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
 
   // ── Fetch today ────────────────────────────────────────────────────────────
   const loadToday = useCallback(async (showError = true) => {
@@ -518,12 +526,13 @@ export default function AttendancePage() {
   const totalPages = viewMode === "today" ? todayTotal : viewMode === "date" ? pickerDateTotal : calendarTotal
 
   return (
-    <div className="premium-page p-6 space-y-6">
+    <div className="premium-page p-4 sm:p-6 md:p-8 space-y-6">
 
       {/* ── Header ────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
+          <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Workforce</p>
+          <h1 className="text-2xl font-semibold text-foreground">Attendance</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {viewMode === "today"
               ? today.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
@@ -563,7 +572,7 @@ export default function AttendancePage() {
 
         {/* Bar chart — each bar = one day, segments coloured by status */}
         <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-4">
             <div>
               <h3 className="font-semibold text-foreground text-sm">Attendance Breakdown</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -571,7 +580,7 @@ export default function AttendancePage() {
               </p>
             </div>
             {/* colour legend */}
-            <div className="flex items-center gap-3 flex-wrap justify-end">
+            <div className="flex items-center gap-3 flex-wrap sm:justify-end">
               {[
                 { label: "Present", color: "#22c55e" },
                 { label: "Late", color: "#f59e0b" },
@@ -604,6 +613,11 @@ export default function AttendancePage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="day"
+                  tickFormatter={(val) => {
+                    if (!isMobile) return val
+                    const day = parseInt(val.split("/")[0])
+                    return (day === 1 || day % 5 === 0) ? String(day) : ""
+                  }}
                   tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", angle: -45, textAnchor: "end" }}
                   axisLine={false}
                   tickLine={false}

@@ -436,15 +436,16 @@ export default function EmployeesPage() {
 
   return (
     <>
-      <div className="premium-page p-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="premium-page p-4 sm:p-6 md:p-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary/70 uppercase mb-1">Staff</p>
             <h1 className="text-2xl font-semibold text-foreground">Employees</h1>
-            <p className="text-muted-foreground">Manage your salon staff</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage your salon staff</p>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Employee
               </Button>
