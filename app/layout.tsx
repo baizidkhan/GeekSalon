@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Manrope, Playfair_Display, Inter, Josefin_Sans } from 'next/font/google'
+import dynamic from 'next/dynamic'
 import './globals.css'
 
 const manrope = Manrope({ subsets: ["latin"], display: "swap" });
@@ -18,9 +19,16 @@ export const metadata: Metadata = {
 
 import { BookingProvider } from '@/context/BookingContext'
 import { BusinessProvider } from '@/context/BusinessContext'
-import { BookingModal } from '@/components/booking-modal'
-import { Toaster } from 'sonner'
-import { PublicChatWidget } from '@/components/ai/PublicChatWidget'
+
+// Heavy components loaded only when needed — not in the initial JS bundle
+const BookingModal = dynamic(
+  () => import('@/components/booking-modal').then(m => ({ default: m.BookingModal })),
+  { ssr: false }
+)
+const Toaster = dynamic(
+  () => import('sonner').then(m => ({ default: m.Toaster })),
+  { ssr: false }
+)
 
 export default function RootLayout({
   children,
@@ -33,7 +41,6 @@ export default function RootLayout({
             {children}
             <BookingModal />
             <Toaster position="top-center" theme="dark" richColors />
-            {/* <PublicChatWidget tenantId={process.env.NEXT_PUBLIC_TENANT_ID ?? 'default'} /> */}
           </BookingProvider>
         </BusinessProvider>
       </body>
