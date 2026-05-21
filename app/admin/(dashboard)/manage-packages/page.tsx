@@ -529,7 +529,7 @@ export default function ManagePackagesPage() {
                   <label className={cn("mt-1.5 flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer transition-colors overflow-hidden relative", errors.coverImage ? "border-destructive hover:border-destructive/80" : "border-border hover:border-primary/50")}>
                     {newImagePreview ? (
                       <>
-                        <img src={newImagePreview} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={newImagePreview} alt="preview" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                           <span className="text-white text-xs font-medium">Change Image</span>
                         </div>
@@ -933,7 +933,7 @@ export default function ManagePackagesPage() {
                       const preview = editImagePreview || (packageToEdit.imageUrl ? `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'}/uploads/${packageToEdit.imageUrl}` : null)
                       return preview ? (
                         <>
-                          <img src={preview} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
+                          <img src={preview} alt="preview" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                             <span className="text-white text-xs font-medium">Change Image</span>
                           </div>
