@@ -24,7 +24,7 @@ export default async function Home() {
                 <div
                     className="hero-bg-zoom absolute inset-0"
                     style={{
-                        backgroundImage: "url('/BannerImage.png')",
+                        backgroundImage: "image-set(url('/BannerImage.avif') type('image/avif'), url('/BannerImage.webp') type('image/webp'), url('/BannerImage.png') type('image/png'))",
                         backgroundSize: 'cover',
                         backgroundPosition: 'center top',
                         backgroundRepeat: 'no-repeat',
