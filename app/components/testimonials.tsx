@@ -7,6 +7,14 @@ export function TestimonialsSection() {
     const [loading, setLoading] = useState(true)
     const [activeIndex, setActiveIndex] = useState(0)
     const [isPaused, setIsPaused] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 1024)
+        checkMobile()
+        window.addEventListener("resize", checkMobile)
+        return () => window.removeEventListener("resize", checkMobile)
+    }, [])
 
     useEffect(() => {
         fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/testimonial`, { cache: 'no-store' })
@@ -48,27 +56,35 @@ export function TestimonialsSection() {
 
     const items = testimonials.length > 0 ? testimonials : fallbackItems
 
-    // Group into pairs — each slide shows 2 cards side by side
-    const pairs: (typeof items)[] = []
-    for (let i = 0; i < items.length; i += 2) {
-        pairs.push(items.slice(i, i + 2))
+    // Mobile: 1 card per slide. Desktop: 2 cards per slide.
+    const slides: (typeof items)[] = []
+    if (isMobile) {
+        items.forEach(item => slides.push([item]))
+    } else {
+        for (let i = 0; i < items.length; i += 2) {
+            slides.push(items.slice(i, i + 2))
+        }
     }
 
     useEffect(() => {
-        if (pairs.length <= 1 || isPaused) return
+        setActiveIndex(0)
+    }, [isMobile])
+
+    useEffect(() => {
+        if (slides.length <= 1 || isPaused) return
 
         const intervalId = window.setInterval(() => {
-            setActiveIndex((prev) => (prev + 1) % pairs.length)
+            setActiveIndex((prev) => (prev + 1) % slides.length)
         }, 4200)
 
         return () => window.clearInterval(intervalId)
-    }, [pairs.length, isPaused])
+    }, [slides.length, isPaused])
 
     useEffect(() => {
-        if (activeIndex >= pairs.length) {
+        if (activeIndex >= slides.length) {
             setActiveIndex(0)
         }
-    }, [activeIndex, pairs.length])
+    }, [activeIndex, slides.length])
 
     if (loading) {
         return (
@@ -105,9 +121,9 @@ export function TestimonialsSection() {
                         className="flex transition-transform duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
                         style={{ transform: `translateX(-${activeIndex * 100}%)` }}
                     >
-                        {pairs.map((pair, pairIndex) => (
-                            <div key={pairIndex} className="flex w-full shrink-0 flex-col gap-6 lg:flex-row lg:gap-[30px]">
-                                {pair.map((item, cardIndex) => (
+                        {slides.map((slide, slideIndex) => (
+                            <div key={slideIndex} className="flex w-full shrink-0 flex-col gap-6 lg:flex-row lg:gap-[30px]">
+                                {slide.map((item, cardIndex) => (
                                     <article
                                         key={`${item.name}-${cardIndex}`}
                                         className="testimonial-card relative flex min-h-[264px] flex-1 flex-col justify-between border border-[#eccd80] px-8 pb-10 pt-12 text-left sm:px-10 lg:px-16"
@@ -145,13 +161,12 @@ export function TestimonialsSection() {
                     </div>
                 </div>
 
-                {/* One dot per pair */}
                 <div className="testimonial-dots mt-12 flex items-center gap-[6px]">
-                    {pairs.map((_, index) => (
+                    {slides.map((_, index) => (
                         <button
                             key={index}
                             type="button"
-                            aria-label={`Go to reviews ${index * 2 + 1}–${index * 2 + 2}`}
+                            aria-label={`Go to review ${index + 1}`}
                             onClick={() => setActiveIndex(index)}
                             className={index === activeIndex
                                 ? "testimonial-dot-active h-[6px] w-[24px] rounded-full bg-[#eccd80]"
