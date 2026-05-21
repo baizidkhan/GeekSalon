@@ -362,6 +362,8 @@ export default function ServicesPage() {
                     <img
                       src={getMediaUrl(newService.previewUrl || newService.imageUrl)}
                       alt="preview"
+                      loading="lazy"
+                      decoding="async"
                       className="mt-2 h-24 w-full object-cover rounded"
                     />
                   )}
@@ -481,6 +483,8 @@ export default function ServicesPage() {
                           <img
                             src={getMediaUrl(service.imageUrl)}
                             alt={service.name}
+                            loading="lazy"
+                            decoding="async"
                             className="h-10 w-10 object-cover rounded-md border border-border"
                           />
                         ) : (
@@ -638,6 +642,8 @@ export default function ServicesPage() {
                   <img
                     src={getMediaUrl(serviceToEdit.previewUrl || serviceToEdit.imageUrl)}
                     alt="preview"
+                    loading="lazy"
+                    decoding="async"
                     className="mt-2 h-24 w-full object-cover rounded"
                   />
                 )}
