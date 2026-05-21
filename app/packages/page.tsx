@@ -105,7 +105,7 @@ export default async function PackagesPage() {
 
               <div className="mt-10 flex justify-center">
                 <ContactSpecialistsModal
-                  triggerLabel="Contact Our Specialists"
+                  triggerLabel="Contact Us"
                   triggerClassName="inline-flex items-center gap-3 border border-white/40 bg-transparent px-7 py-3 text-[10px] font-bold uppercase tracking-[0.35em] text-white transition-all duration-300 hover:border-[#eccd80] hover:bg-white hover:text-black"
                 />
               </div>
