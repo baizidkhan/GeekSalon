@@ -526,7 +526,7 @@ export default function SettingsPage() {
                   <div className="relative group aspect-[4/5] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center overflow-hidden transition-all hover:border-blue-400/50 hover:bg-blue-50/30">
                     {previews[index] ? (
                       <>
-                        <img src={getMediaUrl(previews[index]!)} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                        <img src={getMediaUrl(previews[index]!)} alt={`Preview ${index + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <label className="cursor-pointer bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-lg text-sm font-medium transition-all transform translate-y-2 group-hover:translate-y-0">
                             Change Image
@@ -681,6 +681,8 @@ export default function SettingsPage() {
                       <img
                         src={getMediaUrl(journeyPreview)}
                         alt="Journey Background Preview"
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
